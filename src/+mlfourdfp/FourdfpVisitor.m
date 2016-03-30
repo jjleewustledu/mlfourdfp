@@ -56,23 +56,6 @@ classdef FourdfpVisitor
  			this.assertPlatform;
         end
         
-        function resolveTracer(this, varargin)
-            t4_resolver_subject;
-            t4_resolver_crossmodal;
-            t4_resolver_top;
-            t4_resolver;
-            crop_4dfp;
-            copy_4dfp;
-            msktgen_4dfp_mpr;
-            msktgen_4dfp_init;
-            extract_frame_4dfp;
-            frame_reg;
-            t4_img_4dfp;
-            t4_resolve_and_paste;
-            msktgen_4dfp_resolved;
-            t4_resolver_teardown;
-        end
-        
         function [s,r] = actmapf_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'format',      @ischar);
@@ -134,9 +117,19 @@ classdef FourdfpVisitor
                 ip.Results.mode, ...
                 ip.Results.log));
         end
+        function [s,r] = maskimg_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'imgfile', @this.lexist);
+            addRequired(ip, 'mskfile', @this.lexist);
+            addRequired(ip, 'outfile', @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = this.maskimg_4dfp__(sprintf('maskimg_4dfp %s %s %s', ...
+                ip.Results.imgfile, ip.Results.mskfile, ip.Results.outfile));
+        end
         function [s,r] = mpr2atl_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'in',             @(x) lexist(x, 'file') || lexist([x '.4dfp.img'], 'file'));
+            addRequired( ip, 'in',             @this.lexist);
             addParameter(ip, 'options',   '',  @ischar);
             addParameter(ip, 'log',       '',  @ischar);
             parse(ip, varargin{:});
@@ -150,7 +143,7 @@ classdef FourdfpVisitor
         end
         function [s,r] = msktgen_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'in',             @(x) lexist(x, 'file') || lexist([x '.4dfp.img'], 'file'));
+            addRequired( ip, 'in',             @this.lexist);
             addOptional( ip, 'threshold', 200, @isnumeric);
             addParameter(ip, 'options',   '',  @ischar);
             addParameter(ip, 'log',       '',  @ischar);
@@ -219,7 +212,7 @@ classdef FourdfpVisitor
     
     methods (Access = protected)
         function assertPlatform(this)
-            if (logical(getenv('DEBUG')))
+            if (strcmp(getenv('DEBUG'), '1'))
                 return
             end            
             assert(strcmp(computer, 'GLNXA64'));
@@ -327,6 +320,26 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('imgreg_4dfp %s', args));
+        end
+        function [s,r] = maskimg_4dfp__(~, args)
+            %% MASKIMG_4DFP
+            % $Id: maskimg_4dfp.c,v 1.17 2012/06/27 22:33:19 avi Exp $
+            % Usage:	maskimg_4dfp <(4dfp) imgfile> <(4dfp) mskfile> <(4dfp) outfile>
+            %  e.g.:	maskimg_4dfp -t23.2 va1234_mpr mask va1234_mpr_msk
+            % 	option
+            % 	-N	replace NaN in <imgfile> with corresponding <mskfile> value
+            % 	-e	report to stdout mean <imgfile> within-mask value
+            % 	-1	apply first frame of <mskfile> to all frames of <imgfile>
+            % 	-R	suppress creation of rec file
+            % 	-v<flt>	specify <outfile> uniform within-mask value
+            % 	-p<flt>	specify <mskfile> threshold as percent of <mskfile> max
+            % 	-t<flt>	specify <mskfile> threshold directly (default = 0.0)
+            % 	-A	threshold mask by absolute value of <mskfile>
+            % 	-@<b|l>	output big or little endian (default <imgfile> endian)
+            % N.B.:	<imgfile> and <mskfile> may be the same
+
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('maskimg_4dfp %s', args));
         end
         function [s,r] = mpr2atl_4dfp__(~, args)
             %% MPR2ATL_4DFP__

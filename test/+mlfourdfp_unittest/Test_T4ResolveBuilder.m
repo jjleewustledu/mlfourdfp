@@ -30,19 +30,48 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
                 product.fdg.view;
             end
         end
+        function test_t4ResolvePET(this)
+%             this.touch_4dfp('ho2v1');
+%             this.touch_4dfp('ho2v1_sumt');
+%             this.touch_4dfp('ho2v1_sumt_g11');
+%             mlbash('touch ho2v1_to_HYGLY09_mpr_t4');
+%             this.touch_4dfp('ho2v1_on_HYGLY09_mpr');
+%             mlbash('touch ho2v1_to_TRIO_Y_NDC_t4');
+%             this.touch_4dfp('ho2v1_sumt_b55');
+%             for f = 1:48
+%                 frameFps{f} = sprintf('ho2v1_frame%i', f);
+%                 this.touch_4dfp( frameFps{f});
+%                 this.touch_4dfp([frameFps{f} '_b55']);
+%             end
+%             this.touch_4dfp('HYGLY09HO2_v1_NAC_frame4');
+%             this.touch_4dfp('ho2v1_sumt_mskt');
+%             for f = 4:48
+%                 mlbash(sprintf('touch ho2v1_frame%i_to_resolved_t4', f));
+%                 this.touch_4dfp(sprintf('ho2v1_frame%i', f));
+%             end
+%             this.touch_4dfp('ho2v1_frames4to31_resolved');
+%             mlbash('touch resolved.mat0');
+%             mlbash('touch resolved.sub');
+%             this.touch_4dfp('ho2v1_sumt_mskt');
+%             this.touch_4dfp('ho2v1_sumt_mskt_b55');
+%             this.touch_4dfp('ho2v1_b55_mskt');
+%             this.touch_4dfp('ho2v1_b55');
+            
+            this.testObj.t4ResolvePET;
+        end
         function test_readFrameEnd(this)
-            this.verifyEqual(this.testObj.readFrameEnd('NP995_09FDG_v1_NAC'), 31);
+            this.verifyEqual(this.testObj.readFrameEnd('HYGLY09FDG_v1_NAC'), 31);
         end
         function test_t4ResolveIteration(this)
             this.testObj.t4ResolveIteration( ...
-                'NP995_09FDG_v1_NAC', 'fdgv1', 'NP995_09_mpr');
+                'HYGLY09FDG_v1_NAC', 'fdgv1', 'HYGLY09_mpr');
         end
         function test_msktgenInitial(this)
             this.touch_4dfp('fdgv1');
             this.touch_4dfp('fdgv1_sumt');
             this.touch_4dfp('fdgv1_sumt_g11');
-            mlbash('touch fdgv1_to_NP995_09_mpr_t4');
-            this.touch_4dfp('fdgv1_on_NP995_09_mpr');
+            mlbash('touch fdgv1_to_HYGLY09_mpr_t4');
+            this.touch_4dfp('fdgv1_on_HYGLY09_mpr');
             mlbash('touch fdgv1_to_TRIO_Y_NDC_t4');
             this.touch_4dfp('fdgv1_sumt_b55');
             this.testObj.msktgenInitial(this.t4ri);
@@ -59,7 +88,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
                 this.touch_4dfp( frameFps{f});
                 this.touch_4dfp([frameFps{f} '_b55']);
             end
-            this.touch_4dfp('NP995_09FDG_v1_NAC_frame4');
+            this.touch_4dfp('HYGLY09FDG_v1_NAC_frame4');
             this.touch_4dfp('fdgv1_sumt_mskt');
             this.testObj.frameReg(this.t4ri, frameFps);
         end
@@ -84,28 +113,28 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             
             this.studyd = mlpipeline.StudyDataSingletons.instance('test_raichle');
             this.sessd = mlraichle.SessionData( ...
-                'studyData', this.studyd, 'sessionPath', fullfile(this.studyd.subjectsDir, 'NP995_09', ''));            
+                'studyData', this.studyd, 'sessionPath', fullfile(this.studyd.subjectsDir, 'HYGLY09', ''));            
             this.testObj_ = T4ResolveBuilder('sessionData', this.sessd);
             this.t4ri = struct( ...
-                'fdfp0', 'NP995_09FDG_v1_NAC', ...
+                'fdfp0', 'HYGLY09FDG_v1', ...
                 'fdfp1', 'fdgv1', ...
-                'mprage', 'NP995_09_mpr', ...
+                'mprage', 'HYGLY09_mpr', ...
                 'frame0', 4, ...
                 'frameF', 31, ...
                 'crop', 0.5, ...
                 'atlas', 'TRIO_Y_NDC', ...
                 'blur', 5.5);
             
-            setenv('REFDIR',  '/Volumes/InnominateHD3/Local/test/raichle/atlas');
-            setenv('RELEASE', '/Volumes/InnominateHD3/Local/test/raichle/lin64-tools');
-            setenv('DEBUG', '1');
+            %setenv('REFDIR',  '/Volumes/InnominateHD3/Local/test/raichle/atlas');
+            %setenv('RELEASE', '/Volumes/InnominateHD3/Local/test/raichle/lin64-tools');
+            setenv('DEBUG', '0');
  		end
 	end
 
  	methods (TestMethodSetup)
 		function setupT4ResolveBuilderTest(this)
  			this.testObj = this.testObj_;            
-            cd(fullfile(this.sessd.sessionPath, 'NAC', 'FDG_v1', ''));
+            cd(fullfile(this.sessd.sessionPath, 'FDG_v1', ''));
  			this.addTeardown(@this.cleanFiles);
  		end
 	end
