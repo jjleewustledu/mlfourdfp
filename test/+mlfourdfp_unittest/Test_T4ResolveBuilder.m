@@ -21,13 +21,34 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
  	end
 
 	methods (Test)
+        function test_ensureNifti(this)
+            cd(fullfile(getenv('MLUNIT_TEST_PATH'), 'test_ensureNIfTI', ''));
+            this.sessd = mlraichle.SessionData( ...
+                'studyData', this.studyd, 'sessionPath', fullfile(getenv('MLUNIT_TEST_PATH'), 'test_ensureNIfTI', ''));            
+            this.testObj = mlraichle.T4ResolveBuilder('sessionData', this.sessd);
+            
+            this.testObj.ensureNifti('test_ensureNIfTI');   
+            this.testObj.ensureNifti('test_ensureNIfTI.nii');
+            this.testObj.ensureNifti('test_ensureNIfTI.nii.gz');         
+            this.testObj.ensureNifti('test_ensureNIfTI.4dfp.ifh');
+        end
+        function test_ensure4dfp(this)
+            cd(fullfile(getenv('MLUNIT_TEST_PATH'), 'test_ensure4dfp', ''));
+            this.sessd = mlraichle.SessionData( ...
+                'studyData', this.studyd, 'sessionPath', fullfile(getenv('MLUNIT_TEST_PATH'), 'test_ensure4dfp', ''));            
+            this.testObj = mlraichle.T4ResolveBuilder('sessionData', this.sessd);
+            
+            this.testObj.ensure4dfp('test_ensure4dfp');   
+            this.testObj.ensure4dfp('test_ensure4dfp.nii');
+            this.testObj.ensure4dfp('test_ensure4dfp.nii.gz');         
+            this.testObj.ensure4dfp('test_ensure4dfp.4dfp.ifh');
+        end
 		function test_t4ResolveSubject(this)
             fprintf('Test_T4ResolveBuilder.test_t4ResolveSubject:  running t4ResolveSubject which may requires hours of processing time..........');
             this.testObj  = this.testObj.t4ResolveSubject;
-            this.verifyTrue(~isempty(this.testObj.product));
-            
+            this.verifyTrue(~isempty(this.testObj.product));            
             if (this.view)
-                product.fdg.view;
+                this.testObj.product.fdg.view;
             end
         end
         function test_t4ResolvePET(this)
@@ -57,7 +78,10 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
 %             this.touch_4dfp('ho2v1_b55_mskt');
 %             this.touch_4dfp('ho2v1_b55');
             
-            this.testObj.t4ResolvePET;
+            this.testObj = this.testObj.t4ResolvePET;            
+            if (this.view)
+                this.testObj.product.fdg.view;
+            end
         end
         function test_readFrameEnd(this)
             this.verifyEqual(this.testObj.readFrameEnd('HYGLY09FDG_v1_NAC'), 31);
@@ -109,16 +133,14 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
 
  	methods (TestClassSetup)
 		function setupT4ResolveBuilder(this)
- 			import mlfourdfp.*;
-            
             this.studyd = mlpipeline.StudyDataSingletons.instance('test_raichle');
             this.sessd = mlraichle.SessionData( ...
-                'studyData', this.studyd, 'sessionPath', fullfile(this.studyd.subjectsDir, 'HYGLY09', ''));            
-            this.testObj_ = T4ResolveBuilder('sessionData', this.sessd);
+                'studyData', this.studyd, 'sessionPath', fullfile(this.studyd.subjectsDir, 'NP995_09', 'NAC', ''));            
+            this.testObj_ = mlraichle.T4ResolveBuilder('sessionData', this.sessd);
             this.t4ri = struct( ...
-                'fdfp0', 'HYGLY09FDG_v1', ...
+                'fdfp0', 'NP995_09FDG_v1_NAC', ...
                 'fdfp1', 'fdgv1', ...
-                'mprage', 'HYGLY09_mpr', ...
+                'mprage', 'NP995_09_mpr', ...
                 'frame0', 4, ...
                 'frameF', 31, ...
                 'crop', 0.5, ...
