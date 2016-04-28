@@ -34,7 +34,9 @@ classdef FourdfpFacade < handle
     
 	methods 
         function this = t4ResolveSubject(this)
-            assert(~isempty(this.t4ResolveBuilder_));
+            if (isempty(this.t4ResolveBuilder_))
+                this.t4ResolveBuilder_ = mlfourdfp.T4ResolveBuilder('sessionData', this.sessionData);
+            end
             this.t4ResolveBuilder_ = this.t4ResolveBuilder_.t4ResolveSubject;
         end
  		function this = FourdfpFacade(varargin)

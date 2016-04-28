@@ -10,7 +10,9 @@ classdef T4ResolveBuilder
  	
     
     properties
-        blur = 0
+        atlasTag = 'TRIO_Y_NDC'
+        firstCrop = 0.5
+        initialT4 = fullfile(getenv('RELEASE'), 'T_t4') % fullfile(getenv('RELEASE'), 'S_t4')
     end
 
 	properties (Dependent)
@@ -22,6 +24,8 @@ classdef T4ResolveBuilder
         sourceImage
         sourceWeight
         xfm
+        
+        petBlur
     end
     
     methods %% GET/SET
@@ -33,32 +37,32 @@ classdef T4ResolveBuilder
             v = this.buildVisitor_;
         end
         function this = set.product(this, p)
-            if (isa(p, 'mlfourd.ImagingContext')) % preserves MR/PETImagingContexts
+            if (isa(p, 'mlfourdfp.ImagingContext')) % preserves MR/PETImagingContexts
                 this.product_ = p;
                 return
             end
-            this.product_ = mlfourd.ImagingContext(p);
+            this.product_ = mlfourdfp.ImagingContext(p);
         end
         function prod = get.product(this)
             prod = this.product_;
         end
         function this = set.referenceWeight(this, w)
-            if (isa(w, 'mlfourd.ImagingContext')) % preserves MR/PETImagingContexts
+            if (isa(w, 'mlfourdfp.ImagingContext')) % preserves MR/PETImagingContexts
                 this.referenceWeight_ = w;
                 return
             end
-            this.referenceWeight_ = mlfourd.ImagingContext(w);
+            this.referenceWeight_ = mlfourdfp.ImagingContext(w);
         end
         function w    = get.referenceWeight(this)
             % may be empty
             w = this.referenceWeight_;
         end
         function this = set.referenceImage(this, ref)
-            if (isa(ref, 'mlfourd.ImagingContext')) % preserves MR/PETImagingContexts
+            if (isa(ref, 'mlfourdfp.ImagingContext')) % preserves MR/PETImagingContexts
                 this.referenceImage_ = ref;
                 return
             end
-            this.referenceImage_ = mlfourd.ImagingContext(ref);
+            this.referenceImage_ = mlfourdfp.ImagingContext(ref);
         end
         function ref  = get.referenceImage(this)
             ref = this.referenceImage_;
@@ -67,21 +71,21 @@ classdef T4ResolveBuilder
             sd = this.sessionData_;
         end
         function this = set.sourceImage(this, si)
-            if (isa(si, 'mlfourd.ImagingContext')) % preserves MR/PETImagingContexts
+            if (isa(si, 'mlfourdfp.ImagingContext')) % preserves MR/PETImagingContexts
                 this.sourceImage_ = si;
                 return
             end
-            this.sourceImage_ = mlfourd.ImagingContext(si);
+            this.sourceImage_ = mlfourdfp.ImagingContext(si);
         end
         function si = get.sourceImage(this)
             si = this.sourceImage_;
         end
         function this = set.sourceWeight(this, sw)
-            if (isa(sw, 'mlfourd.ImagingContext')) % preserves MR/PETImagingContexts
+            if (isa(sw, 'mlfourdfp.ImagingContext')) % preserves MR/PETImagingContexts
                 this.sourceWeight_ = sw;
                 return
             end
-            this.sourceWeight_ = mlfourd.ImagingContext(sw);
+            this.sourceWeight_ = mlfourdfp.ImagingContext(sw);
         end
         function sw = get.sourceWeight(this)
             sw = this.sourceWeight_;
@@ -107,104 +111,59 @@ classdef T4ResolveBuilder
             end
             x = this.xfm_;
         end
+        function pb   = get.petBlur(this)
+            pb = this.sessionData.petBlur;
+        end
     end
 
+    methods (Abstract)
+        t4ResolveSubject(this)
+        t4ResolvePET(this)
+    end
+    
 	methods
         function fn   = frameRegLoggerFilename(this, tag)
             fn = fullfile(this.sessionData_.sessionPath, [tag '_T4ResolveBuilder_frameReg_Logger_' datestr(now, 30) '.log']);
         end
         function fn   = t4ResolveAndPasteLoggerFilename(this, tag)
             fn = fullfile(this.sessionData_.sessionPath, [tag '_T4ResolveBuilder_t4ResolveAndPaste_Logger_' datestr(now, 30) '.log']);
-        end
-        function this = t4ResolveSubject(this)
-            this.sourceImage = this.sessionData.pet;
-            this = this.t4ResolvePET;
-            pet  = this.product;
-
-            this.sourceImage = this.sessionData.mr;
-            this = this.t4ResolveMR;
-            mr   = this.product;            
-
-            this.sourceImage = mlfourd.ImagingContext({pet mr});
-            this = this.t4Resolve;
-        end
-        function this = t4ResolvePET(this)
-
-            atlTag  = 'TRIO_Y_NDC';
-            subject = 'HYGLY09';
-            convdir = fullfile(getenv('PPG'), 'converted', subject, 'V1', '');
-            nacdir  = fullfile(convdir, '');
-            workdir = fullfile(getenv('PPG'), 'jjlee', subject, '');
-            mpr     = [subject '_mpr'];
-
-            mprImg = [mpr '.4dfp.img'];
-            if (~lexist(mprImg, 'file'))
-                if (lexist(fullfile(convdir, mprImg)))
-                    this.buildVisitor.lns_4dfp(fullfile(convdir, mpr));
-                elseif (lexist(fullfile(convdir, 'V1', mprImg)))
-                    this.buildVisitor.lns_4dfp(fullfile(convdir, 'V1', mpr));
-                elseif (lexist(fullfile(convdir, 'V2', mprImg)))
-                    this.buildVisitor.lns_4dfp(fullfile(convdir, 'V2', mpr));
-                else
-                    error('mlfourdfp:fileNotFound', 'T4ResolveBuilder.t4ResolvePET:  could not find %s', mprImg);
-                end
-            end
-            if (~lexist([mpr '_to_' atlTag '_t4']))
-                this.msktgenMprage(mpr, atlTag);
-            end
-
-            tracer = 'fdg';
-            for visit = 1:1 %2
-                tracerdir = fullfile(workdir, sprintf('%s_v%i', upper(tracer), visit));
-                cd(tracerdir);
-                this.buildVisitor.lns(     fullfile(workdir, [mpr '_to_' atlTag '_t4']));
-                this.buildVisitor.lns_4dfp(fullfile(convdir,  mpr));
-                this.buildVisitor.lns_4dfp(fullfile(nacdir, sprintf('%s%s_v%i_AC', subject, tracer, visit)));
-                fdfp0 = sprintf('%s%s_v%i_AC', subject, tracer, visit);
-                fdfp1 = sprintf('%sv%i', tracer, visit);
-                this.t4ResolveIterative(fdfp0, fdfp1, mpr);
-            end
-            
-%             tracers = {'ho' 'oo'};
-%             for t = 1:1 %length(tracers)
-%                 for visit = 1:1 %2
-%                     for scan = 2:2
-%                         tracerdir = fullfile(workdir, sprintf('%s%i_v%i', upper(tracers{t}), scan, visit));
-%                         this.buildVisitor.mkdir(tracerdir);
-%                         cd(tracerdir);
-%                         this.buildVisitor.lns(     fullfile(workdir, [mpr '_to_' atlTag '_t4']));
-%                         this.buildVisitor.lns_4dfp(fullfile(workdir,  mpr));
-%                         this.buildVisitor.lns_4dfp(fullfile(nacdir, sprintf('%s%s%i_v%i', subject, tracers{t}, scan, visit)));
-%                         fdfp0 = sprintf('%s%s%i_v%i', subject, tracers{t}, scan, visit);
-%                         fdfp1 = sprintf('%s%iv%i', tracers{t}, scan, visit);
-%                         this.t4ResolveIterative(fdfp0, fdfp1, mpr);
-%                     end
-%                 end
-%             end
-        end
+        end        
+        
         function this = t4ResolveMR(this)
         end
+        function this = t4ResolveMultispectral(this)
+        end
         function this = t4ResolveIterative(this, fdfp0, fdfp1, mpr)
-            fdfp0 = basename(fdfp0);
-            fdfp1 = basename(fdfp1);
+            fdfp0 = mybasename(fdfp0);
+            fdfp1 = mybasename(fdfp1);
             frame0 = 4;
             frameF = this.readFrameEnd(fdfp0);
             this.t4ResolveIteration( ...
                 fdfp0, fdfp1, mpr, ...
-                'frame0', frame0, 'crop', 0.5);
+                'frame0', frame0, 'crop', this.firstCrop);
             this.t4ResolveIteration( ...
-                sprintf('%s_frames%sto%s_resolved', fdfp1, frame0, frameF), ...
+                sprintf('%s_frames%ito%i_resolved', fdfp1, frame0, frameF), ...
                 sprintf('%sr1', fdfp1), ...
                 mpr, ...
-                'frame0', frame0, 'frameF', frameF,'crop', 1);
+                'frame0', 1, 'frameF', frameF-frame0+1, 'crop', 1);
             this.t4ResolveIteration( ...
-                sprintf('%sr1_frames%sto%s_resolved', fdfp1, 1, frameF-frame0+1), ...
+                sprintf('%sr1_frames%ito%i_resolved', fdfp1, 1, frameF-frame0+1), ...
                 sprintf('%sr2', fdfp1), ...
                 mpr, ...
                 'frame0', 1, 'frameF', frameF-frame0+1, 'crop', 1);
+            
+            this.product_ = [this.product_ sprintf('%sr2.4dfp.img', fdfp1)];
         end
         function f    = readFrameEnd(~, fdfp)
             [~,f] = mlbash(sprintf('awk ''/matrix size \\[4\\]/{print $NF}'' %s.4dfp.ifh', fdfp));
+            f = str2double(f);
+        end
+        function f    = readSize(~, varargin)
+            ip = inputParser;
+            addRequired(ip, 'fdfp',  @ischar);
+            addOptional(ip, 'mu', 4, @isnumeric);
+            parse(ip, varargin{:});
+            [~,f] = mlbash(sprintf('awk ''/matrix size \\[%i\\]/{print $NF}'' %s.4dfp.ifh', ip.Results.mu, ip.Results.fdfp));
             f = str2double(f);
         end
         function this = t4ResolveIteration(this, varargin)
@@ -237,8 +196,10 @@ classdef T4ResolveBuilder
             this = this.t4ResolveTeardown(ip.Results);
         end
         function this = crop(this, t4ri)
-            if (0 == t4ri.crop || t4ri.crop == 1)  
-                dbbash(sprintf('copy_4dfp %s %s', t4ri.fdfp0, t4ri.fdfp1));  
+            if (0 == t4ri.crop || t4ri.crop == 1)
+                if (~lexist([t4ri.fdfp1 '.4dfp.hdr']))
+                    dbbash(sprintf('copy_4dfp %s %s', t4ri.fdfp0, t4ri.fdfp1));
+                end
                 return
             end
                 dbbash(sprintf('crop_4dfp_.sh %g %s %s', t4ri.crop, t4ri.fdfp0, t4ri.fdfp1));
@@ -346,20 +307,42 @@ classdef T4ResolveBuilder
             end
             
             nameToMprT4 = [name '_to_' mpr '_t4'];
-            this.buildVisitor.t4_inv(fullfile(getenv('RELEASE'), 'S_t4'), nameToMprT4);
+            if (lexist(nameToMprT4, 'file'))
+                delete(nameToMprT4);
+            end
+            this.buildVisitor.t4_inv(this.initialT4, nameToMprT4);
             this.buildVisitor.actmapf_4dfp( ...
                 sprintf('%i+', this.readFrameEnd(t4ri.fdfp0)), name, 'options', '-asumt');
             this.buildVisitor.gauss_4dfp(nameSumt, 1.1, nameSumtG); 
             
-            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, 'none', nameToMprT4, 4099, log);
-            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, 'none', nameToMprT4, 4099, log);
-            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, 'none', nameToMprT4, 3075, log);
-            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, 'none', nameToMprT4, 2051, log);
-            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, 'none', nameToMprT4, 2051, log);
+            petMsk = this.maskBoundaries(nameSumtG);
+            
+            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, petMsk, nameToMprT4, 4099, log);
+            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, petMsk, nameToMprT4, 4099, log);
+            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, petMsk, nameToMprT4, 3075, log);
+            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, petMsk, nameToMprT4, 2051, log);
+            this.buildVisitor.imgreg_4dfp(mpr, 'none', nameSumtG, petMsk, nameToMprT4, 2051, log); % 10243
             this.buildVisitor.t4img_4dfp( nameToMprT4, nameSumtG, [name '_on_' mpr], 'options', ['-n -O' mpr]);            
             this.buildVisitor.t4_mul(     nameToMprT4, mprToAtlT4, [nameSumt '_to_' atl '_t4']);
             
             this.buildVisitor.msktgen_4dfp(nameSumt, 20, 'options', ['-T' fullfile(getenv('REFDIR'), atl)], 'log', log);
+        end
+        function msk  = maskBoundaries(this, fdfp)
+            this.buildVisitor.nifti_4dfp_n(fdfp);
+            ic  = mlfourd.ImagingContext(fdfp);
+            ic  = ic.ones;
+            ic.noclobber = 0;
+            ic.saveas([fdfp '_ones']);
+            this.buildVisitor.nifti_4dfp_4([fdfp '_ones']);
+            msk = this.zeroSlicesOnBoundaries([fdfp '_ones'], 3);
+        end
+        function fdfp = zeroSlicesOnBoundaries(this, fdfp, n)            
+            N     = this.readSize(fdfp, 3);
+            fdfp1 = sprintf('%s_z%ito%i', fdfp,  1, n);
+            fdfp2 = sprintf('%s_z%ito%i', fdfp1, N-n+1, N);
+            this.buildVisitor.zero_slice_4dfp(fdfp,  'z', 1, n,     fdfp1);
+            this.buildVisitor.zero_slice_4dfp(fdfp1, 'z', N-n+1, N, fdfp2);
+            fdfp  = fdfp2;            
         end
         function this = msktgenMprage(this, fdfp, atl)
             log = sprintf('msktgenMprage_%s.log', datestr(now, 30));
@@ -387,6 +370,95 @@ classdef T4ResolveBuilder
                 delete(sprintf('%s_frame%i_b55.4dfp.*', name, f));
                 delete(sprintf('%s_frame%i_resolved.4dfp.*', name, f));
             end
+        end        
+        function [s,r] = ensureNifti(this, varargin)
+            %% ENSURENIFTI
+            %  @param filename is any string descriptor found in an existing file on the filesystem;
+            %  ensureNifti will search for files with extensions .nii, .nii.gz or .4dfp.ifh.
+            %  @returns s, the bash status; r, any bash messages.  ensureNifti ensures files are .nii.gz.
+            
+            ip = inputParser;
+            addRequired(ip, 'filename', @ischar);
+            parse(ip, varargin{:});
+            
+            s = 0; r = '';
+            if (2 == exist(ip.Results.filename, 'file'))
+                if (lstrfind(ip.Results.filename, '.nii'))
+                    return
+                end
+                if (lstrfind(ip.Results.filename, '.mgz'))
+                    fp = myfileprefix(ip.Results.filename);
+                    [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii.gz', fp, fp));
+                    return
+                end
+                [s,r] = this.buildVisitor.nifti_4dfp_ng(myfileprefix(ip.Results.filename));
+                assert(lexist(myfilename(ip.Results.filename), 'file'));
+                return
+            end
+            if (2 == exist([ip.Results.filename '.nii'], 'file'))
+                [s,r] = this.ensureNifti([ip.Results.filename '.nii']);
+                return
+            end
+            if (2 == exist([ip.Results.filename '.nii.gz'], 'file'))
+                return
+            end
+            if (2 == exist([ip.Results.filename '.mgz'], 'file'))
+                [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii.gz', ip.Results.filename, ip.Results.filename));
+                return
+            end    
+            if (2 == exist([ip.Results.filename '.4dfp.ifh'], 'file'))
+                if (2 == exist([ip.Results.filename '.nii'], 'file'))
+                    return
+                end
+                [s,r] = this.ensureNifti([ip.Results.filename '.4dfp.ifh']);
+                return
+            end
+            error('mlfourdfp:fileNotFound', ...
+                  'T4ResolveBuilder.ensureNifti could not find files of form %s', ip.Results.filename);            
+        end
+        function [s,r] = ensure4dfp(this, varargin)
+            %% ENSURE4DFP
+            %  @param filename is any string descriptor found in an existing file on the filesystem;
+            %  ensureNifti will search for files with extensions .4dfp.ifh.
+            %  @returns s, the bash status; r, any bash messages.  ensure4dfp ensures files are .4dfp.ifh.            
+            
+            ip = inputParser;
+            addRequired(ip, 'filename', @ischar);
+            parse(ip, varargin{:});
+            
+            s = 0; r = '';
+            if (2 == exist(ip.Results.filename, 'file'))
+                if (lstrfind(ip.Results.filename, '.4dfp'))
+                    return
+                end
+                if (lstrfind(ip.Results.filename, '.mgz'))
+                    fp = myfileprefix(ip.Results.filename);
+                    [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii', fp, fp)); %#ok<ASGLU>
+                    [s,r] = this.ensure4dfp([fp '.nii']);
+                    return
+                end
+                [s,r] = this.buildVisitor.nifti_4dfp_4(myfileprefix(ip.Results.filename));
+                assert(lexist(myfilename(ip.Results.filename, '.4dfp.ifh'), 'file'));
+                return
+            end
+            if (2 == exist([ip.Results.filename '.4dfp.ifh'], 'file'))
+                return
+            end
+            if (2 == exist([ip.Results.filename '.nii'], 'file'))
+                [s,r] = this.ensure4dfp([ip.Results.filename '.nii']);
+                return
+            end
+            if (2 == exist([ip.Results.filename '.nii.gz'], 'file'))
+                [s,r] = this.ensure4dfp([ip.Results.filename '.nii.gz']);
+                return
+            end      
+            if (2 == exist([ip.Results.filename '.mgz'], 'file'))
+                [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii', ip.Results.filename, ip.Results.filename)); %#ok<ASGLU>
+                [s,r] = this.ensure4dfp([ip.Results.filename '.nii']);
+                return
+            end            
+            error('mlfourdfp:fileNotFound', ...
+                  'T4ResolveBuilder.ensureNifti could not find files of form %s', ip.Results.filename);     
         end
         
  		function this = T4ResolveBuilder(varargin)
@@ -432,9 +504,9 @@ classdef T4ResolveBuilder
     end
     
     methods (Access = protected)
-        
     end
 
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
- end
+end
 
+ 

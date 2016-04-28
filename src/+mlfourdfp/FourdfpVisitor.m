@@ -10,10 +10,26 @@ classdef FourdfpVisitor
  	
 
 	properties (Constant)
- 		FOURDFP_HOSTS = {'touch3'}
+        ASSERT_PLATFORM = false
+ 		FOURDFP_HOSTS = {'touch3' 'william' 'vertebral'}
     end
     
     methods (Static)
+        function [s,r] = cp(fqfn)
+            s = 0; r = '';
+            if (~lexist(mybasename(fqfn), 'file'))
+                [s,r] = mlbash(sprintf('cp %s .', fqfn));
+            end
+        end
+        function [s,r] = cp_4dfp(fqfp)
+            s = 0; r = '';
+            ext = { '.hdr' '.ifh' '.img' '.img.rec' };
+            for e = 1:length(ext) 
+                if (~lexist([mybasename(fqfp) '.4dfp' ext{e}], 'file'))
+                    [s,r] = mlbash(sprintf('cp %s.4dfp%s .', fqfp, ext{e}));
+                end
+            end
+        end
         function tf    = lexist(fdfp)
             tf = lexist(fdfp);
             if (~tf)
@@ -23,27 +39,32 @@ classdef FourdfpVisitor
             end
         end
         function [s,r] = lns(fqfn)
-            if (~lexist(basename(fqfn), 'file'))
+            s = 0; r = '';
+            if (~lexist(mybasename(fqfn), 'file'))
                 [s,r] = mlbash(sprintf('ln -s %s', fqfn));
             end
         end
         function [s,r] = lns_4dfp(fqfp)
+            s = 0; r = '';
             ext = { '.hdr' '.ifh' '.img' '.img.rec' };
             for e = 1:length(ext) 
-                if (~lexist([basename(fqfp) '.4dfp' ext{e}], 'file'))
+                if (~lexist([mybasename(fqfp) '.4dfp' ext{e}], 'file'))
                     [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s', fqfp, ext{e}));
                 end
             end
         end
         function [s,r] = mkdir(pth)
+            s = 0; r = '';
             if (~isdir(pth))
                 [s,r] = mlbash(sprintf('mkdir -p %s', pth));
             end
         end
         function [s,r] = pushd(pth)
+            s = 0; r = '';
             [s,r] = mlbash(sprintf('pushd %s', pth));
         end
         function [s,r] = popd
+            s = 0; r = '';
             [s,r] = mlbash('popd');
         end
     end
@@ -53,7 +74,9 @@ classdef FourdfpVisitor
  			%% FOURDFPVISITOR
  			%  Usage:  this = FourdfpVisitor()
 
- 			this.assertPlatform;
+            if (this.ASSERT_PLATFORM)
+                this.assertPlatform;
+            end
         end
         
         function [s,r] = actmapf_4dfp(this, varargin)
@@ -152,6 +175,42 @@ classdef FourdfpVisitor
             [s,r] = this.msktgen_4dfp__( ...
                 sprintf('%s %i %s %s', ip.Results.in, ip.Results.threshold, ip.Results.options, this.log(ip.Results)));
         end
+        function [s,r] = nifti_4dfp_4(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'fileprefix', @(x) ischar(x) && ~lstrfind(x, '.nii'));
+            parse(ip, varargin{:});            
+            
+            if (lexist([ip.Results.fileprefix '.nii.gz'], 'file') && ...
+               ~lexist([ip.Results.fileprefix '.nii'],    'file'))
+                mlbash(sprintf('gunzip %s.nii.gz', ip.Results.fileprefix));
+            end
+            if (lexist([ip.Results.fileprefix '.nii']))
+                [s,r] = this.nifti_4dfp__( ...
+                    sprintf(' -4 %s.nii %s.4dfp.img', ip.Results.fileprefix, ip.Results.fileprefix));
+                if (~lexist([ip.Results.fileprefix '.nii.gz'], 'file')) 
+                    gzip([ip.Results.fileprefix '.nii']); 
+                end
+                return
+            end
+            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s not found', [ip.Results.fileprefix '.nii']);
+        end
+        function [s,r] = nifti_4dfp_n(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'fileprefix', @(x) ischar(x) && ~lstrfind(x, '.4dfp'));
+            parse(ip, varargin{:});            
+            
+            if (lexist([ip.Results.fileprefix '.4dfp.ifh']))
+                [s,r] = this.nifti_4dfp__( ...
+                    sprintf(' -n %s.4dfp.ifh %s.nii', ip.Results.fileprefix, ip.Results.fileprefix));
+                return
+            end
+            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s not found', [ip.Results.fileprefix '.nii']);
+        end
+        function [s,r] = nifti_4dfp_ng(this, varargin)
+            [s,r] = this.nifti_4dfp_n(varargin{:});
+            assert(s == 0); 
+            gzip([varargin{:} '.nii']);
+        end
         function [s,r] = paste_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'inlist',      @lexist);
@@ -206,13 +265,25 @@ classdef FourdfpVisitor
             [s,r] = this.t4_resolve__( ...
                 sprintf(' %s -o%s %s %s', ip.Results.options, ip.Results.output, ip.Results.filenames, this.log(ip.Results)));
         end
+        function [s,r] = zero_slice_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'fdfp',   @ischar);
+            addRequired( ip, 'axis',   @ischar);
+            addRequired(ip, 'index1',  @isnumeric);
+            addRequired(ip, 'indexF',  @isnumeric);
+            addOptional(ip, 'fdfpOut', sprintf('%s_%s%ito%i', varargin{1:4}), @ischar);
+            parse(ip, varargin{:});            
+            
+            [s,r] = this.zero_slice_4dfp__( ...
+                sprintf(' %s %s %i %i %s', ip.Results.fdfp, ip.Results.axis, ip.Results.index1, ip.Results.indexF, ip.Results.fdfpOut));
+        end
     end 
     
     %% PROTECTED
     
     methods (Access = protected)
         function assertPlatform(this)
-            if (strcmp(getenv('DEBUG'), '1'))
+            if (lgetenv('DEBUG'))
                 return
             end            
             assert(strcmp(computer, 'GLNXA64'));
@@ -377,6 +448,24 @@ classdef FourdfpVisitor
             assert(ischar(args));
             [s,r] = dbbash(sprintf('msktgen_4dfp %s', args));
         end
+        function [s,r] = nifti_4dfp__(~, args)
+            % NIFTI_4DFP__
+            % $Id: nifti_4dfp.c,v 1.9 2011/09/13 03:40:37 avi Exp $
+            % Usage: nifti_4dfp <-4 or -n> <infile> <outfile> [options]
+            %  e.g.: nifti_4dfp -n time_BOXzstat_333_t88.4dfp.ifh time_BOXzstat_333_t88.nii
+            % 	options
+            % 	-T <t4 file>	specify a t4 file to use converting TO NIfTI from 4dfp
+            % 	-n	convert TO NIfTI from 4dfp
+            % 	-4	convert TO 4dfp from NIfTI
+            % 	-N	suppress saving of mmppix and center fields in output ifh
+            % 	-@<val>	specify endianness for output, b or B for big, l or L for little
+            % N.B.:	exactly one of -4 or -n must be specified
+            % N.B.:	".4dfp.ifh" or ".nii" are appended to filenames specified without extension
+            % N.B.:	option -N has effect only on converting nii->4dfp
+            % N.B.:	option -T has effect only on converting 4dfp->nii
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('nifti_4dfp %s', args));
+        end
         function [s,r] = paste_4dfp__(~, args)
             %% PASTE_4DFP__
             % $Id: paste_4dfp.c,v 1.9 2008/10/17 02:53:48 avi Exp $
@@ -463,6 +552,23 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('t4_resolve %s', args));
+        end
+        function [s,r] = zero_slice_4dfp__(~, args)
+            %% ZERO_SLICE_4DFP__
+            % $Id: zero_slice_4dfp.c,v 1.2 2010/08/20 23:21:29 avi Exp $
+            % Usage:	zero_slice_4dfp <(4dfp) image>
+            %  e.g.,	zero_slice_4dfp vce20_mpr -z1to3
+            %    or,	zero_slice_4dfp vce20_mpr <x|y|z> istart iend [outroot]
+            % 	option
+            % 	-<x|y|z><int>to<int>	specify x y z limits (single required argument mode)
+            % 	-f	                    interpret slice numbers using 4dfp<->analyze flips
+            % 	-o	                    specify output fileroot (default = <image>z)
+            % 	-@<b|l>	                output big or little endian (default input endian)
+            % N.B.:	slices count from 1
+            % N.B.:	two usages are supported: 1 or 4 required arguments
+            
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('zero_slice_4dfp %s', args));
         end
     end
 

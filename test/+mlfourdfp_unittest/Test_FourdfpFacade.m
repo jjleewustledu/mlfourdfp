@@ -34,6 +34,20 @@ classdef Test_FourdfpFacade < matlab.unittest.TestCase
                 product.fdg.view;
             end
         end
+        function test_t4ResolveSubject2(this)
+            studyd = mlpipeline.StudyDataSingletons.instance('test_arbelaez');
+            sessd = mlarbelaez.SessionData( ...
+                'studyData', studyd, 'sessionPath', fullfile(studyd.subjectsDir, 'p7991_JJL', ''));
+            t4b = mlfourdfp.T4ResolveBuilder('sessionData', sessd);
+            ff  = mlfourdfp.FourdfpFacade('sessionData', sessd, 't4ResolveBuilder', t4b);
+            fprintf('Test_FourdfpFacade.test_t4ResolveSubject2:  running t4ResolveSubject which may requires hours of processing time..........');
+            ff = ff.t4ResolveSubject;
+            this.verifyTrue(~isempty(ff.product));
+            
+            if (this.view)
+                product.gluc.view;
+            end
+        end
 	end
 
  	methods (TestClassSetup)

@@ -18,9 +18,16 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
         sessd
  		testObj
         t4ri
+        
+        view = true
+        quick = true
  	end
 
 	methods (Test)
+        function test_msktgenInitial(this)
+        end
+        function test_msktgenResolved(this)
+        end
         function test_ensureNifti(this)
             cd(fullfile(getenv('MLUNIT_TEST_PATH'), 'test_ensureNIfTI', ''));
             this.sessd = mlraichle.SessionData( ...
@@ -44,7 +51,11 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             this.testObj.ensure4dfp('test_ensure4dfp.4dfp.ifh');
         end
 		function test_t4ResolveSubject(this)
-            fprintf('Test_T4ResolveBuilder.test_t4ResolveSubject:  running t4ResolveSubject which may requires hours of processing time..........');
+            if (this.quick)
+                return
+            end
+            fprintf('Test_T4ResolveBuilder.test_t4ResolveSubject:\n'); 
+            fprintf('\trunning t4ResolveSubject which may requires hours of processing time..........\n');
             this.testObj  = this.testObj.t4ResolveSubject;
             this.verifyTrue(~isempty(this.testObj.product));            
             if (this.view)
@@ -52,32 +63,6 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             end
         end
         function test_t4ResolvePET(this)
-%             this.touch_4dfp('ho2v1');
-%             this.touch_4dfp('ho2v1_sumt');
-%             this.touch_4dfp('ho2v1_sumt_g11');
-%             mlbash('touch ho2v1_to_HYGLY09_mpr_t4');
-%             this.touch_4dfp('ho2v1_on_HYGLY09_mpr');
-%             mlbash('touch ho2v1_to_TRIO_Y_NDC_t4');
-%             this.touch_4dfp('ho2v1_sumt_b55');
-%             for f = 1:48
-%                 frameFps{f} = sprintf('ho2v1_frame%i', f);
-%                 this.touch_4dfp( frameFps{f});
-%                 this.touch_4dfp([frameFps{f} '_b55']);
-%             end
-%             this.touch_4dfp('HYGLY09HO2_v1_NAC_frame4');
-%             this.touch_4dfp('ho2v1_sumt_mskt');
-%             for f = 4:48
-%                 mlbash(sprintf('touch ho2v1_frame%i_to_resolved_t4', f));
-%                 this.touch_4dfp(sprintf('ho2v1_frame%i', f));
-%             end
-%             this.touch_4dfp('ho2v1_frames4to31_resolved');
-%             mlbash('touch resolved.mat0');
-%             mlbash('touch resolved.sub');
-%             this.touch_4dfp('ho2v1_sumt_mskt');
-%             this.touch_4dfp('ho2v1_sumt_mskt_b55');
-%             this.touch_4dfp('ho2v1_b55_mskt');
-%             this.touch_4dfp('ho2v1_b55');
-            
             this.testObj = this.testObj.t4ResolvePET;            
             if (this.view)
                 this.testObj.product.fdg.view;
@@ -149,7 +134,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             
             %setenv('REFDIR',  '/Volumes/InnominateHD3/Local/test/raichle/atlas');
             %setenv('RELEASE', '/Volumes/InnominateHD3/Local/test/raichle/lin64-tools');
-            setenv('DEBUG', '0');
+            setenv('DEBUG', '');
  		end
 	end
 
