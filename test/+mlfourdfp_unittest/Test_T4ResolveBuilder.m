@@ -24,10 +24,6 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
  	end
 
 	methods (Test)
-        function test_msktgenInitial(this)
-        end
-        function test_msktgenResolved(this)
-        end
         function test_ensureNifti(this)
             cd(fullfile(getenv('MLUNIT_TEST_PATH'), 'test_ensureNIfTI', ''));
             this.sessd = mlraichle.SessionData( ...
