@@ -17,7 +17,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
  		studyd
         sessd
  		testObj
-        t4ri
+        ipResults
         
         view = true
         quick = true
@@ -67,8 +67,8 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
         function test_readFrameEnd(this)
             this.verifyEqual(this.testObj.readFrameEnd('HYGLY09FDG_v1_NAC'), 31);
         end
-        function test_t4ResolveIteration(this)
-            this.testObj.t4ResolveIteration( ...
+        function test_t4ResolveIterate(this)
+            this.testObj.t4ResolveIterate( ...
                 'HYGLY09FDG_v1_NAC', 'fdgv1', 'HYGLY09_mpr');
         end
         function test_msktgenInitial(this)
@@ -79,10 +79,10 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             this.touch_4dfp('fdgv1_on_HYGLY09_mpr');
             mlbash('touch fdgv1_to_TRIO_Y_NDC_t4');
             this.touch_4dfp('fdgv1_sumt_b55');
-            this.testObj.msktgenInitial(this.t4ri);
+            this.testObj.msktgenInitial(this.ipResults);
         end
         function test_extractFrames(this)
-            fps = this.testObj.extractFrames(this.t4ri);
+            fps = this.testObj.extractFrames(this.ipResults);
             for f = 1:length(fps)
                 fprintf('%s\n', fps{f});
             end
@@ -95,7 +95,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             end
             this.touch_4dfp('HYGLY09FDG_v1_NAC_frame4');
             this.touch_4dfp('fdgv1_sumt_mskt');
-            this.testObj.frameReg(this.t4ri, frameFps);
+            this.testObj.frameReg(this.ipResults, frameFps);
         end
         function test_t4ResolveAndPaste(this)
             for f = 4:31
@@ -105,10 +105,10 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             this.touch_4dfp('fdgv1_frames4to31_resolved');
             mlbash('touch resolved.mat0');
             mlbash('touch resolved.sub');
-            this.testObj.t4ResolveAndPaste(this.t4ri);
+            this.testObj.t4ResolveAndPaste(this.ipResults);
         end
-        function test_t4ResolveTeardown(this)
-            this.testObj.t4ResolveTeardown(this.t4ri);
+        function test_teardownT4ResolveIteration(this)
+            this.testObj.teardownT4ResolveIteration(this.ipResults);
         end
 	end
 
@@ -118,7 +118,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             this.sessd = mlraichle.SessionData( ...
                 'studyData', this.studyd, 'sessionPath', fullfile(this.studyd.subjectsDir, 'NP995_09', 'NAC', ''));            
             this.testObj_ = mlraichle.T4ResolveBuilder('sessionData', this.sessd);
-            this.t4ri = struct( ...
+            this.ipResults = struct( ...
                 'fdfp0', 'NP995_09FDG_v1_NAC', ...
                 'fdfp1', 'fdgv1', ...
                 'mprage', 'NP995_09_mpr', ...
