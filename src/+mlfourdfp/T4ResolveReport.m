@@ -9,11 +9,7 @@ classdef T4ResolveReport
  	%% It was developed on Matlab 9.0.0.307022 (R2016a) Prerelease for MACI64.
  	
 
-	properties 		
- 	end
-
-	methods 
-        
+	methods         
         function b = bar3(this, choice, t4r)
             switch (choice)
                 case 'etas'

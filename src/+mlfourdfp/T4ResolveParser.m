@@ -46,11 +46,16 @@ classdef T4ResolveParser
  			%  @params 'sessionData' obj is an instance of mlpipeline.SessionData
 
             ip = inputParser;
-            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData'));
-            addParameter(ip, 'frameLength', [], @isnumeric);
+            addParameter(ip, 'sessionData',     [], @(x) isa(x, 'mlpipeline.SessionData'));
+            addParameter(ip, 'imagingFilename', '', @ischar);
+            addParameter(ip, 'loggingFilename', '', @ischar);
+            addParameter(ip, 'frameLength',     0, @isnumeric);
             parse(ip, varargin{:});
-            this.sessionData_ = ip.Results.sessionData;
-            this.frameLength_ = ip.Results.frameLength;
+            
+            this.sessionData_     = ip.Results.sessionData;
+            this.imagingFilename_ = ip.Results.imagingFilename;
+            this.loggingFilename_ = ip.Results.loggingFilename;
+            this.frameLength_     = ip.Results.frameLength;
         end
         
         function this     = parseLog(this, varargin)
@@ -133,7 +138,9 @@ classdef T4ResolveParser
     
     properties (Access = protected)
         sessionData_
+        imagingFilename_
         imgregLogParser_
+        loggingFilename_
         frameLength_
         etas_
         curves_

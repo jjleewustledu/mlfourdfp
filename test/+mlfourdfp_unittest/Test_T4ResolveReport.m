@@ -23,29 +23,35 @@ classdef Test_T4ResolveReport < matlab.unittest.TestCase
 
 	methods (Test)
 		function test_report(this)
+            this.testObj = this.testObj.parseLog( ...
+                fullfile(this.testObj_.sessionData.sessionPath, this.frame_reg_fdgv1_log), ...
+                'frameLength', 31);
             r = this.testObj.report;
             r.pcolor('z(etas)',   this.testObj);
-            %r.pcolor('z(curves)', this.testObj);
         end
-        function test_report1(this)          
-            r = this.testObj.report;
-            t4r = mlfourdfp.T4ResolveParser('sessionData', this.testObj.sessionData);
-            t4r = t4r.parseLog( ...
-                fullfile(t4r.sessionData.sessionPath, this.frame_reg_fdgv1r1_log), ...
+        function test_report1(this)     
+            this.testObj = this.testObj.parseLog( ...
+                fullfile(this.testObj.sessionData.sessionPath, this.frame_reg_fdgv1_log), ...
+                'frameLength', 31);     
+            r    = this.testObj.report;
+            t4rp = mlfourdfp.T4ResolveParser('sessionData', this.testObj.sessionData);
+            t4rp = t4rp.parseLog( ...
+                fullfile(t4rp.sessionData.sessionPath, this.frame_reg_fdgv1r1_log), ...
                 'frameLength', 28);
-            t4r = t4r.shiftFrames(3);
-            r.pcolor('z(etas)',   t4r);
-            %r.pcolor('z(curves)', t4r);
+            t4rp = t4rp.shiftFrames(3);
+            r.pcolor('z(etas)',   t4rp);
         end
-        function test_report2(this)          
-            r = this.testObj.report;
-            t4r = mlfourdfp.T4ResolveParser('sessionData', this.testObj.sessionData);
-            t4r = t4r.parseLog( ...
-                fullfile(t4r.sessionData.sessionPath, this.frame_reg_fdgv1r2_log), ...
+        function test_report2(this)   
+            this.testObj = this.testObj.parseLog( ...
+                fullfile(this.testObj.sessionData.sessionPath, this.frame_reg_fdgv1_log), ...
+                'frameLength', 31);       
+            r    = this.testObj.report;
+            t4rp = mlfourdfp.T4ResolveParser('sessionData', this.testObj.sessionData);
+            t4rp = t4rp.parseLog( ...
+                fullfile(t4rp.sessionData.sessionPath, this.frame_reg_fdgv1r2_log), ...
                 'frameLength', 27);
-            t4r = t4r.shiftFrames(3);
-            r.pcolor('z(etas)',   t4r);
-            %r.pcolor('z(curves)', t4r);
+            t4rp = t4rp.shiftFrames(3);
+            r.pcolor('z(etas)',   t4rp);
         end
 %         function test_reportD(this)  
 %             r = this.testObj.report;
@@ -55,7 +61,6 @@ classdef Test_T4ResolveReport < matlab.unittest.TestCase
 %                 'frameLength', 28);
 %             t4r = t4r.shiftFrames(3);
 %             r.d('z(etas)',   t4r, this.testObj);
-%             r.d('z(curves)', t4r, this.testObj);
 %         end
 	end
 
@@ -68,9 +73,6 @@ classdef Test_T4ResolveReport < matlab.unittest.TestCase
                 'snumber',     1, ...
                 'vnumber',     1);
  			this.testObj_ = mlfourdfp.T4ResolveParser('sessionData', sessd);
-            this.testObj_ = this.testObj_.parseLog( ...
-                fullfile(this.testObj_.sessionData.sessionPath, this.frame_reg_fdgv1_log), ...
-                'frameLength', 31);
  		end
 	end
 

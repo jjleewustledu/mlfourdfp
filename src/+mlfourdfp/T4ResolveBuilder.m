@@ -183,7 +183,7 @@ classdef T4ResolveBuilder
             this = this.frameReg(ip.Results, frameFps);
             this = this.t4ResolveAndPaste(ip.Results); 
             this = this.teardownT4ResolveIteration(ip.Results);
-            this.buildVisitor.imgblur_4dfp(fdfp1, this.blurArg, this.fpBlur(fdfp1));
+            this.buildVisitor.imgblur_4dfp(fdfp1, this.blurArg);
         end
         function this = t4ResolveFinalize(this, varargin)
             ip = this.t4ResolveParser(varargin{:});             
@@ -194,7 +194,7 @@ classdef T4ResolveBuilder
                     this.fdfpFn(this.fpMskt(this.fpGauss(this.fpSumt(fdfp1)))), 'file'))
                 this = this.msktgenInitial(ip.Results);
             end            
-            this.buildVisitor.imgblur_4dfp(fdfp1, this.blurArg, this.fpBlur(fdfp1));
+            this.buildVisitor.imgblur_4dfp(fdfp1, this.blurArg);
         end
         function this = crop(this, ipr)
             if (0 == ipr.crop || ipr.crop == 1)
@@ -339,7 +339,7 @@ classdef T4ResolveBuilder
             this.buildVisitor.imgreg_4dfp(mprG, 'none', sumtG, petMsk, toMprGT4, 2051, log);            
             this.buildVisitor.imgreg_4dfp(mprG, 'none', sumtG, petMsk, toMprGT4, 2051, log);
             this.buildVisitor.imgreg_4dfp(mprG, 'none', sumtG, petMsk, toMprGT4, 10243, log); % 10243
-            this.buildVisitor.t4img_4dfp(toMprGT4, sumtG,  [sumtG '_on_' mprG], 'options', ['-n -O' mprG]); 
+            this.buildVisitor.t4img_4dfp(toMprGT4, sumtG,  [sumtG '_on_' mprG], 'options', ['-O' mprG]); 
         end
         function this = alignDynamicToAtlas(this, ipr, sumtG, toMprGT4)
             mprToAtlT4 = [ipr.mprage '_to_' ipr.atlas '_t4'];
@@ -348,7 +348,8 @@ classdef T4ResolveBuilder
             end
             dynToAtlT4 = [sumtG '_to_' ipr.atlas '_t4'];
             this.buildVisitor.t4_mul(toMprGT4, mprToAtlT4, dynToAtlT4);
-            this.buildVisitor.t4img_4dfp(dynToAtlT4, ipr.fdfp1,  [ipr.fdfp1, '_on_' ipr.atlas], 'options', ['-n -O' ipr.atlas]);             
+            this.buildVisitor.t4img_4dfp(dynToAtlT4, ipr.fdfp1,  [ipr.fdfp1, '_on_' ipr.atlas], ...
+                'options', ['-O' fullfile(getenv('REFDIR'), ipr.atlas)]);       
         end
         function this = teardownT4ResolveIteration(this, ipr)
             if (this.keepForensics); return; end
