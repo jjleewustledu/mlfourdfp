@@ -79,7 +79,7 @@ classdef FourdfpVisitor
             end
         end
         
-        function [s,r] = actmapf_4dfp(this, varargin)
+        function      [s,r] = actmapf_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'format',      @ischar);
             addRequired( ip, 'input',       @this.lexist);
@@ -89,7 +89,55 @@ classdef FourdfpVisitor
             [s,r] = this.actmapf_4dfp__(sprintf( ...
                 '%s %s %s', ip.Results.format, ip.Results.input, ip.Results.options));
         end
-        function [s,r] = extract_frame_4dfp(this, varargin)
+        function [t4,fdfp,s,r] = ...
+                              align_multiSpectral(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'fdfp0',         @this.lexist);
+            addRequired( ip, 'fdfp1',         @this.lexist);
+            addParameter(ip, 'mask0', 'none', @ischar);
+            addParameter(ip, 'mask1', 'none', @ischar);
+            addParameter(ip, 't40',    fullfile(getenv('RELEASE'), 'T_t4'), ...
+                                              @(x) lexist(x, 'file')); 
+            addParameter(ip, 't4',     this.filenameT4(varargin{1:2}), ...
+                                              @ischar);
+            addParameter(ip, 'log',   'null', @ischar);
+            parse(ip, varargin{:});
+            
+            fdfp0 = myfileprefix(ip.Results.fdfp0);
+            fdfp1 = myfileprefix(ip.Results.fdfp1);
+            mask0 = myfileprefix(ip.Results.mask0);
+            mask1 = myfileprefix(ip.Results.mask1);
+            t4    = ip.Results.t4;
+            log   = sprintf('imgreg_multiSpectral_%s.log', datestr(now, 30));
+            [s,r] = copyfile(ip.Results.t40, t4, 'f'); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(fdfp0, mask0, fdfp1, mask1, t4, 4099, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(fdfp0, mask0, fdfp1, mask1, t4, 4099, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(fdfp0, mask0, fdfp1, mask1, t4, 3075, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(fdfp0, mask0, fdfp1, mask1, t4, 2051, log); %#ok<ASGLU>       
+            [s,r] = this.imgreg_4dfp(fdfp0, mask0, fdfp1, mask1, t4, 2051, log); %#ok<ASGLU>
+%             [s,r] = this.imgreg_4dfp(fdfp0, mask0, fdfp1, mask1, t4, 10243, log);  %#ok<ASGLU> 
+            [fdfp,s,r] = this.t4img_4dfp(t4, fdfp0, 'options', ['-O' fdfp1]); 
+        end
+        function      [s,r] = copy_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'in',  @this.lexist);
+            addRequired( ip, 'out', @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = this.copy_4dfp__( ...
+                sprintf(' %s %s', ip.Results.in, ip.Results.out));
+        end
+        function      [s,r] = cropfrac_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'frac', @isnumeric);
+            addRequired( ip, 'in',   @this.lexist);
+            addRequired( ip, 'out',  @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = this.cropfrac_4dfp__( ...
+                sprintf(' %g %s %s', ip.Results.frac, ip.Results.in, ip.Results.out));
+        end
+        function      [s,r] = extract_frame_4dfp(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fdfp',        @(x) this.lexist(x));
             addRequired(ip, 'frame',       @isnumeric);
@@ -99,28 +147,98 @@ classdef FourdfpVisitor
             [s,r] = this.extract_frame_4dfp__( ...
                 sprintf('%s %i %s', ip.Results.fdfp, ip.Results.frame, ip.Results.options));
         end
-        function [s,r] = gauss_4dfp(this, varargin)
+        function    fn      = filenameT4(this, fn1, fn2)
+            %% FILENAMET4
+            %  @param fn1 may be fully-qualified; a filename or fileprefix; a 4dfp file or t4-file.
+            %  @param fn2 "
+            %  @returns fn is a t4-filename for transformations of fn1 to fn2 in the folder of fn2.
+            %  N.B.:  fn1 and fn2 must both be 4dfp or both be t4.
+            
+            if (strcmp(fn1(end-2:end), '_t4') && strcmp(fn2(end-2:end), '_t4'))
+                fn = this.filenameT4mul(fn1, fn2);
+                return
+            end            
+            if (strcmp(fn1(end-2:end), '_t4') || strcmp(fn2(end-2:end), '_t4'))
+                error('mlfourdfp:filenameError', 'FourdfpVisitor.filenameT4:  expected 4dfp but received t4');
+            end
+            if (lstrfind(fn1, '_to_') || lstrfind(fn2, '_to_'))
+                error('mlfourdfp:filenameError', 'FourdfpVisitor.filenameT4:  malformed filename:  %s, %s', fn1, fn2);
+            end
+            
+            [~, f1] = myfileparts(fn1);
+            [p2,f2] = myfileparts(fn2);
+            [first,last] = this.parseFirstOnLastBasenames(f1, f2);
+            fn = fullfile(p2, sprintf('%s_to_%s_t4', first, last));
+        end
+        function    fn      = filenameT4inv(~, fn)
+            %% FILENAMET4INV
+            %  @param fn is a t4-filename 
+            %  @returns a t4-filename appropriate for the inverse transformation
+            
+            [p,f] = myfileparts(fn);
+            if (~lstrfind(fn, '_t4'))
+                error('mlfourdfp:filenameError', 'FourdfpVisitor.filenameT4inv received a malformed t4 filename:  %s', fn);
+            end
+            r  = regexp(f, '(?<first>\S+)_to_(?<last>\S+)_t4', 'names');
+            fn = fullfile(p, sprintf('%s_to_%s_t4', r.last, r.first));
+        end
+        function    fn      = filenameT4mul(this, fn1, fn2)
+            %% FILENAMET4MUL
+            %  @param fn1 may be fully-qualified; is a t4-filename.
+            %  @param fn2 "
+            %  @returns fn is a t4-filename for composite transformations of fn1 to fn2 in the folder of fn2.
+            
+            [~, f1] = myfileparts(fn1);
+            [p2,f2] = myfileparts(fn2);
+            [first,last] = this.parseFirstToLastBasenames(f1, f2);
+            fn = fullfile(p2, sprintf('%s_to_%s_t4', first, last));
+        end
+        function  fqfp      = fileprefixT4img(this, fp1, fp2)
+            %% FILENAMET4IMG
+            %  @param fp1 may be fully-qualified; a 4dfp fileprefix or filename or t4-file.
+            %  @param fp2 "
+            %  @returns fqfp is a 4dfp-filename for fp1 on fp2 in the folder of fn2.
+            
+            [p1,f1] = myfileparts(fp1);
+            [~, f2] = myfileparts(fp2);
+            [first,last] = this.parseFirstOnLastBasenames(f2, f1);
+            fqfp = fullfile(p1, sprintf('%s_on_%s', first, last));
+        end
+        function [fdfp,s,r] = gauss_4dfp(this, varargin)
             ip = inputParser;
-            addRequired(ip, 'input',            @this.lexist);
-            addRequired(ip, 'f_half',           @isnumeric);
-            outroot = ...
-                sprintf('%s_g%s', varargin{1}, num2str(varargin{2}));
-            addOptional(ip, 'outroot', outroot, @ischar);
+            addRequired(ip, 'input',   @this.lexist);
+            addRequired(ip, 'f_half',  @isnumeric);
+            addOptional(ip, 'outroot', sprintf('%s_g%s', varargin{1}, num2str(varargin{2})), ...
+                                       @ischar);
             parse(ip, varargin{:});
+            fdfp = ip.Results.outroot;
             
             [s,r] = this.gauss_4dfp__(sprintf('%s %g %s', ip.Results.input, ip.Results.f_half, ip.Results.outroot));
         end
-        function [s,r] = imgblur_4dfp(this, varargin)
+        function [fdfp,s,r] = imgblur_4dfp(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fdfp',        @this.lexist);
             addRequired(ip, 'fwhm',        @isnumeric);
             addOptional(ip, 'options', '', @ischar);            
             parse(ip, varargin{:});
-            
+
+            fdfp  = sprintf('%s_b%i', ip.Results.fdfp, floor(10*ip.Results.fwhm));
             [s,r] = this.imgblur_4dfp__( ...
                 sprintf('%s %s %g', ip.Results.options, ip.Results.fdfp, ip.Results.fwhm));
         end
-        function [s,r] = imgreg_4dfp(this, varargin)
+        function      [s,r] = imgopr_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'operation',   @ischar);
+            addRequired( ip, 'out',         @ischar);
+            addRequired( ip, 'in1',         @this.lexist);
+            addRequired( ip, 'in2',         @this.lexist);
+            addParameter(ip, 'options', '', @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = this.imgopr_4dfp__( ...
+                sprintf('-%s%s %s %s %s', ip.Results.operation, ip.Results.out, ip.Results.in1, ip.Results.in2, ip.Results.options));
+        end
+        function      [s,r] = imgreg_4dfp(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fdfp0', @this.lexist);
             addRequired(ip, 'mask0', @ischar);
@@ -140,17 +258,17 @@ classdef FourdfpVisitor
                 ip.Results.mode, ...
                 ip.Results.log));
         end
-        function [s,r] = maskimg_4dfp(this, varargin)
+        function      [s,r] = maskimg_4dfp(this, varargin)
             ip = inputParser;
             addRequired(ip, 'imgfile', @this.lexist);
             addRequired(ip, 'mskfile', @this.lexist);
             addRequired(ip, 'outfile', @ischar);
             parse(ip, varargin{:});
             
-            [s,r] = this.maskimg_4dfp__(sprintf('maskimg_4dfp %s %s %s', ...
+            [s,r] = this.maskimg_4dfp__(sprintf('%s %s %s', ...
                 ip.Results.imgfile, ip.Results.mskfile, ip.Results.outfile));
         end
-        function [s,r] = mpr2atl_4dfp(this, varargin)
+        function      [s,r] = mpr2atl_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'in',             @this.lexist);
             addParameter(ip, 'options',   '',  @ischar);
@@ -164,7 +282,7 @@ classdef FourdfpVisitor
             [s,r] = this.mpr2atl_4dfp__(sprintf( ...
                 cmd, ip.Results.in, ip.Results.options));
         end
-        function [s,r] = msktgen_4dfp(this, varargin)
+        function      [s,r] = msktgen_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'in',             @this.lexist);
             addOptional( ip, 'threshold', 200, @isnumeric);
@@ -175,7 +293,7 @@ classdef FourdfpVisitor
             [s,r] = this.msktgen_4dfp__( ...
                 sprintf('%s %i %s %s', ip.Results.in, ip.Results.threshold, ip.Results.options, this.log(ip.Results)));
         end
-        function [s,r] = nifti_4dfp_4(this, varargin)
+        function      [s,r] = nifti_4dfp_4(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fileprefix', @(x) ischar(x) && ~lstrfind(x, '.nii'));
             parse(ip, varargin{:});            
@@ -194,7 +312,7 @@ classdef FourdfpVisitor
             end
             error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s not found', [ip.Results.fileprefix '.nii']);
         end
-        function [s,r] = nifti_4dfp_n(this, varargin)
+        function      [s,r] = nifti_4dfp_n(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fileprefix', @(x) ischar(x) && ~lstrfind(x, '.4dfp'));
             parse(ip, varargin{:});            
@@ -206,12 +324,54 @@ classdef FourdfpVisitor
             end
             error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s not found', [ip.Results.fileprefix '.nii']);
         end
-        function [s,r] = nifti_4dfp_ng(this, varargin)
+        function      [s,r] = nifti_4dfp_ng(this, varargin)
             [s,r] = this.nifti_4dfp_n(varargin{:});
             assert(s == 0); 
             gzip([varargin{:} '.nii']);
         end
-        function [s,r] = paste_4dfp(this, varargin)
+        function      [f,l] = parseFirstOnLastBasenames(~, name1, name2)
+            name1 = mybasename(name1);
+            name2 = mybasename(name2);            
+            if (lstrfind(name1, '_on_'))
+                idx = strfind(name1, '_on_');
+                f   = name1(1:idx(1)-1);
+            elseif (strfind(name1, '_to_'))                
+                idx = strfind(name1, '_to_');
+                f   = name1(1:idx(1)-1);
+            else
+                f   = name1;
+            end
+            if (lstrfind(name2, '_on_'))
+                idx = strfind(name2, '_on_');
+                l   = name2(idx(end)+4:end);
+            elseif (lstrfind(name2, '_to_'))
+                idx  = strfind(name2, '_to_');
+                idx2 = strfind(name2, '_t4');
+                l    = name2(idx(end)+4:idx2(end)-1);
+            else
+                l   = name2;
+            end            
+        end
+        function      [f,l] = parseFirstToLastBasenames(~, name1, name2)
+            name1 = mybasename(name1);
+            name2 = mybasename(name2);
+            if (lstrfind(name1, '_to_'))
+                idx = strfind(name1, '_to_');
+                f   = name1(1:idx(1)-1);
+            else
+                error('mlfourdfp:filenameError',  ...
+                      'FourdfpVisitor.parseFirstToLastBasenames received malformed name->%s', name1);
+            end
+            if (lstrfind(name2, '_to_'))
+                idx  = strfind(name2, '_to_');
+                idx2 = strfind(name2, '_t4');
+                l    = name2(idx(end)+4:idx2(end)-1);
+            else
+                error('mlfourdfp:filenameError',  ...
+                      'FourdfpVisitor.parseFirstToLastBasenames received malformed name->%s', name2);
+            end            
+        end
+        function      [s,r] = paste_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'inlist',      @lexist);
             addRequired( ip, 'outfile',     @ischar);
@@ -221,40 +381,57 @@ classdef FourdfpVisitor
             [s,r] = this.paste_4dfp__( ...
                 sprintf(' %s %s %s', ip.Results.options, ip.Results.inlist, ip.Results.outfile));
         end
-        function [s,r] = t4img_4dfp(this, varargin)
+        function      [s,r] = scale_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'in',          @this.lexist);
+            addRequired( ip, 'scale',       @isnumeric);
+            addParameter(ip, 'options', '', @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = this.scale_4dfp__( ...
+                sprintf('%s %g %s', ip.Results.in, ip.Results.scale, ip.Results.options));
+        end
+        function [fdfp,s,r] = t4img_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 't4',          @this.lexist);
             addRequired( ip, 'in',          @this.lexist);
-            addRequired( ip, 'out',         @ischar);
+            addParameter(ip, 'out',         this.fileprefixT4img(varargin{1:2}), ...
+                                            @ischar);
             addParameter(ip, 'options', '', @ischar);
             parse(ip, varargin{:});
+            fdfp = ip.Results.out;
             
             [s,r] = this.t4img_4dfp__( ...
                 sprintf('%s %s %s %s', ip.Results.t4, ip.Results.in, ip.Results.out, ip.Results.options));
         end
-        function [s,r] = t4_inv(this, varargin)
+        function   [t4,s,r] = t4_inv(this, varargin)
             ip = inputParser;
-            addRequired(ip, 'in',  @(x) lexist(x, 'file'));
-            addRequired(ip, 'out', @ischar);
+            addRequired( ip, 'in',          @(x) lexist(x, 'file'));
+            addParameter(ip, 'out',         this.filenameT4inv(varargin{1}), ...
+                                            @ischar);
+            addParameter(ip, 'options', '', @ischar);
             parse(ip, varargin{:});
+            t4 = ip.Results.out;
             
-            [s,r] = this.t4_inv__(sprintf('%s %s', ip.Results.in, ip.Results.out));
+            [s,r] = this.t4_inv__(sprintf('%s %s %s', ip.Results.options, ip.Results.in, t4));
             try
                 dbbash(sprintf('chmod 664 %s', ip.Results.out));
             catch ME
                 handexcept(ME);
             end
         end
-        function [s,r] = t4_mul(this, varargin)
+        function   [t4,s,r] = t4_mul(this, varargin)
             ip = inputParser;
             addRequired(ip, 'A2B', @(x) lexist(x, 'file'));
             addRequired(ip, 'B2C', @(x) lexist(x, 'file'));
-            addOptional(ip, 'A2C', '', @ischar);
+            addOptional(ip, 'A2C', this.filenameT4mul(varargin{1:2}), ...
+                                   @ischar);
             parse(ip, varargin{:});
+            t4 = ip.Results.A2C;
             
             [s,r] = this.t4_mul__(sprintf('%s %s %s', ip.Results.A2B, ip.Results.B2C, ip.Results.A2C));
         end
-        function [s,r] = t4_resolve(this, varargin)
+        function      [s,r] = t4_resolve(this, varargin)
             ip = inputParser;
             addRequired( ip, 'output',        @ischar);
             addRequired( ip, 'filenames',     @ischar);
@@ -265,7 +442,7 @@ classdef FourdfpVisitor
             [s,r] = this.t4_resolve__( ...
                 sprintf(' %s -o%s %s %s', ip.Results.options, ip.Results.output, ip.Results.filenames, this.log(ip.Results)));
         end
-        function [s,r] = zero_slice_4dfp(this, varargin)
+        function      [s,r] = zero_slice_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'fdfp',   @ischar);
             addRequired( ip, 'axis',   @ischar);
@@ -320,6 +497,24 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('actmapf_4dfp %s', args));
+        end
+        function [s,r] = copy_4dfp__(~, args)
+            %% COPY_4DFP__
+            % Usage:	copy_4dfp source destination
+            %  e.g.,	copy_4dfp bad_4dfp_name better_4dfp_name
+            %  
+            % copy_4dfp works only with 4dfp files; it does not work on directories
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('copy_4dfp %s', args));
+        end
+        function [s,r] = cropfrac_4dfp__(~, args)
+            %% CROPFRAC_4DFP__
+            % Usage:/mnt/hgfs/Local/bin/cropfrac_4dfp <fraction to crop> <4dfp to crop> <4dfp cropped>
+            % e.g.,/mnt/hgfs/Local/bin/cropfrac_4dfp 0.5 NP995_09ho1_v1 ho1v1
+            % N.B.:crops only along x,y axes; cf. crop_4dfp for details
+
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('cropfrac_4dfp %s', args));
         end
         function [s,r] = crop_4dfp__(~, args)
             %% CROP_4DFP__
@@ -381,6 +576,38 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('imgblur_4dfp %s', args));
+        end
+        function [s,r] = imgopr_4dfp__(~, args)
+            %% IMGOPR_4DFP__
+            % $Id: imgopr_4dfp.c,v 1.14 2010/12/23 02:43:21 avi Exp $
+            % Usage:	imgopr_4dfp -<operation><(4dfp) outroot> <(4dfp) image1> <(4dfp) image2> ...
+            % 	operation
+            % 	a	add
+            % 	s	subtract (image1 - image2)
+            % 	p	product
+            % 	r	ratio (image1 / image2)
+            % 	e	mean (expectation)
+            % 	v	variance
+            % 	g	geometric mean
+            % 	n	count defined (see -u option) voxels
+            % 	x	voxelwize maximum
+            % 	y	voxelwize minimum
+            % 	G	report serial number (counting from 1) of image with greatest value
+            % 	P	unsplit multiple ROIs into fidl compatible ROI file
+            % 	option
+            % 	-u	count only defined (not NaN or 1.e-37 or 0.0) voxels
+            % 	-R	suppress creation of rec file
+            % 	-N	output undefined voxels as NaN
+            % 	-Z	output undefined voxels as 0
+            % 	-E	output undefined voxels as 1.E-37 (default)
+            % 	-c<flt>	multiply output by specified scaling factor
+            % 	-l<lst>	read input file names from specified list file
+            % 	-@<b|l>	output big or little endian (default first input endian)
+            % N.B.:	image dimensions must match except for binary operations {aspr} in which
+            % 	a 1 volume second image may be paired with a multi-volume first image
+            
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('imgopr_4dfp %s', args));
         end
         function [s,r] = imgreg_4dfp__(~, args)
             %% IMGREG_4DFP__
@@ -477,6 +704,23 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('paste_4dfp %s', args));
+        end
+        function [s,r] = scale_4dfp__(~, args)
+            %% SCALE_4DFP__
+            % $Id: scale_4dfp.c,v 1.14 2007/07/05 05:01:52 avi Exp $
+            % Usage:	scale_4dfp <image_4dfp> <scale_factor> [options]
+            % 	option
+            % 	-E	preserve 1.0e-37 values (fidl NaN convention)
+            % 	-a<str>	append trailer to output file name
+            % 	-b<flt>	add specified constant to each voxel
+            % 	-@<b|l>	output big or little endian (default input endian)
+            % e.g.,	scale_4dfp b2_xfrm_avg 12
+            % e.g.,	scale_4dfp b2_xfrm_avg 12 -b5 -ax12+5
+            % N.B.:	<image_4dfp> is overwritten unless the trailer option is used
+            % N.B.:	<scale_factor> must be specified for proper operation
+
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('scale_4dfp %s', args));
         end
         function [s,r] = t4_inv__(~, args)
             %% T4_INV__

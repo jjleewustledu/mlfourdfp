@@ -132,13 +132,6 @@ classdef T4ResolveBuilder
     end
     
 	methods
-        function fn   = frameRegLoggerFilename(this, tag)
-            fn = fullfile(this.sessionData_.sessionPath, [tag '_T4ResolveBuilder_frameReg_Logger_' datestr(now, 30) '.log']);
-        end
-        function fn   = t4ResolveAndPasteLoggerFilename(this, tag)
-            fn = fullfile(this.sessionData_.sessionPath, [tag '_T4ResolveBuilder_t4ResolveAndPaste_Logger_' datestr(now, 30) '.log']);
-        end        
-        
         function this = t4ResolveMR(this)
         end
         function this = t4ResolveMultispectral(this)
@@ -154,19 +147,19 @@ classdef T4ResolveBuilder
             this = this.t4ResolveIterate( ...
                 sprintf('%s_frames%ito%i_resolved', fdfp1, frame0, frameF), ...
                 sprintf('%sr1', fdfp1), ...
-                mpr, ...
+                'mprage', mpr, ...
                 'frame0', 1, 'frameF', frameF-frame0+1);
             this = this.t4ResolveIterate( ...
                 sprintf('%sr1_frames%ito%i_resolved', fdfp1, 1, frameF-frame0+1), ...
                 sprintf('%sr2', fdfp1), ...
-                mpr, ...
+                'mprage', mpr, ...
                 'frame0', 1, 'frameF', frameF-frame0+1);             
             this = this.t4ResolveFinalize( ...
                 sprintf('%sr2_frames%ito%i_resolved', fdfp1, 1, frameF-frame0+1), ...
                 sprintf('%s_resolvedFinal', fdfp1), ...
-                mpr, ...
+                'mprage', mpr, ...
                 'frame0', 1, 'frameF', frameF-frame0+1);
-            this.product_ = [this.product_ this.fdfpFn([fdfp1 'r2'])];
+            this.product_ = [this.product_ this.filename([fdfp1 'r2'])];
         end
         function this = t4ResolveIterate(this, varargin)
             ip = this.t4ResolveParser(varargin{:});          
@@ -174,10 +167,10 @@ classdef T4ResolveBuilder
             
             this = this.crop(ip.Results);
             if (~lexist( ...
-                    this.fdfpFn(this.fpMskt(this.fpGauss(this.fpSumt(fdfp1)))), 'file'))
+                    this.filename(this.fpMskt(this.fpGauss(this.fpSumt(fdfp1)))), 'file'))
                 this = this.msktgenInitial(ip.Results);
             end            
-            if (~lexist(this.fdfpFn([fdfp1 '_frame' ip.Results.frameF]), 'file'))
+            if (~lexist(this.filename([fdfp1 '_frame' ip.Results.frameF]), 'file'))
                 frameFps = this.extractFrames(ip.Results);
             end            
             this = this.frameReg(ip.Results, frameFps);
@@ -191,19 +184,10 @@ classdef T4ResolveBuilder
             
             this = this.crop(ip.Results);
             if (~lexist( ...
-                    this.fdfpFn(this.fpMskt(this.fpGauss(this.fpSumt(fdfp1)))), 'file'))
+                    this.filename(this.fpMskt(this.fpGauss(this.fpSumt(fdfp1)))), 'file'))
                 this = this.msktgenInitial(ip.Results);
             end            
             this.buildVisitor.imgblur_4dfp(fdfp1, this.blurArg);
-        end
-        function this = crop(this, ipr)
-            if (0 == ipr.crop || ipr.crop == 1)
-                if (~lexist(this.fdfpFn(ipr.fdfp1)))
-                    dbbash(sprintf('copy_4dfp %s %s', ipr.fdfp0, ipr.fdfp1));
-                end
-                return
-            end
-                dbbash(sprintf('crop_4dfp_.sh %g %s %s', ipr.crop, ipr.fdfp0, ipr.fdfp1));
         end
         function fps  = extractFrames(this, ipr)
             frameEnd = this.readFrameEnd(ipr.fdfp0);
@@ -214,21 +198,22 @@ classdef T4ResolveBuilder
             end
         end
         function this = frameReg(this, ipr, frameFps)
-            maskfp = this.fpMskt(this.fpGauss(this.fpSumt(ipr.fdfp1))); 
-            file_frame0 =  this.fdfpFn(sprintf('%s_frame%i', ipr.fdfp1, ipr.frame0));
+            file_frame0 =  this.filename(sprintf('%s_frame%i', ipr.fdfp1, ipr.frame0));
             if (~lexist(file_frame0))
                 error('mlfourdfp:missingFile', 'T4ResolveBuilder.frameReg could not find %s', file_frame0);
-            end     
-            file_maskfp = this.fdfpFn(maskfp);
-            if (~lexist(file_maskfp))
-                error('mlfourdfp:missingFile', 'T4ResolveBuilder.frameReg could not find %s', file_maskfp);
+            end   
+            
+            maskfp = this.fpMskt(this.fpGauss(this.fpSumt(ipr.fdfp1))); 
+            maskfn = this.filename(maskfp);
+            if (~lexist(maskfn))
+                error('mlfourdfp:missingFile', 'T4ResolveBuilder.frameReg could not find %s', maskfn);
             end
             
             if (ipr.blur > 0)
                 blurredFps = this.blurFrames(frameFps);
             end
             
-            log = mlpipeline.Logger(this.frameRegLoggerFilename(ipr.fdfp1), this);
+            log = mlpipeline.Logger(this.loggerFilename('frameReg', ipr.fdfp1), this);
             
             for m = ipr.frame0:length(blurredFps)
                 for n = ipr.frame0:length(blurredFps)
@@ -243,10 +228,10 @@ classdef T4ResolveBuilder
         function this = t4ResolveAndPaste(this, ipr)
             imgFns = '';
             for f = ipr.frame0:ipr.frameF
-                imgFns = [imgFns this.fdfpFn(sprintf(' %s_frame%i', ipr.fdfp1, f))];
+                imgFns = [imgFns this.filename(sprintf(' %s_frame%i', ipr.fdfp1, f))];
             end
             
-            log = mlpipeline.Logger(this.t4ResolveAndPasteLoggerFilename(ipr.fdfp1), this);
+            log = mlpipeline.Logger(this.loggerFilename('t4ResolveAndPaste', ipr.fdfp1), this);
             
             resolveSuff = 'resolved';
             fprintf('t4_resolve -v -m -s -o%s %s &> %s', resolveSuff, imgFns, log.fqfilename);
@@ -264,7 +249,7 @@ classdef T4ResolveBuilder
                 this.buildVisitor.t4img_4dfp( ...
                     sprintf('%s_to_%s_t4', frameFile, tag), ...
                     frameFile, ...
-                    sprintf('%s_%s', frameFile, tag), ...
+                    'out', sprintf('%s_%s', frameFile, tag), ...
                     'options', ['-O' frameFile]);
             end
         end
@@ -280,23 +265,6 @@ classdef T4ResolveBuilder
             
             taggedFile = sprintf('%s_frames%ito%i_%s', ipr.fdfp1, ipr.frame0, ipr.frameF, tag);
             this.buildVisitor.paste_4dfp(pasteList, taggedFile, 'options', '-a ');
-        end
-        function fps  = blurFrames(this, fps)
-            for f = 1:length(fps)
-                if (~isempty(fps{f}))
-                    this.buildVisitor.imgblur_4dfp(fps{f}, this.blurArg);
-                    fps{f} = this.fpBlur(fps{f});
-                end
-            end
-        end
-        function msk  = maskBoundaries(this, fdfp)
-            this.buildVisitor.nifti_4dfp_n(fdfp);
-            ic  = mlfourd.ImagingContext(fdfp);
-            ic  = ic.ones;
-            ic.noclobber = 0;
-            ic.saveas([fdfp '_ones']);
-            this.buildVisitor.nifti_4dfp_4([fdfp '_ones']);
-            msk = this.zeroSlicesOnBoundaries([fdfp '_ones'], 3);
         end
         function this = msktgenMprage(this, fdfp, atl)
             log = sprintf('msktgenMprage_%s.log', datestr(now, 30));
@@ -338,8 +306,8 @@ classdef T4ResolveBuilder
             this.buildVisitor.imgreg_4dfp(mprG, 'none', sumtG, petMsk, toMprGT4, 3075, log);
             this.buildVisitor.imgreg_4dfp(mprG, 'none', sumtG, petMsk, toMprGT4, 2051, log);            
             this.buildVisitor.imgreg_4dfp(mprG, 'none', sumtG, petMsk, toMprGT4, 2051, log);
-            this.buildVisitor.imgreg_4dfp(mprG, 'none', sumtG, petMsk, toMprGT4, 10243, log); % 10243
-            this.buildVisitor.t4img_4dfp(toMprGT4, sumtG,  [sumtG '_on_' mprG], 'options', ['-O' mprG]); 
+            this.buildVisitor.imgreg_4dfp(mprG, 'none', sumtG, petMsk, toMprGT4, 10243, log); 
+            this.buildVisitor.t4img_4dfp(toMprGT4, sumtG, 'out', [sumtG '_on_' mprG], 'options', ['-O' mprG]); 
         end
         function this = alignDynamicToAtlas(this, ipr, sumtG, toMprGT4)
             mprToAtlT4 = [ipr.mprage '_to_' ipr.atlas '_t4'];
@@ -348,7 +316,8 @@ classdef T4ResolveBuilder
             end
             dynToAtlT4 = [sumtG '_to_' ipr.atlas '_t4'];
             this.buildVisitor.t4_mul(toMprGT4, mprToAtlT4, dynToAtlT4);
-            this.buildVisitor.t4img_4dfp(dynToAtlT4, ipr.fdfp1,  [ipr.fdfp1, '_on_' ipr.atlas], ...
+            this.buildVisitor.t4img_4dfp(dynToAtlT4, ipr.fdfp1, ...
+                'out', [ipr.fdfp1, '_on_' ipr.atlas], ...
                 'options', ['-O' fullfile(getenv('REFDIR'), ipr.atlas)]);       
         end
         function this = teardownT4ResolveIteration(this, ipr)
@@ -362,6 +331,117 @@ classdef T4ResolveBuilder
                 delete(sprintf('%s_frame%i_b55.4dfp.*', name, f));
                 delete(sprintf('%s_frame%i_resolved.4dfp.*', name, f));
             end
+        end
+        function fqfp = buildUmapOnSumt(this)
+            ct   = [this.sessionData.ct_fqfp '_on_' mybasename(this.sessionData.mpr_fqfp)];
+            mpr  = this.sessionData.mpr_fqfp;
+            sumt = this.fpSumt(this.sessionData.fdg_fqfp);
+            t40  = this.buildVisitor.t4_inv(fullfile(getenv('RELEASE'), 'S_t4'), 'out', 'S_inv_t4');            
+            %t4cm = this.buildVisitor.align_multiSpectral(ct,   mpr, 't40', t40);
+            t4sm = this.buildVisitor.align_multiSpectral(sumt, mpr, 't40', t40);
+            t4ms = this.buildVisitor.t4_inv(t4sm);
+            %t4   = this.buildVisitor.t4_mul(t4cm, t4ms);
+            ct   = this.buildVisitor.t4img_4dfp(t4ms, ct, 'options', ['-O' sumt]);
+            fqfp = this.buildUmapFromCt(ct, this.sessionData.umap_fqfp);
+        end
+        function this = buildCt(this)
+            % ct = ImagingContext('ct.nii')
+            % ct = ct.thresh(900)
+            % ct.size
+            % ct.csize
+            % ct.niftid.size
+            % ct = ct.blurred([51 51 7])
+            % ct.view
+            % ct = ct.thresh(50)
+            % ct = ct.binarized
+            % ct.view
+            % ct = ImagingContext('ct.nii')
+            % ct = ct.thresh(900)
+            % ct = ct.blurred([51 51 51])
+            % ct.view
+            % ct = ct.thresh(200)
+            % ct = ct.binarized
+            % ct.view('ct.nii')
+            % ct.fileprefix
+            % ct.save
+            % ct0 = ImagingContext('ct.nii');
+            % ct0 = ct0.masked(ct.niftid);
+            % ct0.fileprefix = 'ct_masked';
+            % ct0.save
+        end
+        function this = buildUmapFromCt(this, ct, umap)
+            %% BUILDUMAPFROMCT follows the logic of Lars Couture's ct_umap_4dfp and custom_umap_4dfp.
+            %  @param ct   is the (fully-qualified) fileprefix of the CT.
+            %  @param umap is the (fully-qualified) fileprefix of the product umap.
+            
+            assert(lexist(myfilename(ct, '.4dfp.img'), 'file'));
+            ct   = myfileprefix(ct);
+            assert(ischar(umap) && ~isempty(umap) && ~strcmp(umap, ct));
+            umap = myfileprefix(umap);
+            ct_  = sprintf('%s_%s', ct, datestr(now, 30));            
+            this.buildVisitor.copy_4dfp(ct, ct_);
+            %copyfile([ct '.4dfp.ifh'], [ct_ '.4dfp.ifh'], 'f');
+            
+            this.buildVisitor.scale_4dfp(ct_,  1.0,        'options', '-b-1024');
+            this.buildVisitor.scale_4dfp(ct_, -1.0,        'options',         '-ainv');
+            this.buildVisitor.scale_4dfp(ct_,  0.079/1326, 'options', '-b0.093 -ap');
+            this.buildVisitor.scale_4dfp(ct_,  0.093/1000, 'options', '-b0.093 -an');
+            this.buildVisitor.maskimg_4dfp([ct_ '_p'],  ct_,         [ct_ 'p']);
+            this.buildVisitor.maskimg_4dfp([ct_ '_n'], [ct_ '_inv'], [ct_ 'n']);
+            this.buildVisitor.imgopr_4dfp('a', umap,   [ct_ 'p'],    [ct_ 'n']);
+            delete([ct_ '*']);            
+        end
+        function this = buildUmapFrames(this, ipr)
+            
+            frameIndices = ipr.frame0:ipr.frameF;
+            umap0  = sprintf('%s_umap', ipr.fdfp0);
+            umapsF = cellfun( ...
+                @(x) sprintf('%s_umap_frame%i', ipr.fdfp1, x), ...
+                num2cell(frameIndices), ...
+                'UniformOutput', false);  
+            this.buildVisitor.copy_4dfp(myfileprefix(this.sessionData.umap_fqfn), umap0);  
+            
+            t4_frames_to_r0     = this.t4FramesCells( ipr.fdfp0,       frameIndices);
+            t4_r0_to_r1         = this.t4FramesCells([ipr.fdfp0 'r1'], frameIndices-ipr.frame0+1);
+            t4_r1_to_r2         = this.t4FramesCells([ipr.fdfp0 'r2'], frameIndices-ipr.frame0+1);            
+            t4_frames_from_r0   = this.t4sInv(t4_frames_to_r0);  
+            t4_r0_from_r1       = this.t4sInv(t4_r0_to_r1); 
+            t4_r1_from_r2       = this.t4sInv(t4_r1_to_r2);                                
+            t4_r2_from_sumt     = this.t4Cells( ...
+                                  this.imgregPET(this.sumtImage(ipr.fdfp0), this.resolvedSumtImage(ipr)), ...
+                                  ipr.frameF-ipr.frame0+1);
+            t4_frames_from_sumt = this.t4sMuls( ...
+                t4_frames_from_r0, t4_r0_from_r1, t4_r1_from_r2, t4_r2_from_sumt);
+            this = this.t4sImg(t4_frames_from_sumt, umap0, umapsF, umap0);            
+            this = this.pasteFramesUmap(ipr);
+        end
+        function this = pasteFramesUmap(this, ipr)
+            ipr.fdfp1 = [ipr.fdfp1 '_umap'];
+            pasteList = [ipr.fdfp1 '_paste.lst'];
+            if (lexist(pasteList)); delete(pasteList); end
+            fid = fopen(pasteList, 'w');
+            for f = 1:ipr.frame0-1
+                fprintf(fid, '%s.4dfp.img\n', ipr.fdfp1);
+            end
+            for f = ipr.frame0:ipr.frameF
+                fprintf(fid, '%s_frame%i.4dfp.img\n', ipr.fdfp1, f);
+            end
+            fclose(fid);
+            
+            taggedFile = sprintf('%s_frames%ito%i', ipr.fdfp1, 1, ipr.frameF);
+            this.buildVisitor.paste_4dfp(pasteList, taggedFile, 'options', '-a ');
+        end
+        function t4   = imgregPET(this, varargin)
+            %% ALIGNPET blurs, calls imgreg_4dfp with mode 2051 and writes a log.
+            %  @return t4 is the t4-file for the transformation.            
+            
+            ip           = this.t4ResolveParser(varargin{:});            
+            blurredFdfp0 = this.ensureBlurred(ip.Results.fdfp0);
+            blurredFdfp1 = this.ensureBlurred(ip.Results.fdfp1);
+            t4           = sprintf('%s_to_%s_t4', blurredFdfp0, blurredFdfp1);
+            log          = mlpipeline.Logger(this.loggerFilename('imgregPET', ip.Results.fdfp0), this);
+            
+            this.buildVisitor.imgreg_4dfp(blurredFdfp0, 'none', blurredFdfp1, 'none', t4, 2051, log.fqfilename);
         end
         
         function [s,r] = ensureNifti(this, varargin)
@@ -453,6 +533,34 @@ classdef T4ResolveBuilder
             error('mlfourdfp:fileNotFound', ...
                   'T4ResolveBuilder.ensureNifti could not find files of form %s', ip.Results.filename);     
         end
+        function ip    = t4ResolveParser(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'fdfp0',   @(x) lexist(this.filename(x), 'file'));
+            addRequired( ip, 'fdfp1',   @ischar);
+            addParameter(ip, 'mprage',  this.sessionData.mpr_fqfn, ...
+                                        @(x) lexist(x, 'file'));
+            addParameter(ip, 'frame0',  this.framesToSkip+1, ...
+                                        @isnumeric);
+            addParameter(ip, 'frameF',  this.readFrameEnd(varargin{1}), ...
+                                        @isnumeric);
+            addParameter(ip, 'crop',    1, ...
+                                        @isnumeric);
+            addParameter(ip, 'atlas',   'TRIO_Y_NDC', ...
+                                        @(x) lexist(fullfile(getenv('REFDIR'), this.filename(x))));
+            addParameter(ip, 'blur',    this.blurArg, ...
+                                        @isnumeric);
+            addParameter(ip, 'rnumber', ...
+                                        0, @isnumeric );
+            parse(ip, varargin{:});  
+        end     
+        function fqfp  = transverseMpr(this)
+            fqfp = [this.sessionData.mpr_fqfp '_trans'];
+            if (~lexist(this.filename(fqfp), 'file'))
+                fqfp = this.buildVisitor.t4img_4dfp( ...
+                    fullfile(getenv('RELEASE'), 'S_t4'), this.sessionData.mpr_fqfp, ...
+                    'out', fqfp, 'options', ['-O' this.sessionData.mpr_fqfp]);
+            end
+        end
         
  		function this = T4ResolveBuilder(varargin)
  			%% T4RESOLVEBUILDER
@@ -497,7 +605,36 @@ classdef T4ResolveBuilder
     end
     
     methods (Access = protected)
-        function fn   = fdfpFn(~, fp)
+        function fps  = blurFrames(this, fps)
+            for f = 1:length(fps)
+                if (~isempty(fps{f}))
+                    this.buildVisitor.imgblur_4dfp(fps{f}, this.blurArg);
+                    fps{f} = this.fpBlur(fps{f});
+                end
+            end
+        end
+        function c    = char2cell(~, c, sz)
+            if (~iscell(c))
+                c = cellfun(@(x) c, cell(sz), 'UniformOutput', false);
+            end
+        end
+        function this = crop(this, ipr)
+            if (0 == ipr.crop || ipr.crop == 1)
+                if (~lexist(this.filename(ipr.fdfp1)))
+                    dbbash(sprintf('copy_4dfp %s %s', ipr.fdfp0, ipr.fdfp1));
+                end
+                return
+            end
+                dbbash(sprintf('crop_4dfp %g %s %s', ipr.crop, ipr.fdfp0, ipr.fdfp1));
+        end
+        function fdfp = ensureBlurred(this, fdfp)
+            blurTag = sprintf('_b%i', floor(this.blurArg*10));
+            if (~lstrfind(fdfp, blurTag))
+                this.buildVisitor.imgblur_4dfp(fdfp, this.blurArg);
+                fdfp = this.fpBlur(fdfp);
+            end
+        end
+        function fn   = filename(~, fp)
             fn = [fp '.4dfp.img'];
         end
         function fp   = fpBlur(this, fp)
@@ -515,6 +652,19 @@ classdef T4ResolveBuilder
         function mprG = gaussMprage(this, ipr)
             mprG = this.fpGauss(ipr.mprage);            
             this.buildVisitor.gauss_4dfp(ipr.mprage, this.gaussArg, mprG);   
+        end 
+        function fn   = loggerFilename(this, func, tag)
+            fn = fullfile(this.sessionData_.sessionPath, ...
+                 sprintf('%s_T4ResolveBuilder_%s_Logger_%s.log', tag, func, datestr(now, 30)));
+        end
+        function msk  = maskBoundaries(this, fdfp)
+            this.buildVisitor.nifti_4dfp_n(fdfp);
+            ic  = mlfourd.ImagingContext(fdfp);
+            ic  = ic.ones;
+            ic.noclobber = 0;
+            ic.saveas([fdfp '_ones']);
+            this.buildVisitor.nifti_4dfp_4([fdfp '_ones']);
+            msk = this.zeroSlicesOnBoundaries([fdfp '_ones'], 3);
         end
         function f    = readFrameEnd(~, fdfp)
             [~,f] = mlbash(sprintf('awk ''/matrix size \\[4\\]/{print $NF}'' %s.4dfp.ifh', fdfp));
@@ -528,6 +678,10 @@ classdef T4ResolveBuilder
             [~,f] = mlbash(sprintf('awk ''/matrix size \\[%i\\]/{print $NF}'' %s.4dfp.ifh', ip.Results.mu, ip.Results.fdfp));
             f = str2double(f);
         end
+        function fdfp = resolvedSumtImage(this, ipr)
+            fdfp = this.sumtImage( ...
+                sprintf('%sr%i_frames%ito%i_resolved', ipr.fdfp1, ipr.rnumber, 1, ipr.frameF-ipr.frame0+1));
+        end
         function [sumt,sumtG,toMprGT4] = ...
                         sumtDynamic(this, ipr, mprG)
             sumt  = this.fpSumt(ipr.fdfp1);
@@ -540,22 +694,54 @@ classdef T4ResolveBuilder
             this.buildVisitor.actmapf_4dfp( ...
                 sprintf('%i+', this.readFrameEnd(ipr.fdfp0)), ipr.fdfp1, 'options', '-asumt');
         end
-        function ip   = t4ResolveParser(this, varargin)
-            ip = inputParser;
-            addRequired( ip, 'fdfp0',  @(x) lexist(this.fdfpFn(x), 'file'));
-            addRequired( ip, 'fdfp1',  @ischar);
-            addRequired( ip, 'mprage', @(x) lexist(this.fdfpFn(x)));
-            addParameter(ip, 'frame0', this.framesToSkip+1, ...
-                                       @isnumeric);
-            addParameter(ip, 'frameF', this.readFrameEnd(varargin{1}), ...
-                                       @isnumeric);
-            addParameter(ip, 'crop',   1, ...
-                                       @isnumeric);
-            addParameter(ip, 'atlas', 'TRIO_Y_NDC', ...
-                                       @(x) lexist(fullfile(getenv('REFDIR'), this.fdfpFn(x))));
-            addParameter(ip, 'blur',   this.blurArg, ...
-                                       @isnumeric);
-            parse(ip, varargin{:});  
+        function fdfp = sumtImage(this, fdfp0)
+            fdfp = sprintf('%s_sumt', fdfp0);
+            if (~lexist(this.filename(fdfp), 'file'))
+                this.buildVisitor.actmapf_4dfp( ...
+                    sprintf('%i+', this.readFrameEnd(fdfp0)), fdfp0, 'options', '-asumt');
+            end
+        end
+        function t4c  = t4Cells(~, t4, N)
+            t4c = cellfun( ...
+                @(x) t4, ...
+                num2cell(1:N), ...
+                'UniformOutput', false);
+        end
+        function t4c  = t4FramesCells(~, bname, findices)
+            assert(ischar(bname));
+            assert(isnumeric(findices));
+            t4c = cellfun( ...
+                @(x) sprintf('%s_frame%i_to_resolved_t4', bname, x), ...
+                num2cell(findices), ...
+                'UniformOutput', false);
+        end
+        function t4s  = t4sInv(this, t4s)
+            for t = 1:length(t4s)
+                this.buildVisitor.t4_inv(t4s{t});
+                t4s{t} = this.buildVisitor.filenameT4inv(t4s{t});
+            end
+        end
+        function t4s  = t4sMul(this, t4s1, t4s2)
+            for t = 1:min(length(t4s1), length(t4s2))
+                t4s{t} = this.buildVisitor.filenameT4mul(t4s1{t}, t4s2{t});
+                this.buildVisitor.t4_mul(t4s1{t}, t4s2{t}, t4s{t});                
+            end
+        end
+        function t4s  = t4sMuls(this, varargin)
+            nva = length(varargin);
+            t4s = varargin{end};
+            for v = nva-1:-1:1
+                t4s = this.t4sMul(t4s, varargin{v});
+            end
+        end
+        function this = t4sImg(this, t4s, fdfp0, fdfp1, ref_fdfp)
+            assert(iscell(t4s));
+            assert(iscell(fdfp1) && all(size(t4s) == size(fdfp1)));
+            fdfp0    = this.char2cell(fdfp0, size(t4s));
+            ref_fdfp = this.char2cell(ref_fdfp, size(t4s));
+            for f = 1:length(t4s)
+                this.buildVisitor.t4img_4dfp(t4s{f}, fdfp0{f}, 'out', fdfp1{f}, 'options', ['-O' ref_fdfp{f}]);
+            end
         end
         function fdfp = zeroSlicesOnBoundaries(this, fdfp, n)
             N     = this.readSize(fdfp, 3);
