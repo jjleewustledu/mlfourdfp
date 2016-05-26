@@ -126,10 +126,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
                 'frameF', 31, ...
                 'crop', 0.5, ...
                 'atlas', 'TRIO_Y_NDC', ...
-                'blur', 5.5);
-            
-            %setenv('REFDIR',  '/Volumes/InnominateHD3/Local/test/raichle/atlas');
-            %setenv('RELEASE', '/Volumes/InnominateHD3/Local/test/raichle/lin64-tools');
+                'blur', 5.5);            
             setenv('DEBUG', '');
  		end
 	end
