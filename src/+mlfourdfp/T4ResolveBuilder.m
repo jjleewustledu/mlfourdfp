@@ -142,7 +142,8 @@ classdef T4ResolveBuilder
             frame0 = this.framesToSkip+1;
             frameF = this.readFrameEnd(fdfp0);
             this = this.t4ResolveIterate( ...
-                fdfp0, fdfp1, mpr, ...
+                fdfp0, fdfp1, ...
+                'mprage', mpr, ...
                 'frame0', frame0, 'crop', this.firstCrop);
             this = this.t4ResolveIterate( ...
                 sprintf('%s_frames%ito%i_resolved', fdfp1, frame0, frameF), ...
@@ -415,6 +416,18 @@ classdef T4ResolveBuilder
             this = this.t4sImg(t4_frames_from_sumt, umap0, umapsF, umap0);            
             this = this.pasteFramesUmap(ipr);
         end
+        function this = pasteFramesAC(this, ipr)
+            pasteList = [ipr.fdfp1 '_paste.lst'];
+            if (lexist(pasteList)); delete(pasteList); end
+            fid = fopen(pasteList, 'w');
+            for f = ipr.frame0:ipr.frameF
+                fprintf(fid, '%s_frame%i_OP.4dfp.img\n', ipr.fdfp1, f);
+            end
+            fclose(fid);
+            
+            taggedFile = sprintf('%s_frames%ito%i', ipr.fdfp1, 1, ipr.frameF);
+            this.buildVisitor.paste_4dfp(pasteList, taggedFile, 'options', '-a ');
+        end
         function this = pasteFramesUmap(this, ipr)
             ipr.fdfp1 = [ipr.fdfp1 '_umap'];
             pasteList = [ipr.fdfp1 '_paste.lst'];
@@ -538,7 +551,7 @@ classdef T4ResolveBuilder
             addRequired( ip, 'fdfp0',   @(x) lexist(this.filename(x), 'file'));
             addRequired( ip, 'fdfp1',   @ischar);
             addParameter(ip, 'mprage',  this.sessionData.mpr_fqfn, ...
-                                        @(x) lexist(x, 'file'));
+                                        @(x) lexist(this.filename(x), 'file'));
             addParameter(ip, 'frame0',  this.framesToSkip+1, ...
                                         @isnumeric);
             addParameter(ip, 'frameF',  this.readFrameEnd(varargin{1}), ...
@@ -625,7 +638,7 @@ classdef T4ResolveBuilder
                 end
                 return
             end
-                dbbash(sprintf('crop_4dfp %g %s %s', ipr.crop, ipr.fdfp0, ipr.fdfp1));
+                dbbash(sprintf('cropfrac_4dfp %g %s %s', ipr.crop, ipr.fdfp0, ipr.fdfp1));
         end
         function fdfp = ensureBlurred(this, fdfp)
             blurTag = sprintf('_b%i', floor(this.blurArg*10));
@@ -690,7 +703,7 @@ classdef T4ResolveBuilder
             if (lexist(toMprGT4, 'file'))
                 delete(toMprGT4);
             end
-            this.buildVisitor.t4_inv(this.initialT4, toMprGT4);
+            this.buildVisitor.t4_inv(this.initialT4, 'out', toMprGT4);
             this.buildVisitor.actmapf_4dfp( ...
                 sprintf('%i+', this.readFrameEnd(ipr.fdfp0)), ipr.fdfp1, 'options', '-asumt');
         end
