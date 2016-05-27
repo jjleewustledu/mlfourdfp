@@ -150,6 +150,9 @@ classdef T4ResolveBuilder
                 sprintf('%sr1', fdfp1), ...
                 'mprage', mpr, ...
                 'frame0', 1, 'frameF', frameF-frame0+1);
+            
+            return
+            
             this = this.t4ResolveIterate( ...
                 sprintf('%sr1_frames%ito%i_resolved', fdfp1, 1, frameF-frame0+1), ...
                 sprintf('%sr2', fdfp1), ...
@@ -166,14 +169,13 @@ classdef T4ResolveBuilder
             ip = this.t4ResolveParser(varargin{:});          
             fdfp1 = ip.Results.fdfp1;
             
-            this = this.crop(ip.Results);
-            if (~lexist( ...
-                    this.filename(this.fpMskt(this.fpGauss(this.fpSumt(fdfp1)))), 'file'))
+            if (~lexist(this.filename(fdfp1)))
+                this = this.crop(ip.Results);
+            end
+            if (~lexist(this.filename(this.fpMskt(this.fpGauss(this.fpSumt(fdfp1)))), 'file'))
                 this = this.msktgenInitial(ip.Results);
-            end            
-            if (~lexist(this.filename([fdfp1 '_frame' ip.Results.frameF]), 'file'))
-                frameFps = this.extractFrames(ip.Results);
-            end            
+            end
+            frameFps = this.extractFrames(ip.Results);
             this = this.frameReg(ip.Results, frameFps);
             this = this.t4ResolveAndPaste(ip.Results); 
             this = this.teardownT4ResolveIteration(ip.Results);
@@ -194,37 +196,37 @@ classdef T4ResolveBuilder
             frameEnd = this.readFrameEnd(ipr.fdfp0);
             fps = cell(1, frameEnd);
             for f = ipr.frame0:ipr.frameF
-                this.buildVisitor.extract_frame_4dfp(ipr.fdfp1, f);
                 fps{f} = sprintf('%s_frame%i', ipr.fdfp1, f);
+                if (~lexist(this.filename(fps{f})))
+                    this.buildVisitor.extract_frame_4dfp(ipr.fdfp1, f);
+                end
             end
         end
-        function this = frameReg(this, ipr, frameFps)
-            file_frame0 =  this.filename(sprintf('%s_frame%i', ipr.fdfp1, ipr.frame0));
-            if (~lexist(file_frame0))
-                error('mlfourdfp:missingFile', 'T4ResolveBuilder.frameReg could not find %s', file_frame0);
-            end   
-            
-            maskfp = this.fpMskt(this.fpGauss(this.fpSumt(ipr.fdfp1))); 
-            maskfn = this.filename(maskfp);
-            if (~lexist(maskfn))
-                error('mlfourdfp:missingFile', 'T4ResolveBuilder.frameReg could not find %s', maskfn);
-            end
-            
-            if (ipr.blur > 0)
-                blurredFps = this.blurFrames(frameFps);
-            end
-            
-            log = mlpipeline.Logger(this.loggerFilename('frameReg', ipr.fdfp1), this);
-            
-            for m = ipr.frame0:length(blurredFps)
-                for n = ipr.frame0:length(blurredFps)
+        function this = frameReg(this, ipr, frameFdfps)
+            frame0Fdfp = this.filename(sprintf('%s_frame%i', ipr.fdfp1, ipr.frame0));
+            if (~lexist(frame0Fdfp))
+                error('mlfourdfp:missingFile', 'T4ResolveBuilder.frameReg could not find %s', frame0Fdfp);
+            end            
+            blurredFdfps = this.blurFrames(frameFdfps);
+            log = mlpipeline.Logger(this.loggerFilename('frameReg', ipr.fdfp1), this);            
+            mask = this.frameRegMask(ipr);
+            for m = ipr.frame0:length(blurredFdfps)
+                for n = ipr.frame0:length(blurredFdfps)
                     if (m ~= n)
-                        t4file = sprintf('%s_to_%s_t4', frameFps{m}, frameFps{n});
-                        this.buildVisitor.imgreg_4dfp(blurredFps{m}, maskfp, blurredFps{n}, 'none', t4file, 2051, log.fqfilename);
-                        this.buildVisitor.imgreg_4dfp(blurredFps{m}, maskfp, blurredFps{n}, 'none', t4file, 2051, log.fqfilename);
+                        t4file = sprintf('%s_to_%s_t4', frameFdfps{m}, frameFdfps{n});
+                        this.buildVisitor.imgreg_4dfp(blurredFdfps{m}, mask, blurredFdfps{n}, mask, t4file, 2051, log.fqfilename);
+                        this.buildVisitor.imgreg_4dfp(blurredFdfps{m}, mask, blurredFdfps{n}, mask, t4file, 2051, log.fqfilename);
                     end
                 end
             end
+        end
+        function fdfp = frameRegMask(this, ipr)
+            fdfp = 'none';
+            
+            %fdfp = this.fpMskt(this.fpGauss(this.fpSumt(ipr.fdfp1)));
+            %if (~lexist(this.filename(fdfp)))
+            %    error('mlfourdfp:missingFile', 'T4ResolveBuilder.frameReg could not find %s', maskfn);
+            %end
         end
         function this = t4ResolveAndPaste(this, ipr)
             imgFns = '';
@@ -618,11 +620,12 @@ classdef T4ResolveBuilder
     end
     
     methods (Access = protected)
-        function fps  = blurFrames(this, fps)
-            for f = 1:length(fps)
-                if (~isempty(fps{f}))
-                    this.buildVisitor.imgblur_4dfp(fps{f}, this.blurArg);
-                    fps{f} = this.fpBlur(fps{f});
+        function fdfps = blurFrames(this, fdfps)
+            if (~(ipr.blur > 0)); return; end
+            for f = 1:length(fdfps)
+                if (~isempty(fdfps{f}))
+                    this.buildVisitor.imgblur_4dfp(fdfps{f}, this.blurArg);
+                    fdfps{f} = this.fpBlur(fdfps{f});
                 end
             end
         end
