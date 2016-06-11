@@ -79,6 +79,15 @@ classdef FourdfpVisitor
             end
         end
         
+        function      [s,r] = IFhdr_to_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'IFstr',                              @this.lexist);
+            addOptional(ip, 'outroot', myfileprefix(varargin{1}), @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = this.IFhdr_to_4dfp__(sprintf( ...
+                '%s %s', ip.Results.IFstr, ip.Results.outroot));       
+        end
         function      [s,r] = actmapf_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'format',      @ischar);
@@ -317,7 +326,19 @@ classdef FourdfpVisitor
             addRequired(ip, 'fileprefix', @(x) ischar(x) && ~lstrfind(x, '.4dfp'));
             parse(ip, varargin{:});            
             
-            if (lexist([ip.Results.fileprefix '.4dfp.ifh']))
+            ifhstr = [ip.Results.fileprefix '.4dfp.ifh'];
+            if (lexist(ifhstr))
+%                ifhp = mlfourdfp.IfhParser.load(ifhstr);
+%                 if (4 == ifhp.rightSideNumeric('orientation'))
+%                     [s,r] = this.nifti_4dfp__( ...
+%                         sprintf(' -n -T %s/S_t4 %s.4dfp.ifh %s.nii', getenv('RELEASE'), ip.Results.fileprefix, ip.Results.fileprefix));
+%                     return
+%                 end
+%                 if (3 == ifhp.rightSideNumeric('orientation'))
+%                     [s,r] = this.nifti_4dfp__( ...
+%                         sprintf(' -n -T %s/C_t4 %s.4dfp.ifh %s.nii', getenv('RELEASE'), ip.Results.fileprefix, ip.Results.fileprefix));
+%                     return
+%                 end
                 [s,r] = this.nifti_4dfp__( ...
                     sprintf(' -n %s.4dfp.ifh %s.nii', ip.Results.fileprefix, ip.Results.fileprefix));
                 return
@@ -390,6 +411,15 @@ classdef FourdfpVisitor
             
             [s,r] = this.scale_4dfp__( ...
                 sprintf('%s %g %s', ip.Results.in, ip.Results.scale, ip.Results.options));
+        end
+        function      [s,r] = sif_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'sifstr',                             @this.lexist);
+            addOptional(ip, 'outroot', myfileprefix(varargin{1}), @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = this.IFhdr_to_4dfp__(sprintf( ...
+                '%s %s', ip.Results.sifstr, ip.Results.outroot));       
         end
         function [fdfp,s,r] = t4img_4dfp(this, varargin)
             ip = inputParser;
@@ -476,6 +506,14 @@ classdef FourdfpVisitor
             fn = '';            
         end
         
+        function [s,r] = IFhdr_to_4dfp__(~, args)
+            %% IFHDR_TO_4DFP__
+            % $Id: IFhdr_to_4dfp,v 1.1 2014/02/25 suy Exp $
+            % Usage: IFhdr_to_4dfp IFfstr outroot
+
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('IFhdr_to_4dfp %s', args));
+        end
         function [s,r] = actmapf_4dfp__(~, args)
             %% ACTMAPF_4DFP__
             % $Id: actmapf_4dfp.c,v 1.34 2016/02/12 00:59:43 avi Exp $
@@ -691,6 +729,10 @@ classdef FourdfpVisitor
             % N.B.:	option -N has effect only on converting nii->4dfp
             % N.B.:	option -T has effect only on converting 4dfp->nii
             assert(ischar(args));
+            if (lstrcmp(computer, 'MACI64'))
+                [s,r] = dbbash(sprintf('%s/Local/bin/nifti_4dfp %s', getenv('HOME'), args));
+                return
+            end
             [s,r] = dbbash(sprintf('nifti_4dfp %s', args));
         end
         function [s,r] = paste_4dfp__(~, args)
@@ -721,6 +763,14 @@ classdef FourdfpVisitor
 
             assert(ischar(args));
             [s,r] = dbbash(sprintf('scale_4dfp %s', args));
+        end
+        function [s,r] = sif_4dfp__(~, args)
+            %% SIF_4DFP__
+            % $Id: sif_4dfp,v 1.0 Tue Feb 25 11:27:39 CST 2014 suy $
+            % Usage: sif_4dfp sifstr outroot
+
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('sif_4dfp %s', args));
         end
         function [s,r] = t4_inv__(~, args)
             %% T4_INV__

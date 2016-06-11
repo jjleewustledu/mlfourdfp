@@ -32,7 +32,49 @@ classdef FourdfpFacade < handle
         end
     end
     
-	methods 
+	methods
+        function this = convertMhdr(this)
+            iVisits = this.sessionData_.jsreconData.createIteratorForVisits;
+            while (iVisits.hasNext)
+                iSeries = iVisits.createIteratorForSeries;
+                while (iSeries.hasNext)
+                    aSeries = iSeries.next;
+                    cd(aSeries.listmodePath);
+                    dt = mlsystem.DirTool('*.mhdr');
+                    for d = 1:dt.length
+                        this.buildVisitor_.sif_4dfp(dt.fns{d});
+                    end
+                end
+            end
+        end
+        function this = convertV(this)
+            iVisits = this.sessionData_.jsreconData.createIteratorForVisits;
+            while (iVisits.hasNext)
+                iSeries = iVisits.createIteratorForSeries;
+                while (iSeries.hasNext)
+                    aSeries = iSeries.next;
+                    cd(aSeries.listmodePath);
+                    dt = mlsystem.DirTool('*.v.hdr');
+                    for d = 1:dt.length
+                        this.buildVisitor_.IFhdr_to_4dfp(dt.fns{d});
+                    end
+                end
+            end
+        end
+        function this = convertS(this)
+            iVisits = this.sessionData_.jsreconData.createIteratorForVisits;
+            while (iVisits.hasNext)
+                iSeries = iVisits.createIteratorForSeries;
+                while (iSeries.hasNext)
+                    aSeries = iSeries.next;
+                    cd(aSeries.listmodePath);
+                    dt = mlsystem.DirTool('*.s.hdr');
+                    for d = 1:dt.length
+                        this.buildVisitor_.IFhdr_to_4dfp(dt.fns{d});
+                    end
+                end
+            end
+        end
         function this = t4ResolveSubject(this)
             if (isempty(this.t4ResolveBuilder_))
                 this.t4ResolveBuilder_ = mlfourdfp.T4ResolveBuilder('sessionData', this.sessionData);
@@ -49,10 +91,13 @@ classdef FourdfpFacade < handle
             ip = inputParser;
             addParameter(ip, 'sessionData',      [], @(x) isa(x, 'mlpipeline.SessionData'));
             addParameter(ip, 't4ResolveBuilder', [], @(x) isa(x, 'mlfourdfp.T4ResolveBuilder') || isempty(x));
+            addParameter(ip, 'buildVisitor', mlfourdfp.FourdfpVisitor, ...
+                                                     @(x) isa(x, 'mlfourdfp.FourdfpVisitor'));
             parse(ip, varargin{:});
             
             this.sessionData_      = ip.Results.sessionData;
             this.t4ResolveBuilder_ = ip.Results.t4ResolveBuilder;
+            this.buildVisitor_     = ip.Results.buildVisitor;
         end  
     end 
     
@@ -61,6 +106,7 @@ classdef FourdfpFacade < handle
     properties (Access = protected)
         sessionData_
         t4ResolveBuilder_
+        buildVisitor_
     end
 
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
