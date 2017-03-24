@@ -12,6 +12,7 @@ classdef IFourdfp
     properties (Constant) 
         FILETYPE     = '4DFP'
         FILETYPE_EXT = '.4dfp.img'
+        SUPPORTED_EXT = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp'}
     end
     
 	properties (Abstract)

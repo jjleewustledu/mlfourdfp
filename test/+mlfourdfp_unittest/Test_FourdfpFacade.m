@@ -20,28 +20,28 @@ classdef Test_FourdfpFacade < matlab.unittest.TestCase
  	end
 
 	methods (Test)
-        function test_t4ResolveSubject(this)
+        function test_raichleResolve(this)
             studyd = mlpipeline.StudyDataSingletons.instance('raichle');
             sessd = mlraichle.SessionData( ...
                 'studyData', studyd, 'sessionPath', fullfile(studyd.subjectsDir, 'NP995_09', ''));            
             t4b = mlfourdfp.T4ResolveBuilder('sessionData', sessd);
             ff  = mlfourdfp.FourdfpFacade( 'sessionData', sessd, 't4ResolveBuilder', t4b);
-            fprintf('Test_FourdfpFacade.test_t4ResolveSubject:  running t4ResolveSubject which may requires hours of processing time..........');
-            ff  = ff.t4ResolveSubject;
+            fprintf('Test_FourdfpFacade.test_resolve:  running resolve which may requires hours of processing time..........');
+            ff  = ff.resolve;
             this.verifyTrue(~isempty(ff.product));
             
             if (this.view)
                 product.fdg.view;
             end
         end
-        function test_t4ResolveSubject2(this)
+        function test_arbelaezResolve(this)
             studyd = mlpipeline.StudyDataSingletons.instance('test_arbelaez');
             sessd = mlarbelaez.SessionData( ...
                 'studyData', studyd, 'sessionPath', fullfile(studyd.subjectsDir, 'p7991_JJL', ''));
             t4b = mlfourdfp.T4ResolveBuilder('sessionData', sessd);
             ff  = mlfourdfp.FourdfpFacade('sessionData', sessd, 't4ResolveBuilder', t4b);
-            fprintf('Test_FourdfpFacade.test_t4ResolveSubject2:  running t4ResolveSubject which may requires hours of processing time..........');
-            ff = ff.t4ResolveSubject;
+            fprintf('Test_FourdfpFacade.test_resolve:  running resolve which may requires hours of processing time..........');
+            ff = ff.resolve;
             this.verifyTrue(~isempty(ff.product));
             
             if (this.view)

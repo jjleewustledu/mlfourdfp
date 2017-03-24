@@ -35,7 +35,7 @@ classdef FourdfpcState < mlfourdfp.ImagingState
                 mlfourd.NIfTIdState(this.concreteObj_.get(1), this.contexth_));
             g = this.contexth_.niftid;
         end    
-        function g = get.numericalNiftid(this)       
+        function g = get.numericalNiftid(this)
             this.contexth_.changeState( ...
                 mlfourd.NIfTIdState(this.concreteObj_.get(1), this.contexth_));
             g = this.contexth_.numericalNiftid;     
@@ -97,7 +97,7 @@ classdef FourdfpcState < mlfourdfp.ImagingState
                 if (~lexist(niid.fqfilename))
                     niid.save;
                 end
-                fns = [fns niid.fqfilename];
+                fns = [fns niid.fqfileprefix '.4dfp.ifh'];
             end
             viewArgin = this.segregateForView(fns, varargin{:});
             niid1.view(viewArgin{:});
@@ -139,7 +139,7 @@ classdef FourdfpcState < mlfourdfp.ImagingState
         end
     end
     
-    methods (Access = private)        
+    methods (Access = private)
         function this = accumulateNIfTId(this, varargin)
             for v = 1:length(varargin)
                 if (isa(varargin{v}, 'mlfourd.INIfTIc'))

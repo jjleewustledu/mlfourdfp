@@ -71,6 +71,7 @@ classdef FourdfpdState < mlfourdfp.ImagingState
             tf = prod(thisSize(1:3)) < prod(inSize(1:3));
         end
         function        view(this, varargin)
+            this.concreteObj_.filesuffix = '.4dfp.ifh';
             this.concreteObj_.freeview(varargin{:});
         end
         

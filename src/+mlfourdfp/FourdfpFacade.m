@@ -12,7 +12,6 @@ classdef FourdfpFacade < handle
 	properties
  		
  	end
-
     
     properties (Dependent)
         sessionData
@@ -75,11 +74,11 @@ classdef FourdfpFacade < handle
                 end
             end
         end
-        function this = t4ResolveSubject(this)
+        function this = resolve(this)
             if (isempty(this.t4ResolveBuilder_))
                 this.t4ResolveBuilder_ = mlfourdfp.T4ResolveBuilder('sessionData', this.sessionData);
             end
-            this.t4ResolveBuilder_ = this.t4ResolveBuilder_.t4ResolveSubject;
+            this.t4ResolveBuilder_ = this.t4ResolveBuilder_.resolve;
         end
  		function this = FourdfpFacade(varargin)
  			%% FOURDFPFACADE

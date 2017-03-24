@@ -40,7 +40,7 @@ classdef T4ResolveParser
         end
     end
 
-	methods 		
+	methods
  		function this = T4ResolveParser(varargin)
  			%% T4RESOLVEPARSER
  			%  @params 'sessionData' obj is an instance of mlpipeline.SessionData
@@ -56,11 +56,14 @@ classdef T4ResolveParser
             this.imagingFilename_ = ip.Results.imagingFilename;
             this.loggingFilename_ = ip.Results.loggingFilename;
             this.frameLength_     = ip.Results.frameLength;
+            
+            assert(lexist(this.loggingFilename_));
+            this = this.parseLog;
         end
         
         function this     = parseLog(this, varargin)
             ip = inputParser;
-            addRequired(ip, 'fqfn', @(x) lexist(x, 'file'));
+            addOptional( ip, 'fqfn', this.loggingFilename_, @(x) lexist(x, 'file'));
             addParameter(ip, 'frameLength', this.frameLength_, @isnumeric);
             addParameter(ip, 'shiftFrames', 0, @isnumeric);
             parse(ip, varargin{:});
@@ -69,14 +72,15 @@ classdef T4ResolveParser
             this.frameLength_ = ip.Results.frameLength;
             
             idx = 1;
-            this.etas_   = cell(this.frameLength, this.frameLength);
-            this.curves_ = cell(this.frameLength, this.frameLength);
+            fL  = this.frameLength;
+            this.etas_   = num2cell(nan(fL,fL));
+            this.curves_ = num2cell(nan(fL,fL));
             while (idx < this.imgregLogParser_.length)
                 try
                     [fr1,idx] = this.frameNum(idx);
                     [fr2,idx] = this.frameNum(idx+1);
                     
-                    this.etas_{fr1,fr2}        = this.parseEtas(  idx+1);
+                    this.etas_{fr1,fr2}         = this.parseEtas(  idx+1);
                     [this.curves_{fr1,fr2},idx] = this.parseCurves(idx+1);
                 catch ME
                     if (~strcmp(ME.identifier, 'mlio:endOfFile'))
@@ -146,7 +150,7 @@ classdef T4ResolveParser
         curves_
     end
     
-    methods (Static, Access = protected)        
+    methods (Static, Access = protected)
         function grid = resizeCellGrid(grid, S)
             M     = size(grid,1);
             N     = size(grid,2);

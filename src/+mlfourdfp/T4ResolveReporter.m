@@ -35,6 +35,7 @@ classdef T4ResolveReporter
             addParameter(ip, 'loggingPath', pwd,               @isdir);
             addParameter(ip, 'imagingFileprefix', '',          @ischar);
             addParameter(ip, 'loggingFileprefix', '',          @ischar);
+            addParameter(ip, 'frameLength', 0,                 @isnumeric);
             parse(ip, varargin{:});
             
             import mlsystem.*;
@@ -50,8 +51,9 @@ classdef T4ResolveReporter
                 this.reports_{d} = T4ResolveReport( ...
                     T4ResolveParser( ...
                         'sessionData',     this.sessionData, ...
-                        'imagingFilename', this.strfindImagingFilename(this.loggingDirTool_.fqfns{d}), ...
-                        'loggingFilename', this.loggingDirTool_.fqfns{d}));
+                        'imagingFilename', '', ...
+                        'loggingFilename', this.loggingDirTool_.fqfns{d}, ...
+                        'frameLength', ip.Results.frameLength)); % this.strfindImagingFilename(this.loggingDirTool_.fqfns{d})
             end
  		end
     end 
