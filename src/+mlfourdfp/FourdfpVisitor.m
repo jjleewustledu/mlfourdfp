@@ -837,6 +837,10 @@ classdef FourdfpVisitor
             fp = fullfile(pth, fp);
             
             if (lexist([fp '.nii.gz'], 'file') && ...
+                lexist([fp '.nii'],    'file'))
+                delete([fp '.nii']);
+            end
+            if (lexist([fp '.nii.gz'], 'file') && ...
                ~lexist([fp '.nii'],    'file'))
                 gunzip([fp '.nii.gz']);
             end
@@ -851,7 +855,7 @@ classdef FourdfpVisitor
         function      [s,r] = nifti_4dfp_n(this, varargin)
             [s,r] = this.nifti_4dfp_ng(varargin{:});
         end
-        function      [s,r] = nifti_4dfp_ng(this, varargin)            
+        function      [s,r] = nifti_4dfp_ng(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fileprefix',                 @ischar);
             addOptional(ip, 'fileprefixOut', varargin{1}, @ischar);

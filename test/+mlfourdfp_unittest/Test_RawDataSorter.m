@@ -125,11 +125,11 @@ classdef Test_RawDataSorter < matlab.unittest.TestCase
             cd(this.studyData.subjectsDir);
             
             synth = fullfile(this.studyData.subjectsDir, 'SYNTH25', '');
-            if (hostnameMatch('innominate') && ~isdir(synth))
+            if (hostnameMatch('ophthalmic') && ~isdir(synth))
                 mkdir(synth);
             end
             hygly = fullfile(this.studyData.subjectsDir, 'HYGLY25', '');
-            if (hostnameMatch('innominate') && ~isdir(hygly))
+            if (hostnameMatch('ophthalmic') && ~isdir(hygly))
                 mkdir(hygly);
             end
  		end
@@ -147,7 +147,7 @@ classdef Test_RawDataSorter < matlab.unittest.TestCase
             end
         end
 		function cleanFiles(this)
-            if (hostnameMatch('innominate'))
+            if (hostnameMatch('ophthalmic'))
                 hygly = fullfile(this.studyData.subjectsDir, 'HYGLY25', '');
                 if (isdir(hygly))
                     rmdir(hygly, 's');
