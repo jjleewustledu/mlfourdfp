@@ -666,7 +666,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
             fqfp = sprintf('%s_%s', ip.Results.fqfpDyn, ip.Results.tag);
             if (~lexist_4dfp(fqfp))
                 this.buildVisitor.actmapf_4dfp( ...
-                    sprintf('%i+', this.imageComposite.length, ip.Results.fqfpDyn, 'options', ['-a' ip.Results.tag]));
+                    sprintf('%i+', this.imageComposite.length), ip.Results.fqfpDyn, 'options', ['-a' ip.Results.tag]);
             end
         end
         function fqfp = sumTimesImagingContext(this, varargin)

@@ -55,8 +55,7 @@ classdef (Abstract) AbstractTracerBuilder
             this.sessionData = ip.Results.sessionData;
             %this.framesResolveBuilder_ = T4ResolveBuilder('sessionData', this.sessionData);
             %this.compositeResolveBuilder_ = CompositeT4ResolveBuilder('sessionData', this.sessionData);
-        end
-        
+        end        
  	end 
     
     %% PROTECTED
@@ -120,8 +119,7 @@ classdef (Abstract) AbstractTracerBuilder
         compositeResolveBuilder_
         finished_
         framesResolveBuilder_
-    end
-    
+    end    
     
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
  end
