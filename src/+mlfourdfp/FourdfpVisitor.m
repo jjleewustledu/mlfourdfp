@@ -355,7 +355,7 @@ classdef FourdfpVisitor
         end
         function [t4,fqfp,s,r] = ...
                               align_intramodal(this, varargin)
-            %% ALIGN_INTRAMODAL calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] and writes a log.
+            %% ALIGN_INTRAMODAL calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] + 256 and writes a log.
             %  @param dest       is a f.q. fileprefix.
             %  @param destMask   "
             %  @param source     "
@@ -962,13 +962,15 @@ classdef FourdfpVisitor
         end
         function      [s,r] = sif_4dfp(this, varargin)
             ip = inputParser;
-            addRequired(ip, 'sifstr',                             @this.lexist_mhdr);
-            addOptional(ip, 'outroot', myfileprefix(varargin{1}), @ischar);
+            addRequired(ip, 'sifstr',      @this.lexist_mhdr);
+            addOptional(ip, 'outroot', '', @ischar);
             parse(ip, varargin{:});
+            outroot = ip.Results.outroot;
             
             [p,f] = myfileparts(ip.Results.sifstr);
+            if (isempty(outroot)); outroot = fullfile(p, f); end
             [s,r] = this.sif_4dfp__(sprintf( ...
-                '%s %s', fullfile(p, [f '.mhdr']), ip.Results.outroot));       
+                '%s %s', fullfile(p, [f '.mhdr']), outroot));
         end
         function [fqfp,s,r] = t4img_4dfp(this, varargin)
             ip = inputParser;
@@ -1694,7 +1696,7 @@ classdef FourdfpVisitor
             % Usage: sif_4dfp sifstr outroot
 
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('sif_4dfp %s', args));
+            [s,r] = dbbash(sprintf('sif_4dfp1 %s', args));
         end
         function [s,r] = t4_inv__(~, args)
             %% T4_INV__

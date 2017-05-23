@@ -243,7 +243,7 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 ii(i) = true;
             end
         end        
-    end 
+    end
     
     %% PROTECTED
     

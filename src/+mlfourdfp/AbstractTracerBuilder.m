@@ -35,6 +35,50 @@ classdef (Abstract) AbstractTracerBuilder
         end
     end
     
+    methods (Static)        
+        function viewStudyConverted(varargin)
+            ip = inputParser;
+            addParameter(ip, 'ac', false, @islogical);
+            addParameter(ip, 'tracer', 'FDG', @ischar);
+            parse(ip, varargin{:});
+            
+            fv = mlfourdfp.FourdfpVisitor;
+            studyd = mlraichle.StudyData;
+            cd(studyd.subjectsDir);
+            subjs = mlsystem.DirTool('HYGLY*');
+            for d = 1:length(subjs)
+                for v = 1:2
+                    try
+                        sessd = mlraichle.SessionData( ...
+                            'studyData', studyd, 'sessionPath', subjs.fqdns{d}, 'vnumber', v, ...
+                            'tracer', ip.Results.tracer, 'ac', ip.Results.ac);
+                        cd(sessd.tracerListmodeLocation);
+                        if (~lexist(sessd.tracerListmodeSif('typ','fn'), 'file'))
+                            fv.sif_4dfp(sessd.tracerListmodeMhdr('typ','fp'))
+                        end
+                    catch ME
+                        handwarning(ME);
+                    end
+                end
+            end
+            for d = 1:length(subjs)
+                for v = 1:2
+                    try
+                        sessd = mlraichle.SessionData( ...
+                            'studyData', studyd, 'sessionPath', subjs.fqdns{d}, 'vnumber', v, ...
+                            'tracer', ip.Results.tracer, 'ac', ip.Results.ac);
+                        cd(sessd.tracerListmodeLocation);
+                        ic = mlfourd.ImagingContext(sessd.tracerListmodeSif('typ','fn'));
+                        ic.viewer = 'fslview';
+                        ic.view;
+                    catch ME
+                        handwarning(ME);
+                    end
+                end
+            end
+        end
+    end
+    
 	methods
  		function this = AbstractTracerBuilder(varargin)
  			%% AbstractTracerBuilder
