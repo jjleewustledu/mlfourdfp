@@ -99,7 +99,8 @@ classdef IfhParser < mlio.AbstractParser
                 nv = []; 
                 return
             end
-            names = regexp(line, sprintf('%s\\s+:=\\s*(?<value1>%s)', fieldName, this.ENG_PATT_LOW), 'names');
+            names = regexp(line, sprintf('%s\\s+:=\\s*(?<value1>%s)', ...
+                    strrep(strrep(fieldName,'[','\['),']','\]'), this.ENG_PATT_LOW), 'names');
             nv    = str2num(strtrim(names.value1)); %#ok<ST2NM>
         end
     end 

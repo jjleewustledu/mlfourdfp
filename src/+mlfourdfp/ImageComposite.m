@@ -46,7 +46,7 @@ classdef ImageComposite < mlfourdfp.AbstractImageComposite
             parse(ip, varargin{:});
             
             import mlfourdfp.*;
-            this.theImages_ = FourdfpVisitor.ensureSafeOn(ip.Results.theImages);
+            this.theImages_ = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
             this.indicesLogical = ip.Results.indicesLogical;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
         end        

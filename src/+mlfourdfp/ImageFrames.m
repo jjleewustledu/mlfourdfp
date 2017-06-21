@@ -63,7 +63,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             parse(ip, varargin{:}); 
             
             import mlfourdfp.*;
-            this.theImages_ = FourdfpVisitor.ensureSafeOn(ip.Results.theImages);
+            this.theImages_ = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
             if (isempty(this.theImages))
                 this.length_ = this.readLength;
             else

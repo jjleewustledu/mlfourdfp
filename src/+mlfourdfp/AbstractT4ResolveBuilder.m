@@ -223,7 +223,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
             %if (~isempty(ip.Results.resolveTag))
             %    this.resolveTag = ip.Results.resolveTag;
             %end
-            this.theImages = FourdfpVisitor.ensureSafeOn(ip.Results.theImages);
+            this.theImages = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
             
             this = this.mpr2atl;
         end
@@ -598,11 +598,15 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
             src  = ip.Results.src;
             ref  = ip.Results.ref;
             opts = ip.Results.opts;
+            ref_ = [ref 'r1_' this.resolveTag];
+            if (~this.buildVisitor.lexist_4dfp(ref_)) %% KLUDGE
+                ref_ = ref;
+            end
             
             t4  = sprintf('%sr1_to_%s_t4', src0, this.resolveTag);
             in  = src;
-            out = sprintf('%sr1_%s', this.clipLastRevisionMarking(src), this.resolveTag);
-            this.buildVisitor.t4img_4dfp(t4, in, 'out', out, 'options', ['-O' ref 'r1_' this.resolveTag ' ' opts]);
+            out = sprintf('%sr1_%s', this.clipLastRevisionMarking(src), this.resolveTag);            
+            this.buildVisitor.t4img_4dfp(t4, in, 'out', out, 'options', ['-O' ref_ ' ' opts]);
         end
         function out   = t4img_4dfpr2(this, varargin)
             ip = inputParser;
@@ -615,16 +619,20 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
             src  = ip.Results.src;
             ref  = ip.Results.ref;
             opts = ip.Results.opts;
+            ref_ = [ref 'r1_' this.resolveTag];
+            if (~this.buildVisitor.lexist_4dfp(ref_)) %% KLUDGE
+                ref_ = ref;
+            end
             
             t4  = sprintf('%sr1_to_%s_t4', src0, this.resolveTag);
             in  = src;
             out = sprintf('%sr1_%s', this.clipLastRevisionMarking(src), this.resolveTag);
-            this.buildVisitor.t4img_4dfp(t4, in, 'out', out, 'options', ['-O' ref 'r1_' this.resolveTag ' ' opts]);
+            this.buildVisitor.t4img_4dfp(t4, in, 'out', out, 'options', ['-O' ref_ ' ' opts]);
             
             t4  = sprintf('%sr2_to_%s_t4', src0, this.resolveTag);
             in  = sprintf('%sr1_%s', this.clipLastRevisionMarking(src), this.resolveTag);
-            out = sprintf('%sr2_%s', this.clipLastRevisionMarking(src), this.resolveTag);
-            this.buildVisitor.t4img_4dfp(t4, in, 'out', out, 'options', ['-O' ref 'r2_' this.resolveTag ' ' opts]);
+            out = sprintf('%sr2_%s', this.clipLastRevisionMarking(src), this.resolveTag);            
+            this.buildVisitor.t4img_4dfp(t4, in, 'out', out, 'options', ['-O' ref_ ' ' opts]);
         end
  	end 
 

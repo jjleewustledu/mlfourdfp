@@ -58,14 +58,14 @@ classdef FourdfpVisitor
                 cd(pth);
             end
         end
-        function obj1  = ensureSafeOn(obj)
+        function obj1  = ensureSafeFileprefix(obj)
             import mlfourdfp.*;
             if (isempty(obj))
                 obj1 = obj;
                 return
             end
             if (iscell(obj))
-                obj1 = cellfun(@(x) FourdfpVisitor.ensureSafeOn(x), obj,  'UniformOutput', false);
+                obj1 = cellfun(@(x) FourdfpVisitor.ensureSafeFileprefix(x), obj,  'UniformOutput', false);
                 return
             end
             if (ischar(obj))
@@ -78,8 +78,8 @@ classdef FourdfpVisitor
                 while (~isempty(idxs))
                     idx1 = idxs(1);
                     idx2 = idx1+4;
-                    assert(idx1 > 1, 'AbstractT4ResolveBuilder.ensureSafeOn.fp->%s may be missing prefix', fp);
-                    assert(length(fp) >= idx2, 'AbstractT4ResolveBuilder.ensureSafeOn.fp->%s may be missing suffix', fp);
+                    assert(idx1 > 1, 'AbstractT4ResolveBuilder.ensureSafeFileprefix.fp->%s may be missing prefix', fp);
+                    assert(length(fp) >= idx2, 'AbstractT4ResolveBuilder.ensureSafeFileprefix.fp->%s may be missing suffix', fp);
                     fp = sprintf('%sOn%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
                     idxs = regexp(fp, '_on_');
                 end
@@ -89,7 +89,7 @@ classdef FourdfpVisitor
                 end
                 return
             end
-            error('mlfourdfp:unsupportedTypeclass', 'AbstractT4ResolveBuilder.ensureSafeOn');
+            error('mlfourdfp:unsupportedTypeclass', 'AbstractT4ResolveBuilder.ensureSafeFileprefix');
         end
         function obj1  = ensureSafeOp(obj)
             import mlfourdfp.*;
@@ -122,7 +122,16 @@ classdef FourdfpVisitor
                 end
                 return
             end
-            error('mlfourdfp:unsupportedTypeclass', 'AbstractT4ResolveBuilder.ensureSafeOn');
+            error('mlfourdfp:unsupportedTypeclass', 'AbstractT4ResolveBuilder.ensureSafeFileprefix');
+        end
+        function m     = ifhMatrixSize(fqfn)
+            assert(lexist(fqfn));
+            ifhp       = mlfourdfp.IfhParser.load(fqfn);
+            m          = [0 0 0 0];
+            [m(1),idx] = ifhp.rightSideNumeric('matrix size [1]');
+            [m(2),idx] = ifhp.rightSideNumeric('matrix size [2]', idx);
+            [m(3),idx] = ifhp.rightSideNumeric('matrix size [3]', idx);
+             m(4)      = ifhp.rightSideNumeric('matrix size [4]', idx);
         end
         function tf    = lexist_4dfp(fqfp)
             tf = lexist(fqfp);
@@ -193,15 +202,6 @@ classdef FourdfpVisitor
     end
 
 	methods
- 		function this = FourdfpVisitor(varargin)
- 			%% FOURDFPVISITOR
- 			%  Usage:  this = FourdfpVisitor()
-
-            if (this.ASSERT_PLATFORM)
-                this.assertPlatform;
-            end
-        end
-        
         function [fqfp,s,r] = CT2mpr_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'mpr',              @this.lexist_4dfp);
@@ -1056,7 +1056,16 @@ classdef FourdfpVisitor
             
             [s,r] = this.zero_slice_4dfp__( ...
                 sprintf(' %s %s %i %i %s', ip.Results.fqfp, ip.Results.axis, ip.Results.index1, ip.Results.indexF, ip.Results.fdfpOut));
-        end
+        end        
+        
+ 		function this = FourdfpVisitor(varargin)
+ 			%% FOURDFPVISITOR
+ 			%  Usage:  this = FourdfpVisitor()
+
+            if (this.ASSERT_PLATFORM)
+                this.assertPlatform;
+            end
+        end        
     end 
     
     %% PROTECTED
