@@ -12,7 +12,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
     methods (Static)
         function prepareWilliam
             import mlsystem.*;
-            cd(fullfile(getenv('PPG'), 'jjlee', ''));            
+            cd(mlraichle.RaichleRegistry.instance.subjectsDir);            
             dt = DirTool('*');
             dtFqdns = dt.fqdns;            
             studyd = mlraichle.StudyData;
@@ -35,7 +35,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
         end
         function parWilliam
             import mlsystem.*;
-            cd(fullfile(getenv('PPG'), 'jjlee', ''));
+            cd(mlraichle.RaichleRegistry.instance.subjectsDir);
             dt = DirTool('*');
             dtFqdns = dt.fqdns;            
             parfor idt = 1:length(dtFqdns)

@@ -21,36 +21,36 @@ classdef RawDataSorter
     
     methods %% GET/SET
         function g    = get.studyData(this)
-            assert(~isempty(this.studyData_));
-            g = this.studyData_;
+            assert(~isempty(this.sessionData_));
+            g = this.sessionData.studyData;
         end
         function this = set.studyData(this, s)
             assert(isa(s, 'mlpipeline.StudyDataHandle'));
-            this.studyData_ = s;
+            assert(~isempty(this.sessionData_));
+            this.sessionData_.studyData = s;
         end
         function g    = get.sessionData(this)
-            g = this.studyData.sessionData;
+            g = this.sessionData_;
         end
         function this = set.sessionData(this, s)
             assert(isa(s, 'mlpipeline.SessionData'));
-            studyd = this.studyData.instance(s);
-            this.studyData = studyd;
+            this.sessionData_ = s;
         end
         function g    = get.sessionPath(this)
-            g = this.studyData.sessionData.sessionPath;
+            g = this.sessionData_.sessionPath;
         end
         function this = set.sessionPath(this, s)
             assert(isdir(s));            
-            studyd = this.studyData;
-            sessd  = studyd.sessionData;
-            sessd.sessionPath = s;
-            studyd = studyd.instance(sessd);
-            this.studyData = studyd;
+            this.sessionData_.sessionPath = s;
         end
     end
     
     methods (Static)
         function [s,r] = bash_copyfile(loc0, loc)
+            if (isdir(loc))
+                error('mlfourdfp:potentialDataCorruption', ...
+                      'destination already exists:  RawDataSorter.bash_copyfile.loc->%s', loc);
+            end
             if (~isdir(fileparts(loc)))
                 mkdir(fileparts(loc));
             end
@@ -66,6 +66,10 @@ classdef RawDataSorter
             end
         end
         function [s,r] = bash_movefile(loc0, loc)
+            if (isdir(loc))
+                error('mlfourdfp:potentialDataCorruption', ...
+                      'destination already exists:  RawDataSorter.bash_movefile.loc->%s', loc);
+            end            
             if (~isdir(fileparts(loc)))
                 mkdir(fileparts(loc));
             end
@@ -94,12 +98,10 @@ classdef RawDataSorter
             iSrcFold    = strfind(srcRawData, 'rawdata/');
             iSrcFold    = iSrcFold + 8;
             re          = DicomSorter.folderRegexp(srcRawData(iSrcFold:end));
-            studyd      = StudyDataSingleton.instance( ... 
-                          RawDataSorter.destSessionPath(re.subjid));
-            sessd       = studyd.sessionData;
+            studyd      = StudyData;
+            sessd       = mlraichle.SessionData('studyData', studyd, 'sessionPath', RawDataSorter.destSessionPath(re.subjid));
             sessd.vnumber = str2double(re.visit);
-            studyd      = StudyDataSingleton.instance(sessd);
-            this        = RawDataSorter('studyData', studyd);
+            this        = RawDataSorter('sessionData', sessd);
             this        = this.dcm_sort_PPG(srcRawData);
             this        = this.copyRawData(srcRawData);
             this        = this.copyUTE( ...
@@ -113,10 +115,10 @@ classdef RawDataSorter
             addParameter(ip, 'session', '', @ischar); % e.g., $PPG/jjlee/HYGLY15, HYGLY15
             parse(ip, varargin{:});
             
-            studyData = SynthDataSingleton.instance;
+            studyData = StudyData;
             sessPath  = RawDataSorter.destSessionPath(ip.Results.session);
-            sessData  = studyData.sessionData('sessionPath', sessPath);
- 			this      = RawDataSorter('studyData', studyData);
+            sessData  = SessionData('studyData', studyData, 'sessionPath', sessPath);
+ 			this      = RawDataSorter('sessionData', sessData);
             this      = this.copyRawDataConverted('sessionData', sessData, 'sessionPath', sessPath);
         end
         function this = move(varargin)
@@ -133,9 +135,9 @@ classdef RawDataSorter
             srcRawData  = RawDataSorter.sourceRawDataPath(ip.Results.rawdataFolder);
             [~,srcFold] = fileparts(srcRawData);            
             re          = DicomSorter.folderRegexp(srcFold);         
-            studyd      = StudyDataSingleton.instance( ... 
+            sessd       = SessionData('sessionPath', ...
                           RawDataSorter.destSessionPath(re.subjid));
-            this        = RawDataSorter('studyData', studyd);
+            this        = RawDataSorter('sessionData', sessd);
             this        = this.moveRawData(srcRawData);
             this        = this.copyUTE( ...
                           RawDataSorter.sourceRawDataPath(ip.Results.rawdataFolder));
@@ -167,7 +169,7 @@ classdef RawDataSorter
         function pth  = destSessionPath(str)
             assert(ischar(str));
             if (~strcmp(str(1), '/'))
-                pth = fullfile(getenv('PPG'), 'jjlee', str, '');
+                pth = fullfile(mlraichle.RaichleRegistry.subjectsDir, str, '');
                 assert(isdir(pth));
             else
                 pth = str;
@@ -214,10 +216,9 @@ classdef RawDataSorter
             
             ip = inputParser;
             addParameter(ip, 'sessionData', this.sessionData, @(x) isa(x, 'mlpipeline.SessionData'));
-            addParameter(ip, 'sessionPath', '', @isdir);
             parse(ip, varargin{:});
                      
-            this.studyData_ = this.studyData_.instance(ip.Results.sessionData);
+            this.sessionData_ = ip.Results.sessionData;
             [~,sfold] = fileparts(this.sessionData.sessionPath);
 
             for iv = 1:2
@@ -235,23 +236,23 @@ classdef RawDataSorter
                 end
             end
         end
-        function this = dcm_sort(this, RawDataDir)
-            assert(isdir(RawDataDir));
-            dt = mlsystem.DirTool(RawDataDir);
+        function this = dcm_sort(this, rawDataDir)
+            assert(isdir(rawDataDir));
+            dt = mlsystem.DirTool(rawDataDir);
             if (~isempty(dt.dns))
                 return
             end
             vtor = mlfourdfp.FourdfpVisitor;
-            vtor.dcm_sort(RawDataDir);
+            vtor.dcm_sort(rawDataDir);
         end
-        function this = dcm_sort_PPG(this, RawDataDir)
-            assert(isdir(RawDataDir));
-            dt = mlsystem.DirTool(RawDataDir);
+        function this = dcm_sort_PPG(this, rawDataDir)
+            assert(isdir(rawDataDir));
+            dt = mlsystem.DirTool(rawDataDir);
             if (~isempty(dt.dns))
                 return
             end
-            vtor = mlfourdfp.FourdfpVisitor;
-            vtor.dcm_sort_PPG(RawDataDir);
+            vtor = mlfourdfp.FourdfpVisitor; % escalate to ad hoc shell script
+            vtor.dcm_sort_PPG(rawDataDir);
         end
         function this = moveRawData(this, varargin)
             this = this.operationOnData(@mlfourdfp.RawDataSorter.bash_movefile, @this.rawDataMatch, varargin{:});
@@ -283,7 +284,7 @@ classdef RawDataSorter
                     destLocs{id} = fullfile(loc1, ['FDG_' vfold]);
                 end
                 if (lstrfind(fold, 'Head_MRAC_PET_5min'))
-                    destLocs{id} = fullfile(loc1, ['Calibration_' vfold]);
+                    destLocs{id} = fullfile(loc1, ['Twilite_' vfold]);
                 end
                 if (lstrfind(fold, 'Head_HO'))
                     idxS = strfind(fold, 'HO');
@@ -305,35 +306,43 @@ classdef RawDataSorter
             %  @param loc1 is the path ending in the session visit folder, e.g., '/path/to/V1', '/path/to/V2', ...
             %  @returns locs, a cell-array of locations, e.g., '/path/to/V1/FDG_V1/umap'.
             %  @returns fqdn, the path to source dicoms, e.g., '/rawdata/HYGLY25_VISIT_1/SCANS/45/DICOM'.
+
+            tags = {'FDG_' 'HO1_' 'HO2_' 'OC1_' 'OC2_' 'OO1_' 'OO2_'};
+            [destLocs0,srcLocs0] = umapMatch(this, loc0, loc1, 'MRAC_PET_5min_in_UMAP',  {'Twilite'});
+            [destLocs1,srcLocs1] = umapMatch(this, loc0, loc1, 'UTE_AC_only_UMAP',       tags);
+            [destLocs2,srcLocs2] = umapMatch(this, loc0, loc1, 'UTE_MRAC_UMAP',          tags);
+            [destLocs3,srcLocs3] = umapMatch(this, loc0, loc1, 'MRAC_PET_60min_in_UMAP', tags);            
+           
+            destLocs = [destLocs0 destLocs1 destLocs2 destLocs3];
+            srcLocs  = [srcLocs0  srcLocs1  srcLocs2  srcLocs3];
+            
+        end
+        function [destLocs,srcLocs] = umapMatch(this, loc0, loc1, dcmInfoTag, tags)
             
             assert(isdir(loc0));          
             [~,vfold] = fileparts(loc1);
-            assert(lstrfind(vfold, 'V') && 2 == length(vfold));
-            
+            assert(lstrfind(vfold, 'V') && 2 == length(vfold));            
             if (~isdir(loc1))
                 [s,m,mid] = mkdir(loc1);
                 if (~s)
-                    error('mlfourdfp:mkdirFailed', 'RawDataSorter.UTEMatch:  %s; %s', m, mid);
+                    error('mlfourdfp:mkdirFailed', 'RawDataSorter.dcminfoMatch:  %s; %s', m, mid);
                 end
             end            
-            ds = mlfourdfp.DicomSorter('studyData', this.studyData);
+            ds = mlfourdfp.DicomSorter('sessionData', this.sessionData);
             try
-                [~,fqdn] = ds.findDcmInfo(1, 'UTE_AC_only_UMAP', fullfile(loc0, '..', ''));
-            catch ME
-                handwarning(ME);
-                try
-                    [~,fqdn] = ds.findDcmInfo(1, 'UTE_MRAC_UMAP', fullfile(loc0, '..', ''));
-                catch ME2
-                    handwarning(ME2);
-                    [~,fqdn] = ds.findDcmInfo(1, 'MRAC_PET_60min_in_UMAP', fullfile(loc0, '..', ''));
+                [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fileparts(loc0));
+            catch ME %#ok<NASGU>
+                try                    
+                    [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fullfile(this.sessionData.rawdataDir, fileparts(loc0), ''));
+                catch ME1 %#ok<NASGU>
+                    fprintf('RawDataSorter.umapMatch:  no match for %s\n', dcmInfoTag);
+                    info = [];
                 end
             end
-            fqdn = fullfile(fqdn, 'DICOM', '');
-            srcLocs = {fqdn fqdn fqdn fqdn fqdn fqdn fqdn};
-            destLocs = cell(size(srcLocs));
-            tags = {'FDG_' 'HO1_' 'HO2_' 'OC1_' 'OC2_' 'OO1_' 'OO2_'};
-            for t = 1:length(tags)
-                destLocs{t} = fullfile(loc1, [tags{t} vfold], 'umap', ''); 
+            srcLocs = {}; destLocs = {};
+            if (~isempty(info))
+                srcLocs  = cellfun(@(x) fullfile(fqdn, 'DICOM', ''),           tags, 'UniformOutput', false);
+                destLocs = cellfun(@(x) fullfile(loc1, [x vfold], 'umap', ''), tags, 'UniformOutput', false);
             end
         end
 		  
@@ -344,13 +353,13 @@ classdef RawDataSorter
             %  @param 'sessionData' is an mlpipeline.SessionData.
             
             ip = inputParser;
+            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData'));
             addParameter(ip, 'studyData',   [], @(x) isa(x, 'mlpipeline.StudyDataHandle') || isempty(x));
-            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData')     || isempty(x));
             parse(ip, varargin{:});
             
-            this.studyData_ = ip.Results.studyData;
-            if (~isempty(ip.Results.sessionData))
-                this.studyData_ = this.studyData_.instance(ip.Results.sessionData);
+            this.sessionData_ = ip.Results.sessionData;
+            if (~isempty(ip.Results.studyData))
+                this.sessionData_.studyData = ip.Results.studyData;
             end
  		end
     end 
@@ -358,12 +367,7 @@ classdef RawDataSorter
     %% PRIVATE
     
     properties (Access = private)
-        studyData_
-    end
-    
-    methods (Static, Access = private)
-        function this = oper(varargin)            
-        end
+        sessionData_
     end
 
     methods (Access = private)        
@@ -422,7 +426,11 @@ classdef RawDataSorter
             end
             assert(length(srcLocs) == length(destLocs));
             for d = 1:length(destLocs)
-                this.binaryFilesystemOperation(srcLocs{d}, destLocs{d}, ip.Results.oper);
+                try
+                    this.binaryFilesystemOperation(srcLocs{d}, destLocs{d}, ip.Results.oper);
+                catch ME
+                    handwarning(ME);
+                end
             end
         end
     end

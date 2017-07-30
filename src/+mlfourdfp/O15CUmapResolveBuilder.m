@@ -29,7 +29,7 @@ classdef O15CUmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
         end
         function parWilliam
             import mlsystem.*;
-            cd(fullfile(getenv('PPG'), 'jjlee', ''));
+            cd(mlraichle.RaichleRegistry.instance.subjectsDir);
             dt = DirTool('*');
             dtFqdns = dt.fqdns;
             parfor idt = 1:length(dtFqdns)

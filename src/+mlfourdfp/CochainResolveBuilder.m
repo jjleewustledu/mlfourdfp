@@ -43,7 +43,7 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             import mlraichle.*;
             studyd = StudyData;
             sessd  = SessionData('studyData', studyd, 'sessionPath', ...
-                     fullfile(getenv('PPG'), 'jjlee2', 'HYGLY28', ''), 'vnumber', 2);
+                     mlraichle.RaichleRegistry.instance.subjectsFolder, 'vnumber', 2);
             sessd.tracer = 'FDG';
             mmrb = mlsiemens.MMRBuilder('sessionData', sessd);
             fqfp = mmrb.sif;
@@ -58,7 +58,7 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             import mlraichle.*;
             studyd = StudyData;
             sessd  = SessionData('studyData', studyd, 'sessionPath', ...
-                     fullfile(getenv('PPG'), 'jjlee2', 'HYGLY28', ''), 'vnumber', 2);
+                     mlraichle.RaichleRegistry.instance.subjectsFolder, 'vnumber', 2);
             sessd.tracer = 'FDG';
             this = mlfourdfp.CochainResolveBuilder('sessionData', sessd);
             cd(sessd.tracerLocation('typ','path'));

@@ -22,7 +22,7 @@ classdef Test_O15UmapResolveBuilder < matlab.unittest.TestCase
 
 	methods (Test)
         function test_ctor(this)
-            this.verifyEqual(pwd, fullfile(getenv('PPG'),'jjlee', 'HYGLY09', 'V1', ''));
+            this.verifyEqual(pwd, fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY09', 'V1', ''));
         end
         function test_buildO15NAC(this)
             this.testObj.buildO15NAC('OC', 1);

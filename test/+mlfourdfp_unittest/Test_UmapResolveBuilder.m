@@ -26,7 +26,7 @@ classdef Test_UmapResolveBuilder < matlab.unittest.TestCase
         function test_ctor(this)
             this.verifyEqual( ...
                 pwd, ...
-                fullfile(getenv('PPG'),'jjlee', 'NP995_22', 'V1', 'FDG_V1-NAC', ''));
+                fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'NP995_22', 'V1', 'FDG_V1-NAC', ''));
             this.verifyEqual(this.testObj.tracer, 'FDG');
         end
         function test_buildCTMasked(this)          

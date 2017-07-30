@@ -16,8 +16,8 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
 	properties
         studyData
  		testObj
-        ctFqfp  = fullfile(getenv('PPG'), 'jjlee', 'HYGLY28', 'AC_CT')
-        mprFqfp = fullfile(getenv('PPG'), 'jjlee', 'HYGLY28', 'V1', 't1_mprage_sag')
+        ctFqfp  = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY28', 'AC_CT')
+        mprFqfp = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY28', 'V1', 't1_mprage_sag')
  	end
 
 	methods (Test)
@@ -56,7 +56,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
         end
         function test_session_to_4dfp(this)
             src  = fullfile(getenv('PPG'), 'rawdata', 'HYGLY28_VISIT_1', '');
-            dest = fullfile(getenv('PPG'), 'jjlee', 'HYGLY28', 'V1', '');
+            dest = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY28', 'V1', '');
             this.testObj.session_to_4dfp( ...
                 src, dest, ...
                 'seriesFilter', 't1_mprage_sag', ...

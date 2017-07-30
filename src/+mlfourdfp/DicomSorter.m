@@ -9,7 +9,7 @@ classdef DicomSorter
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.0.0.341360 (R2016a) for MACI64.
  	
-
+    
     properties
         cachedDcminfosFilename = 'DicomSorter_dcminfos_infos.mat';
         preferredInfoFields = {'SequenceName' 'SeriesDescription' 'ProtocolName' 'ImageType' 'SequenceName'}
@@ -27,24 +27,20 @@ classdef DicomSorter
     methods %% GET/SET
         function this = set.buildVisitor(this, v)
             assert(isa(v, 'mlfourdfp.FourdfpVisitor'));
-            this.buildVisitor___ = v;
+            this.buildVisitor_ = v;
         end
         function v    = get.buildVisitor(this)
-            v = this.buildVisitor___;
+            v = this.buildVisitor_;
         end
         function e    = get.dicomExtension(this)
-            e = this.studyData___.dicomExtension;
+            e = this.studyData.dicomExtension;
         end
         function sd   = get.sessionData(this)
-            if (isempty(this.sessionData___))
-                sd = this.studyData.sessionData;
-                return
-            end
-            sd = this.sessionData___;
+            sd = this.sessionData_;
         end
         function sd   = get.studyData(this)
-            assert(~isempty(this.studyData___));
-            sd = this.studyData___;
+            assert(~isempty(this.sessionData_));
+            sd = this.sessionData_.studyData;
         end
     end
 
@@ -84,21 +80,21 @@ classdef DicomSorter
             ip = inputParser;
             addParameter(ip, 'sessionFilter', @(x) iscell(x) || ischar(x));
             addParameter(ip, 'seriesFilter',  @(x) iscell(x) || ischar(x));
-            addParameter(ip, 'studyData', [], @(x) isa(x, 'mlpipeline.StudyDataHandle'));
+            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData'));
             addParameter(ip, 'preferredName', 'unknown', @ischar);
             parse(ip, varargin{:});
             
             import mlfourdfp.* mlsystem.*;
-            this = DicomSorter('studyData', ip.Results.studyData);
+            this = DicomSorter('sessionData', ip.Results.sessionData);
             dt = DirTools(ip.Results.sessionFilter);
             for idns = 1:length(dt.dns)
                 try
-                    cd(this.studyData.rawdataDir);
+                    cd(this.sessionData.rawdataDir);
                     srcPth = dt.dns{idns};
                     this = this.session_to_4dfp( ...
                         srcPth, ...
                         this.destPath(srcPth), ...
-                        'studyData', this.studyData, ...
+                        'sessionData', this.sessionData, ...
                         'seriesFilter', ip.Results.seriesFilter, ...
                         'preferredName', ip.Results.preferredName);
                 catch ME
@@ -110,7 +106,7 @@ classdef DicomSorter
             ip = inputParser;
             addRequired( ip, 'srcPath',            @isdir); % top-level folder for session raw data
             addOptional( ip, 'destPath', pwd,      @ischar);
-            addParameter(ip, 'studyData', [],      @(x) isa(x, 'mlpipeline.StudyDataHandle'));
+            addParameter(ip, 'sessionData', [],      @(x) isa(x, 'mlpipeline.SessionData'));
             addParameter(ip, 'seriesFilter', {[]}, @(x) iscell(x) || ischar(x));
             addParameter(ip, 'preferredInfoFields', {'SeriesDescription'}, @iscell);
             addParameter(ip, 'preferredName', 'unknown', @ischar);
@@ -120,7 +116,7 @@ classdef DicomSorter
             end
             
             import mlfourdfp.* mlsystem.* mlio.*;
-            this = DicomSorter('studyData', ip.Results.studyData);
+            this = DicomSorter('sessionData', ip.Results.sessionData);
             this.preferredInfoFields = ip.Results.preferredInfoFields;
             pwd0 = pwd;
             cd(ip.Results.srcPath);
@@ -147,7 +143,7 @@ classdef DicomSorter
             ip = inputParser;
             addRequired( ip, 'srcPath',       @isdir); % top-level folder for session raw data
             addOptional( ip, 'destPath', pwd, @ischar);
-            addParameter(ip, 'studyData', mlraichle.StudyData, @(x) isa(x, 'mlpipeline.StudyDataHandle'));
+            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData'));
             parse(ip, varargin{:});
 
             import mlfourdfp.*;
@@ -163,7 +159,7 @@ classdef DicomSorter
                 this = DicomSorter.session_to_4dfp( ...
                     ip.Results.srcPath, ip.Results.destPath, ...
                     'seriesFilter', seriesList{s}, ...
-                    'studyData', ip.Results.studyData, ...
+                    'sessionData', ip.Results.sessionData, ...
                     'preferredName', targetList{s});
             end
         end
@@ -171,7 +167,7 @@ classdef DicomSorter
             ip = inputParser;
             addRequired( ip, 'srcPath',       @isdir); % top-level folder for session raw data
             addOptional( ip, 'destPath', pwd, @ischar);
-            addParameter(ip, 'studyData', mlraichle.StudyData, @(x) isa(x, 'mlpipeline.StudyDataHandle'));
+            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData'));
             parse(ip, varargin{:});
 
             import mlfourdfp.*;
@@ -182,7 +178,7 @@ classdef DicomSorter
                 this = DicomSorter.session_to_4dfp( ...
                     ip.Results.srcPath, ip.Results.destPath, ...
                     'seriesFilter', seriesList{s}, ...
-                    'studyData', ip.Results.studyData, ...
+                    'sessionData', ip.Results.sessionData, ...
                     'preferredName', targetList{s});
             end
         end
@@ -241,7 +237,7 @@ classdef DicomSorter
             re  = this.ctFolderRegexp(str);
             if (~isempty(re))
                 if (~isempty(re.subjid))
-                    pth = fullfile(this.studyData.subjectsDir, this.scrubSubjectID(re.subjid), '');
+                    pth = fullfile(this.sessionData.subjectsDir, this.scrubSubjectID(re.subjid), '');
                     return
                 end
             end
@@ -261,8 +257,8 @@ classdef DicomSorter
             if (lstrfind(canonFp, 'TOF'))
                 opts = [opts ' -t T'];
             end
-            this.buildVisitor___.dcm_to_4dfp( ...
-                this.studyData.seriesDicomAsterisk(parentFqdn), ...
+            this.buildVisitor_.dcm_to_4dfp( ...
+                this.sessionData.seriesDicomAsterisk(parentFqdn), ...
                 'base', canonFp, ...
                 'options', opts);
             this.appendInfoFieldToIfh(info, 'KVP', canonFp);
@@ -323,10 +319,10 @@ classdef DicomSorter
             if (~isempty(re))
                 if (~isempty(re.subjid))
                     if (~isempty(re.visit))
-                        pth = fullfile(this.studyData.subjectsDir, this.scrubSubjectID(re.subjid), sprintf('V%s', re.visit), '');
+                        pth = fullfile(this.sessionData.subjectsDir, this.scrubSubjectID(re.subjid), sprintf('V%s', re.visit), '');
                         return
                     else
-                        pth = fullfile(this.studyData.subjectsDir, this.scrubSubjectID(re.subjid), '');
+                        pth = fullfile(this.sessionData.subjectsDir, this.scrubSubjectID(re.subjid), '');
                         return
                     end
                 end
@@ -428,26 +424,27 @@ classdef DicomSorter
  			%% DICOMSORTER
  			%  Usage:  this = DicomSorter(param_name, param_value)
             %  @param 'studyData' is an mlpipeline.StudyDataHandle.
+            %  left unset, DicomSorter attempts to use only sessionData.
             %  @param 'sessionData' is an mlpipeline.SessionData; 
-            %  left unset, DicomSorter attempts to use studyData.sessionData.
             
             ip = inputParser;
-            addParameter(ip, 'studyData',   [], @(x) isa(x, 'mlpipeline.StudyDataHandle') || isempty(x));
             addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData')     || isempty(x));
+            addParameter(ip, 'studyData',   [], @(x) isa(x, 'mlpipeline.StudyDataHandle') || isempty(x));
             parse(ip, varargin{:});
             
-            this.studyData___    = ip.Results.studyData;
-            this.sessionData___  = ip.Results.sessionData;
-            this.buildVisitor___ = mlfourdfp.FourdfpVisitor;
+            this.sessionData_  = ip.Results.sessionData;
+            if (~isempty(ip.Results.studyData))                
+                this.sessionData_.studyData = ip.Results.studyData;
+            end
+            this.buildVisitor_ = mlfourdfp.FourdfpVisitor;
  		end
  	end 
     
     %% PRIVATE
     
     properties (Access = private)
-        buildVisitor___
-        sessionData___
-        studyData___
+        buildVisitor_
+        sessionData_
     end
     
     methods (Static, Access = private)        

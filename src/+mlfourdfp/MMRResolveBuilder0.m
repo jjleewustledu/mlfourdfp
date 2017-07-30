@@ -122,7 +122,7 @@ classdef MMRResolveBuilder0 < mlfourdfp.T4ResolveBuilder0
             end
         end
         function incomplete = scanForIncompleteE7
-            pthPPG0 = pushd(fullfile(getenv('PPG'), 'jjlee', ''));
+            pthPPG0 = pushd(mlraichle.RaichleRegistry.instance.subjectsDir);
             incomplete = {};
             
             import mlsystem.* mlfourdfp.*;

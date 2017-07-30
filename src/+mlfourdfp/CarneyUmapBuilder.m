@@ -23,7 +23,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             setenv('PRINTV', '1');
             studyd = StudyData;            
             if (isempty(ip.Results.tag))
-                tagString = 'HYGLY*';
+                tagString = 'HYGLY3*';
             else                
                 tagString = [ip.Results.tag '*'];
             end
