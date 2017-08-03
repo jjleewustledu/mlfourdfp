@@ -29,9 +29,9 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             end
             
             eSess = DirTool(fullfile(studyd.subjectsDir, tagString));
-            parfor iSess = 1:length(eSess.fqdns)
+            for iSess = 1:length(eSess.fqdns)
 
-                eVisit = DirTool(fullfile(eSess.fqdns{iSess}, 'V*')); %#ok<PFBNS>
+                eVisit = DirTool(fullfile(eSess.fqdns{iSess}, 'V*'));
                 for iVisit = 1:length(eVisit.fqdns)
 
                     try
@@ -44,6 +44,9 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
                             'ac',          false, ...
                             'tracer',      '', ...
                             'vnumber',     T4ResolveUtilities.visitNumber(eVisit.dns{iVisit}));
+                        if (mlfourdfp.FourdfpVisitor.lexist_4dfp(sessd.umapSynth('typ', 'fqfp')))
+                            continue
+                        end
                         this = mlfourdfp.CarneyUmapBuilder('sessionData', sessd);                        
                         this.keepForensics = true;
                         this.buildUmap;                        

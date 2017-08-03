@@ -38,6 +38,7 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
             obj = mlfourdfp.Fourdfp(this.component.clone);
         end
         function       save(this)
+            this.component.filesuffix = this.FOURDFP_EXT;
             this.component.save;
         end
         function obj = saveas(this, fqfn)

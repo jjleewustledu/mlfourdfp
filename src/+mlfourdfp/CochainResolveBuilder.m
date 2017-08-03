@@ -17,14 +17,23 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
 	properties (Dependent)
  		chain
         cochain
+        lenParts
     end
     
-    methods %% GET
+    methods %% GET/SET
         function g = get.chain(this)
             g = this.chain_;
         end
         function g = get.cochain(this)
             g = this.cochain_;
+        end
+        function g = get.lenParts(this)
+            g = this.lenParts_;
+        end
+        
+        function this = set.lenParts(this, s)
+            assert(isnumeric(s) && s < this.imageComposite.length);
+            this.lenParts_ = s;
         end
     end
     
@@ -63,14 +72,14 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this = mlfourdfp.CochainResolveBuilder('sessionData', sessd);
             cd(sessd.tracerLocation('typ','path'));
             this.product_ = { ...
-                'fdgv1_frames1-8r2_resolved_sumt' ...
-                'fdgv1_frames9-16r2_resolved_sumt' ...
-                'fdgv1_frames17-24r2_resolved_sumt' ...
-                'fdgv1_frames25-32r2_resolved_sumt' ...
-                'fdgv1_frames33-40r2_resolved_sumt' ...
-                'fdgv1_frames41-48r2_resolved_sumt' ...
-                'fdgv1_frames49-56r2_resolved_sumt' ...
-                'fdgv1_frames57-64r2_resolved_sumt'};
+                'fdgv1fr1to8r2_resolved_sumt' ...
+                'fdgv1fr9to16r2_resolved_sumt' ...
+                'fdgv1fr17to24r2_resolved_sumt' ...
+                'fdgv1fr25to32r2_resolved_sumt' ...
+                'fdgv1fr33to40r2_resolved_sumt' ...
+                'fdgv1fr41to48r2_resolved_sumt' ...
+                'fdgv1fr49to56r2_resolved_sumt' ...
+                'fdgv1fr57to64r2_resolved_sumt'};
             this.product_ = cellfun(@(x) mlpet.PETImagingContext([x '.4dfp.ifh']), this.product_, 'UniformOutput', false);
             this = this.sumPartitions;   
             this = this.resolveComposite; % to umapSynth
@@ -109,7 +118,7 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function this = partitionTracer(this, varargin)
             sd = this.sessionData;            
             ip = inputParser;
-            addParameter(ip, 'fqfn', sd.tracerVisit('typ', '4dfp.ifh'), @(x) lexist(x, 'file'));
+            addParameter(ip, 'fqfn', sd.tracerRevision('typ', '4dfp.ifh'), @(x) lexist(x, 'file'));
             parse(ip, varargin{:}); 
             [lenp,len,pic] = this.lengthPart(ip.Results.fqfn);
             
@@ -118,10 +127,10 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             for p = 1:lenp
                 ff = pic.fourdfp;
                 if (p < lenp)                    
-                    ff.fileprefix = sprintf('%s_frames%i-%i', pic.fileprefix, (p-1)*lenp+1, p*lenp);
+                    ff.fileprefix = sprintf('%sfr%ito%i', pic.fileprefix, (p-1)*lenp+1, p*lenp);
                     ff.img = ff.img(:,:,:,(p-1)*lenp+1:p*lenp);
                 else
-                    ff.fileprefix = sprintf('%s_frames%i-%i', pic.fileprefix, (p-1)*lenp+1, len);   
+                    ff.fileprefix = sprintf('%sfr%ito%i', pic.fileprefix, (p-1)*lenp+1, len);   
                     ff.img = ff.img(:,:,:,(p-1)*lenp+1:len);
                 end
                 ff.save;
@@ -172,7 +181,7 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             ct4rb = mlfourdfp.CompositeT4ResolveBuilder('sessionData', this.sessionData, 'theImages', prod);
             ipr = struct('dest', []);
             ipr.dest = [prod{3:end}];
-            for p = 3:length(prod)                
+            for p = 3:length(prod) % 1->umapSynth; 2->mpr; cf. resolveComposite
                 ct4rb.indexOfReference = p;
                 ipr = ct4rb.resolveAndPaste(ipr);
                 prod{p} = ipr.resolved;
@@ -182,7 +191,7 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function this = reorderPartitionsResolved(this)
             prod = this.product_;
             prod1 = {};
-            for p = 3:length(prod)
+            for p = 3:length(prod) % 1->umapSynth; 2->mpr; cf. resolveComposite 
                 t4rb = mlfourdfp.T4ResolveBuilder('sessionData', this.sessionData, 'theImages', prod);
                 ipr = struct('dest', []);
                 ipr.dest = [prod{p}];
@@ -197,28 +206,27 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         end
         function parts = resolvePartitions(this)
                        
-            lenParts = 8;
-            Nparts = floor(this.imageComposite.length/lenParts);
+            Nparts = floor(this.imageComposite.length/this.lenParts);
             parts = cell(1, Nparts);
             
             parts{1} = this.imageComposite;
-            parts{1}.indicesLogical = this.indicesInterval(1, lenParts);
-            parts{1}.indexOfReference = lenParts;
+            parts{1}.indicesLogical = this.indicesInterval(1, this.lenParts);
+            parts{1}.indexOfReference = this.lenParts;
             this.imageComposite = parts{1};
             this = this.resolvePartition( ...
-                'resolveTag', sprintf('frames%i-%i_op_frame%i', 1, lenParts, parts{1}.indexOfReference));
+                'resolveTag', sprintf('fr%ito%i_op_frame%i', 1, this.lenParts, parts{1}.indexOfReference));
             
             for p = 2:Nparts
-                q = (p - 1)*lenParts + 1;
+                q = (p - 1)*this.lenParts + 1;
                 parts{p} = this.imageComposite;
-                parts{p}.indicesLogical = this.indicesInterval(q, q+lenParts-1);
+                parts{p}.indicesLogical = this.indicesInterval(q, q+this.lenParts-1);
                 parts{p}.indexOfReference = q;
                 this.imageComposite = parts{p};
                 if (Nparts == p)
                     this.keepForensics = false;
                 end
                 this = this.resolvePartition( ...
-                    'resolveTag', sprintf('frames%i-%i_op_frame%i', q, q+lenParts-1, parts{p}.indexOfReference));
+                    'resolveTag', sprintf('fr%ito%i_op_frame%i', q, q+this.lenParts-1, parts{p}.indexOfReference));
             end
         end
         function this  = resolvePartition(this, varargin)
@@ -229,10 +237,10 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             sessd0 = this.sessionData;
             sessd0.rnumber = sessd.rnumber - 1;
             pwd_ = pushd(sessd.tracerLocation);
-            this.printv('CochainResolveBuilder.resolveRevision.pwd -> %s\n', pwd);
+            this.printv('CochainResolveBuilder.resolvePartition.pwd -> %s\n', pwd);
             this = this.resolve( ...
-                'dest',      sessd.tracerRevision('typ', 'fp'), ... 
-                'source',    sessd0.tracerResolved('typ', 'fp'), ...
+                'dest',           sessd.tracerRevision('typ', 'fp'), ... 
+                'source',         sessd0.tracerResolved('typ', 'fp'), ...
                 'indicesLogical', this.indicesLogical, ...
                 varargin{:});
             popd(pwd_);
@@ -250,6 +258,7 @@ classdef CochainResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     properties (Access = protected)
         chain_
         cochain_
+        lenParts_ = 8
         resolvers_
         vendorSupport_
     end

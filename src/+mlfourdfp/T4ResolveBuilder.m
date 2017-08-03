@@ -28,7 +28,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 'theImages', FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages), ...
                 'indexOfReference', ip.Results.indexOfReference);
             this.blurArg_ = ip.Results.blurArg;
-            this.finished = mlpipeline.Finished(this, 'path', this.logPath, 'tag', lower(this.sessionData.tracer));
+            this.finished = mlpipeline.Finished(this, ...
+                'path', this.logPath, 'tag', lower(this.sessionData.tracerRevision('typ','fp')));
             cd(this.sessionData.tracerLocation);
         end
                 
@@ -57,16 +58,19 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'maskForImages',  'maskForImages',     @ischar);
             addParameter(ip, 'indicesLogical', this.indicesLogical, @islogical);
             addParameter(ip, 't40',            this.buildVisitor.transverse_t4, @(x) ischar(x) || iscell(x));
-            %addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
+            addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
             addParameter(ip, 'log',            '/dev/null',         @ischar);
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
-            %this.resolveTag = ip.Results.resolveTag;            
+            this.resolveTag = ip.Results.resolveTag;            
             ipr = ip.Results;
             ipr = this.expandBlurs(ipr);
             
             if (isempty(ipr.dest)); ipr.dest = ipr.source; end
-            ipr.resolved = ipr.source; % initialize this.revise            
+            ipr.resolved = ipr.source; % initialize this.revise   
+            if (this.isfinished)
+                return
+            end
             while (this.sessionData.rnumber <= this.NRevisions)
                 ipr.source = ipr.resolved;
                 ipr.dest   = this.fileprefixRevision(ipr.dest, this.sessionData.rnumber);

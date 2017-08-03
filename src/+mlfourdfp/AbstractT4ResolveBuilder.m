@@ -1,4 +1,4 @@
-classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
+classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & mlfourdfp.IT4ResolveBuilder
 	%% ABSTRACTT4RESOLVEBUILDER  
 
 	%  $Revision$
@@ -12,8 +12,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
 	properties
         doMaskBoundaries = false
         finished
-        keepForensics
-        logger % TODO
         mprToAtlT4
         msktgenThresh = 0
         NRevisions 
@@ -30,14 +28,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
         indicesLogical
         indexOfReference
         petBlur
- 		product
         referenceImage
         referenceWeight
         resolveTag
-        sessionData
         sourceImage
         sourceWeight
-        studyData
         theImages
     end
     
@@ -88,9 +83,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
         function g    = get.petBlur(this)
             g = this.sessionData.petBlur;
         end
-        function prod = get.product(this)
-            prod = this.product_;
-        end
         function rw   = get.referenceWeight(~)
             rw = [];
         end
@@ -104,21 +96,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
             assert(ischar(s));
             this.sessionData_.resolveTag = s;
         end
-        function g    = get.sessionData(this)
-            g = this.sessionData_;
-        end
-        function this = set.sessionData(this, s)
-            assert(isa(s, 'mlpipeline.SessionData'));
-            this.sessionData_ = s;
-        end
         function si   = get.sourceImage(this)
             si = this.imageComposite.sourceImage;
         end
         function sw   = get.sourceWeight(~)
             sw = [];
-        end
-        function g    = get.studyData(this)
-            g = this.sessionData.studyData;
         end
         function g    = get.theImages(this)
             g = this.imageComposite.theImages;
@@ -183,7 +165,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
                 this.doMaskBoundaries = aCopy.doMaskBoundaries;
                 this.finished = aCopy.finished;
                 this.keepForensics = aCopy.keepForensics;
-                this.logger = aCopy.logger;
+                this.logger_ = aCopy.logger;
                 this.mprToAtlT4 = aCopy.mprToAtlT4;
                 this.msktgenThresh = aCopy.msktgenThresh;
                 this.NRevisions = aCopy.NRevisions;
@@ -209,7 +191,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
             ip.KeepUnmatched = true;
             addParameter(ip, 'buildVisitor',     FourdfpVisitor, @(x) isa(x, 'mlfourdfp.FourdfpVisitor'));
             addParameter(ip, 'sessionData',      [],             @(x) isa(x, 'mlpipeline.ISessionData'));
-            addParameter(ip, 'NRevisions',       2,              @isnumeric);
+            addParameter(ip, 'NRevisions',       1,              @isnumeric);
             addParameter(ip, 'keepForensics',    true,           @islogical);
             %addParameter(ip, 'resolveTag',       '',             @ischar);
             addParameter(ip, 'theImages',        {},             @(x) iscell(x) || ischar(x));
@@ -217,7 +199,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
             
             this.buildVisitor_ = ip.Results.buildVisitor;
             this.sessionData_ = ip.Results.sessionData;
-            this.sessionData_.builder = this;  
             this.NRevisions = ip.Results.NRevisions;
             this.keepForensics = ip.Results.keepForensics;
             %if (~isempty(ip.Results.resolveTag))
@@ -274,6 +255,10 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
             end
         end
         function tf   = isfinished(this, varargin)
+            if (isempty(this.finished))
+                tf = false; 
+                return
+            end
             tf = this.finished.isfinished;
         end
         
@@ -510,14 +495,18 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
             parse(ip, varargin{:});
             
             import mlfourd.* mlfourdfp.*;
-            fqfp1 = [ip.Results.fp1 '_g0.1'];
-            fqfp2 = [ip.Results.fp2 '_g0.1'];
+            fqfp1 = [ip.Results.fp1 '_g0_1'];
+            fqfp2 = [ip.Results.fp2 '_g0_1'];
             bv = this.buildVisitor;
             if (~bv.lexist_4dfp(fqfp1))
-                fqfp1 = bv.gauss_4dfp(ip.Results.fp1, 0.1);
+                fqfp_ = bv.gauss_4dfp(ip.Results.fp1, 0.1);
+                fqfp1 = strrep(fqfp_, '0.1','0_1');
+                bv.move_4dfp(fqfp_, fqfp1);
             end
             if (~bv.lexist_4dfp(fqfp2))
-                fqfp2 = bv.gauss_4dfp(ip.Results.fp2, 0.1);
+                fqfp_ = bv.gauss_4dfp(ip.Results.fp2, 0.1);
+                fqfp2 = strrep(fqfp_, '0.1','0_1');
+                bv.move_4dfp(fqfp_, fqfp2);
             end
             ic1 = ImagingContext([fqfp1 '.4dfp.ifh']);
             ic2 = ImagingContext([fqfp2 '.4dfp.ifh']);
@@ -642,8 +631,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.IT4ResolveBuilder
         blurArg_
         buildVisitor_        
         imageComposite_
-        product_
-        sessionData_
         trash_ = {};
         xfm_
     end

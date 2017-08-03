@@ -61,6 +61,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             %addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
             addParameter(ip, 'log',            '/dev/null',         @ischar);
             parse(ip, varargin{:});
+            if (this.isfinished); return; end
             this.indicesLogical = ip.Results.indicesLogical;
             %this.resolveTag = ip.Results.resolveTag;  
             ipr = ip.Results;            
