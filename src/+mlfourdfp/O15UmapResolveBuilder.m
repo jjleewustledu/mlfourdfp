@@ -377,8 +377,6 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
         end
  	end 
     
-    %% PRIVATE
-    
     methods (Static) %%% DEBUG , Access = private)
         function this = triggering(varargin)
             

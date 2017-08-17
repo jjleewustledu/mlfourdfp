@@ -29,7 +29,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 'indexOfReference', ip.Results.indexOfReference);
             this.indexOfReference = ip.Results.indexOfReference;
             this.blurArg_ = ip.Results.blurArg; 
-            this.finished = mlpipeline.Finished(this, 'path', this.logPath, 'tag', lower(this.sessionData.tracer));
+            this.finished = mlpipeline.Finished(this, ...
+                'path', this.logPath, ...
+                'tag', sprintf('%s_NRev%i_idxOfRef%i', ...
+                       lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference));
             %cd(this.sessionData.tracerLocation);
         end
         
@@ -58,23 +61,26 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'maskForImages',  'maskForImages',     @ischar);
             addParameter(ip, 'indicesLogical', this.indicesLogical, @islogical);
             addParameter(ip, 't40',            this.buildVisitor.transverse_t4, @(x) ischar(x) || iscell(x));
-            %addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
+            addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
             addParameter(ip, 'log',            '/dev/null',         @ischar);
             parse(ip, varargin{:});
-            if (this.isfinished); return; end
+            %if (this.isfinished); return; end
             this.indicesLogical = ip.Results.indicesLogical;
-            %this.resolveTag = ip.Results.resolveTag;  
+            this.resolveTag = ip.Results.resolveTag;  
             ipr = ip.Results;            
             ipr = this.expandDest(ipr);
-            ipr = this.expandBlurs(ipr);
-            
-            ipr.resolved = ipr.source;
-            while (this.sessionData.rnumber <= this.NRevisions)
+            ipr = this.expandBlurs(ipr);            
+            ipr.resolved = ipr.source; 
+            if (this.isfinished)  
+                this = this.alreadyFinalized(ipr);
+                return
+            end
+            while (this.rnumber <= this.NRevisions)
                 ipr.source = ipr.resolved;
-                ipr.dest   = cellfun(@(x) this.fileprefixRevision(x, this.sessionData.rnumber), ipr.dest, 'UniformOutput', false);
+                ipr.dest   = cellfun(@(x) this.fileprefixRevision(x, this.rnumber), ipr.dest, 'UniformOutput', false);
                 [ipr,this] = this.revise(ipr);
-                assert(this.sessionData.rnumber < 10);
-            end            
+                assert(this.rnumber < 10);
+            end  
             this = this.finalize(ipr);
         end        
         function [ipr,this]   = revise(this, ipr)
@@ -87,7 +93,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.imageReg(ipr);
             ipr = this.resolveAndPaste(ipr); 
             this.teardownRevision;
-            this.sessionData_.rnumber = this.sessionData_.rnumber + 1;
+            this.rnumber = this.rnumber + 1;
         end  
         function                imageReg(this, ipr)
             stagedImgs  = this.lazyStageImages(ipr);
@@ -119,7 +125,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.deleteTrash;
         end  
         function [ipr,imgFns] = resolveAndPaste(this, ipr)
-            %% RESOLVEANDPASTE
+            %% RESOLVEANDPASTE - preassign ipr.dest, this.resolveTag, this.indexOfReference as needed.
             %  @param ipr is a struct w/ field dest, a cell array of fileprefixes || is a cell
             
             if (iscell(ipr))
@@ -128,9 +134,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 ipr.dest = ipr_cell;
             end
             dest_ = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
-            imgFns = this.fileprefixOfReference(ipr); % initial 
+            imgFns = this.fileprefixOfReference(ipr); % initial on ipr.dest
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f) && f ~= this.indexOfReference)
+                    %                    fileprefix of frame != this.indexOfReference
                     imgFns = [imgFns ' ' dest_{f}]; %#ok<AGROW>
                 end
             end
@@ -138,7 +145,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.buildVisitor.t4_resolve( ...
                 this.resolveTag, imgFns, ...
                 'options', '-v -m -s', 'log', this.resolveLog);
-            this.t4imgAll(ipr, this.resolveTag);
+            this.t4imgAll(ipr, this.resolveTag); % transform ipr.dest on this.resolveTag
 
             ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest_, 'UniformOutput', false); 
             movefile([this.resolveTag '.mat0'], [ipr.resolved{this.indexOfReference} '_' datestr(now, 30) '.mat0']);
@@ -167,6 +174,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             %deletefiles(fqfps{:});
         end  
         function this         = finalize(this, ipr)
+            this.ipResults_ = ipr;
+            this.rnumber = this.NRevisions;
             this.product_ = cell(1, sum(this.indicesLogical));
             il1 = 0;
             for il = 1:length(this.indicesLogical)
@@ -178,6 +187,20 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end
             this.teardownResolve(ipr);
             this.finished.touchFinishedMarker;  
+        end
+        function this         = alreadyFinalized(this, ipr)    
+            dest = cellfun(@(x) this.fileprefixRevision(x, this.NRevisions), ipr.dest, 'UniformOutput', false);
+            ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest, 'UniformOutput', false);             
+            this.ipResults_ = ipr;
+            this.rnumber = this.NRevisions;            
+            this.product_ = cell(1, sum(this.indicesLogical));            
+            il1 = 0;
+            for il = 1:length(this.indicesLogical)
+                if (this.indicesLogical(il))
+                    il1 = il1 + 1;                    
+                    this.product_{il1} = mlpet.PETImagingContext([ipr.resolved{il} '.4dfp.ifh']);
+                end
+            end
         end
         function                teardownResolve(this, ipr)
             if (this.keepForensics); return; end
@@ -193,8 +216,6 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         delete(sprintf('%sr%i_g*.nii.gz', fp0, r));
                     end
                 end
-                sessd = this.sessionData;
-                sessd.rnumber = r;
             end            
             delete(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
         end
@@ -202,7 +223,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         %% UTILITY
         
         function ipr   = copySourceToDest(this, ipr)
-            if (1 == this.sessionData.rnumber)
+            if (1 == this.rnumber)
                 try              
                     for s = 1:length(ipr.source)
                         if (this.indicesLogical(s))
@@ -227,8 +248,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             for s = 1:length(ipr.source)
                 if (this.indicesLogical(s))
                     this.buildVisitor.copy_4dfp( ...
-                        this.fileprefixResolved(ipr.dest{s}, this.sessionData.rnumber-1), ...
-                        this.fileprefixRevision(ipr.dest{s}, this.sessionData.rnumber));
+                        this.fileprefixResolved(ipr.dest{s}, this.rnumber-1), ...
+                        this.fileprefixRevision(ipr.dest{s}, this.rnumber));
                 end
             end
         end
@@ -282,100 +303,6 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end
         end
     end 
-
-    %% PROTECTED
-    
-    methods (Access = protected)   
-        function fqt4  = mapcycle( this, indexMin, indexMax, varargin)
-            switch (this.NRevisions)
-                case 1
-                    fqt4 = this.map1cycle(indexMin, indexMax, varargin{:});
-                case 2
-                    fqt4 = this.map2cycle(indexMin, indexMax, varargin{:});
-                otherwise
-                    error('mlfourdfp:unsupportedSwitchCase', ...
-                          'HeterogeneousT4ResolveBuilder.mapcycle.NRevisions -> %i', ...
-                          this.NRevisions);
-            end
-            assert(lexist(fqt4, 'file'));
-        end
-        function fqt4  = map1cycle(this, indexMin, indexMax, varargin)
-            ip = inputParser;
-            addRequired(ip, 'indexMin', @ischar);
-            addRequired(ip, 'indexMax', @ischar);
-            addOptional(ip, 't4output', sprintf('map1cycle_to_%sr1_t4', indexMax), @ischar);
-            parse(ip, indexMin, indexMax, varargin{:});
-            
-            pwd0 = pushd(this.sessionData.tracerT4Location);
-            b    = this.buildVisitor;
-            fqt4 = this.buildVisitor.t4_mul( ...
-                     this.T(indexMin, 1), ...
-                     b.t4_inv(this.T(indexMax, 1)), basename(ip.Results.t4output));
-            fqt4 = fullfile(this.sessionData.tracerT4Location, fqt4);
-            popd(pwd0);
-        end
-        function fqt4  = map2cycle(this, indexMin, indexMax, varargin)
-            ip = inputParser;
-            addRequired(ip, 'indexMin', @ischar);
-            addRequired(ip, 'indexMax', @ischar);
-            addOptional(ip, 't4output', sprintf('map2cycle_to_%sr2_t4',indexMax), @ischar);
-            parse(ip, indexMin, indexMax, varargin{:});
-            
-            b = this.buildVisitor;
-            
-            % 0 := indexMin, F := indexMax, r := resolved
-            pwd0 = pushd(this.sessionData.tracerT4Location);
-            T_0r_1 = this.T(indexMin, 1);
-            T_0r_2 = this.T(indexMin, 2);
-            T_rF_2 = b.t4_inv(this.T(indexMax, 2));
-            T_rF_1 = b.t4_inv(this.T(indexMax, 1));
-            fqt4   = b.t4_mul(T_0r_1, b.t4_mul(T_0r_2, b.t4_mul(T_rF_2, T_rF_1)), basename(ip.Results.t4output));  
-            fqt4   = fullfile(this.sessionData.tracerT4Location, fqt4);
-            popd(pwd0);
-        end
-        function t4    = T(this, varargin)
-            %% T selects an affine transformation file.
-            %  @param f1 is the originating frame/image (char).
-            %  @param r1 is the originating iteration of t4_resolve (numeric).
-            %  @param f2 is the destination frame/image (char).
-            %  @param r2 is the destination iteration of t4_resolve (numeric).
-            %  @param fq specifies whether to return the transformation file fully-qualified (logical).
-            
-            ip = inputParser;
-            addRequired( ip, 'f1', @ischar);
-            addRequired( ip, 'r1', @isnumeric);
-            addOptional( ip, 'f2', '',    @ischar);
-            addOptional( ip, 'r2', nan,   @isnumeric);
-            addParameter(ip, 'fq', false, @islogical);
-            parse(ip, varargin{:});
-            
-            if (isempty(ip.Results.f2) || isnan(ip.Results.r2))
-                t4__ = sprintf('%sr%i_to_resolved_t4', ...
-                    ip.Results.f1, ip.Results.r1);
-            else
-                t4__ = sprintf('%sr%i_to_%sr%i_t4', ...
-                    ip.Results.f1, ip.Results.r1, ip.Results.f2, ip.Results.r2);
-            end    
-            if (~ip.Results.fq)
-                t4 = t4__;
-            else
-                t4 = fullfile(this.sessionData.tracerT4Location, t4__);                
-            end
-        end                  
-        function this  = t4imgAll(this, ipr, tag)
-            tag = mybasename(tag);
-            for f = 1:length(this.indicesLogical)
-                if (this.indicesLogical(f))
-                    destFp = ipr.dest{f};
-                    this.buildVisitor.t4img_4dfp( ...
-                        sprintf('%s_to_%s_t4', destFp, tag), ...
-                        destFp, ...
-                        'out', sprintf('%s_%s', destFp, tag), ...
-                        'options', ['-O' ipr.dest{this.indexOfReference}]);
-                end
-            end
-        end  
-    end
     
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
  end

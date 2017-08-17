@@ -1,21 +1,19 @@
-classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
-	%% T4RESOLVEBUILDER  
+classdef T4BackResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
+	%% T4BACKRESOLVEBUILDER  
 
 	%  $Revision$
- 	%  was created 10-Mar-2016 21:29:59
- 	%  by jjlee,
- 	%  last modified $LastChangedDate$
- 	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
- 	%% It was developed on Matlab 9.0.0.307022 (R2016a) Prerelease for MACI64.  Copyright 2017 John Joowon Lee.
+ 	%  was created 07-Aug-2017 05:41:12 by jjlee,
+ 	%  last modified $LastChangedDate$ and placed into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
+ 	%% It was developed on Matlab 9.2.0.538062 (R2017a) for MACI64.  Copyright 2017 John Joowon Lee.
+
     
-    
-	methods
- 		function this = T4ResolveBuilder(varargin)
- 			%% T4RESOLVEBUILDER
- 			
-            this = this@mlfourdfp.AbstractT4ResolveBuilder(varargin{:});            
+	methods		  
+ 		function this = T4BackResolveBuilder(varargin)
+ 			%% T4BACKRESOLVEBUILDER
+
+ 			this = this@mlfourdfp.AbstractT4ResolveBuilder(varargin{:});
             ip = inputParser;
-            ip.KeepUnmatched = true;
+            ip.KeepUnmatched = true;           
             addOptional( ip, 'cctor', []);
             addParameter(ip, 'blurArg', 5.5, @isnumeric);
             addParameter(ip, 'indicesLogical', true, @islogical);
@@ -30,16 +28,16 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     'theImages', FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages), ...
                     'indexOfReference', ip.Results.indexOfReference);
                 this.blurArg_ = ip.Results.blurArg;
-            end
+            end            
             this.finished = mlpipeline.Finished(this, ...
                 'path', this.logPath, ...
                 'tag', sprintf('%s_NRev%i_idxOfRef%i', ...
                        lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference));
             cd(this.sessionData.tracerLocation);
-        end
+ 		end
                 
         function this         = resolve(this, varargin)
-            %% RESOLVE iteratively calls t4_resolve and writes a log.
+            %% BACKRESOLVE iteratively calls t4_resolve and writes a log.
             %  @param dest       is a f.q. fileprefix.
             %  @param destMask   "
             %  @param source     "
@@ -69,69 +67,30 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.indicesLogical = ip.Results.indicesLogical;
             this.resolveTag = ip.Results.resolveTag;            
             ipr = ip.Results;
-            ipr = this.expandBlurs(ipr);            
+            ipr = this.expandBlurs(ipr);
+            
             if (isempty(ipr.dest)); ipr.dest = ipr.source; end
             ipr.resolved = ipr.source; % initialize this.revise   
-            if (this.isfinished)  
-                this = this.alreadyFinalized(ipr);
-                return
-            end
-            while (this.rnumber <= this.NRevisions)
+            %if (this.isfinished)  
+            %    this = this.alreadyFinalized(ipr);
+            %    return
+            %end
+            while (this.sessionData.rnumber <= this.NRevisions)
                 ipr.source = ipr.resolved;
-                ipr.dest   = this.fileprefixRevision(ipr.dest, this.rnumber);
+                ipr.dest   = this.fileprefixRevision(ipr.dest, this.sessionData.rnumber);
                 [ipr,this] = this.revise(ipr);
-                assert(this.rnumber < 10);
+                assert(this.sessionData.rnumber < 10);
             end
             this = this.finalize(ipr);
         end
         function [ipr,this]   = revise(this, ipr)
             this.copySourceToDest(ipr); % crop/copy ipr.source to ipr.dest
-            this.imageRegLog = loggerFilename( ...
-                ipr.dest, 'func', 'T4ResolveBuilder_imageReg', 'path', this.logPath);
             this.resolveLog = loggerFilename( ...
                 ipr.dest, 'func', 'T4ResolveBuilder_resolveAndPaste', 'path', this.logPath);
             
-            this.imageReg(ipr);
             ipr = this.resolveAndPaste(ipr); 
             this.teardownRevision;
-            this.rnumber = this.rnumber + 1;
-        end
-        function                imageReg(this, ipr)
-            stagedImgs  = this.lazyStageImages(ipr);
-            blurredImgs = this.lazyBlurImages(ipr);
-            assert(length(stagedImgs) == length(blurredImgs));
-            for m = 1:length(stagedImgs)
-                for n = 1:length(stagedImgs)
-                    if (m ~= n) 
-                        try
-                            t4 = this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m});
-                            if (~lexist(t4))
-                                maskFp = this.lazyMaskForImages( ...
-                                    ipr.maskForImages, stagedImgs{m}, stagedImgs{n}, ...
-                                    this.imageComposite.fortranImageIndices(m), this.imageComposite.fortranImageIndices(n));
-                                this.buildVisitor.align_2051( ...
-                                    'dest',       blurredImgs{m}, ...
-                                    'source',     blurredImgs{n}, ...
-                                    'destMask',   maskFp, ...
-                                    'sourceMask', maskFp, ...
-                                    't4',         t4, ...
-                                    't4img_4dfp', false, ...
-                                    'log',        this.imageRegLog);
-                            end
-                            % t4_resolve requires an idiomatic naming convention for t4 files,
-                            % based on the names of frame files
-                            % e. g., fdgv1r1_frame13_to_fdgv1r1_frame72_t4                            
-                        catch ME
-                            copyfile( ...
-                                this.buildVisitor.transverse_t4, ...
-                                this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}), 'f');
-                            handwarning(ME);
-                        end
-                    end
-                end
-            end            
-            
-            this.deleteTrash;
+            this.sessionData_.rnumber = this.sessionData_.rnumber + 1;
         end
         function [ipr,imgFps] = resolveAndPaste(this, ipr)
             %% RESOLVEANDPASTE - preassign ipr.dest, this.resolveTag, this.indexOfReference as needed.
@@ -148,60 +107,12 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             this.buildVisitor.t4_resolve( ...
                 this.resolveTag, imgFps, ...
-                'options', '-v -m -s', 'log', this.resolveLog);
-            this.t4imgAll(ipr, this.resolveTag); % transform ipr.dest on this.resolveTag
-            this.reconstituteImages(ipr, this.resolveTag); % reconstitute (concat) all frames            
+                'options', '-v -m -s', 'log', this.resolveLog);          
             ipr.resolved = sprintf('%s_%s', dest_, this.resolveTag); 
-        end
-        function this         = resolveWithoutPaste(this, ipr)
-            %% RESOLVEANDPASTE - preassign ipr.dest, this.resolveTag, this.indexOfReference as needed.
-            %  @param ipr is a struct w/ field dest, a string fileprefix || is a string.
-            
-            this.resolveTag = '';
-            this.resolveTag = this.sessionData.resolveTagFrame(this.indexOfReference);     
-            this.resolveLog = loggerFilename( ...
-                ipr.dest, 'func', 'T4ResolveBuilder_resolveWithoutPaste', 'path', this.logPath);
-            dest_ = mybasename(ipr.dest);
-            imgFps = this.fileprefixOfReference(ipr, this.indexOfReference); % initial on ipr.dest
-            for f = 1:length(this.indicesLogical)
-                if (this.indicesLogical(f) && f ~= this.indexOfReference)
-                    %                    fileprefix of frame != this.indexOfReference
-                    imgFps = [imgFps ' ' this.fileprefixIndexed(dest_, f)]; %#ok<AGROW>
-                end
-            end
-            
-            this.buildVisitor.t4_resolve( ...
-                this.resolveTag, imgFps, ...
-                'options', '-v -m -s', 'log', this.resolveLog);            
-            ipr.resolved = sprintf('%s_%s', dest_, this.resolveTag); 
-        end
-        function                reconstituteImages(this, ipr, varargin)
-            ip = inputParser;
-            addRequired(ip, 'ipr', @isstruct);
-            addOptional(ip, 'tag', '', @ischar);
-            parse(ip, ipr, varargin{:});            
-            tag = mybasename(ip.Results.tag);
-            
-            import mlpet.*;
-            prev = PETImagingContext([ipr.dest '.4dfp.ifh']);
-            prev = prev.numericalNiftid; 
-            for f = 1:length(this.indicesLogical)
-                if (this.indicesLogical(f))
-                    curr = PETImagingContext([this.fileprefixIndexedResolved(ipr.dest, f, tag) '.4dfp.ifh']);
-                    curr = curr.numericalNiftid;
-                    prev.img(:,:,:,f) = curr.img(:,:,:);
-                end
-            end
-            if (~isempty(tag))
-                prev.filename = [ipr.dest '_' tag '.4dfp.ifh'];
-            else
-                prev.filename = [ipr.dest '.4dfp.ifh'];
-            end
-            prev.save;
-        end             
+        end        
         function this         = finalize(this, ipr)            
             this.ipResults_ = ipr;
-            this.rnumber = this.NRevisions;
+            this.sessionData.rnumber = this.NRevisions;
             this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);              
             this.buildVisitor.imgblur_4dfp(ipr.resolved, this.blurArg);
             this.teardownResolve(ipr);
@@ -211,7 +122,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             dest = this.fileprefixRevision(ipr.dest, this.NRevisions);
             ipr.resolved = sprintf('%s_%s', dest, this.resolveTag);            
             this.ipResults_ = ipr;
-            this.rnumber = this.NRevisions;
+            this.sessionData.rnumber = this.NRevisions;
             this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);
         end
         function                teardownResolve(this, ipr)
@@ -228,6 +139,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         delete(sprintf('%s_frame%i_g*.nii.gz', fp0, f));
                     end
                 end
+                sessd = this.sessionData;
+                sessd.rnumber = r;
             end            
             delete(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
         end
@@ -235,7 +148,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         %% UTILITY         
               
         function         copySourceToDest(this, ipr)
-            if (1 == this.rnumber)
+            if (1 == this.sessionData.rnumber)
                 try
                     if (~this.buildVisitor.lexist_4dfp(ipr.dest) && ...
                         ~strcmp(ipr.source, ipr.dest))
@@ -252,8 +165,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             %% COPYRESOLVEDTONEWREVISION opportunistically reuses existing files from the last iteration
             
             this.buildVisitor.copy_4dfp( ...
-                this.fileprefixResolved(ipr.dest, this.rnumber-1), ...
-                this.fileprefixRevision(ipr.dest, this.rnumber));
+                this.fileprefixResolved(ipr.dest, this.sessionData.rnumber-1), ...
+                this.fileprefixRevision(ipr.dest, this.sessionData.rnumber));
             dt = mlsystem.DirTool( ...
                 sprintf('%s_frame*_%s.4dfp.ifh', this.sessionData.tracerRevision('typ','fp'), this.resolveTag));
             for f = 1:length(dt.fns)
@@ -288,59 +201,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             fp = this.fileprefixIndexed(mybasename(ipr.dest), ip.Results.indexOfRef);
         end
-        function fqfp  = lazyBlurImage(this, ipr, blur)
-            %% LAZYBLURIMAGE uses specifiers in ipr; will not replace any existing image
-            %  @param ipr is a struct
-            %  @param blur is numeric
-            
-            fqfp_ = this.fileprefixIndexed(ipr.dest, ipr.currentIndex);
-            fqfp  = this.fileprefixBlurred(fqfp_, blur);
-            if (~this.buildVisitor.lexist_4dfp(fqfp))
-                this.buildVisitor.imgblur_4dfp(fqfp_, blur);
-            end
-        end
-        function fp    = lazyMaskForImages(this, maskFp, fpm, fpn, m, n)
-            if (isempty(maskFp))
-                fp = '';
-                return
-            end
-            
-            maskMN = sprintf('%s_%i_%i.4dfp.img', maskFp, m, n);
-            maskNM = sprintf('%s_%i_%i.4dfp.img', maskFp, n, m);
-            if (lexist(maskMN, 'file'))
-                fp = maskMN;
-            else
-                if (lexist(maskNM, 'file'))
-                    fp = maskNM;
-                else
-                    fp = this.maskForImages(fpm, fpn, maskMN);
-                end
-            end
-        end
-        function fqfps = lazyStageImages(this, ipr)
-            fqfps = this.imageComposite.lazyExtractImages(ipr);
-        end
-    end
-    
-    %% PROTECTED
-    
-    methods (Access = protected)
-        function this = t4imgAll(this, ipr, tag)
-            tag = mybasename(tag);
-            for f = 1:length(this.indicesLogical)
-                if (this.indicesLogical(f))
-                    frameFp = sprintf('%s_frame%i', ipr.dest, f);
-                    this.buildVisitor.t4img_4dfp( ...
-                        sprintf('%s_to_%s_t4', frameFp, tag), ...
-                        frameFp, ...
-                        'out', sprintf('%s_%s', frameFp, tag), ...
-                        'options', ['-O' frameFp]);
-                end
-            end
-        end
-    end
+ 	end 
 
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
-end
+ end
 
- 

@@ -889,20 +889,32 @@ classdef FourdfpVisitor
             delete([tmp  '.nii*']);
             delete([tmp  '.4dfp.*']);
         end
-        function      [f,l] = parseFirstOnLastBasenames(~, name1, name2)
+        function      [f,l] = parseFilenameT4(~, fn)
+            [pth,fp,x] = fileparts(fn);
+            assert(isempty(x), 'unexpected filesuffix %s', x);
+            
+            if (~contains(fp, '_t4'))
+                error('mlfourdfp:filenameError', 'FourdfpVisitor.parseFilenameT4 received a malformed t4 filename:  %s', fn);
+            end
+            r = regexp(fp, '(?<first>\S+)_to_(?<last>\S+)_t4', 'names');
+            f = fullfile(pth, r.first);
+            l = r.last;
+        end
+        function      [f,l] = parseFirstLastBasenames(~, name1, name2, sep)
             name1 = mybasename(name1);
-            name2 = mybasename(name2);            
-            if (lstrfind(name1, '_on_'))
-                idx = strfind(name1, '_on_');
+            name2 = mybasename(name2);    
+            assert(ischar(sep));
+            if (lstrfind(name1, sep))
+                idx = strfind(name1, sep);
                 f   = name1(1:idx(1)-1);
-            elseif (strfind(name1, '_to_'))                
+            elseif (contains(name1, '_to_'))
                 idx = strfind(name1, '_to_');
                 f   = name1(1:idx(1)-1);
             else
                 f   = name1;
             end
-            if (lstrfind(name2, '_on_'))
-                idx = strfind(name2, '_on_');
+            if (lstrfind(name2, sep))
+                idx = strfind(name2, sep);
                 l   = name2(idx(end)+4:end);
             elseif (lstrfind(name2, '_to_'))
                 idx  = strfind(name2, '_to_');
@@ -911,6 +923,12 @@ classdef FourdfpVisitor
             else
                 l   = name2;
             end            
+        end
+        function      [f,l] = parseFirstOnLastBasenames(this, name1, name2)
+            [f,l] = this.parseFirstLastBasenames(name1, name2, '_on_');
+        end
+        function      [f,l] = parseFirstOpLastBasenames(this, name1, name2)
+            [f,l] = this.parseFirstLastBasenames(name1, name2, '_op_');
         end
         function      [f,l] = parseFirstToLastBasenames(~, name1, name2)
             name1 = mybasename(name1);

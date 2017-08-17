@@ -1,5 +1,8 @@
 classdef HeterogeneousT4ResolveBuilder < mlfourdfp.T4ResolveBuilder
-
+    %% HETEROGENEOUST4RESOLVEBUILDER
+    %  @deprecated prefer CompositeT4ResolveBuilder.
+    %  JJL.  2017 Aug 4.
+    
     
 	methods 
 		  
@@ -52,15 +55,18 @@ classdef HeterogeneousT4ResolveBuilder < mlfourdfp.T4ResolveBuilder
             ipr = ip.Results;     
             ipr = this.expandDest(ipr);
             ipr = this.expandBlurs(ipr);
-            ipr.resolved = ipr.source;
-            while (ipr.rnumber <= this.NRevisions)
-                ipr = this.revise(ipr, ...
-                    ipr.resolved, ...
-                    this.fileprefixesRevision(ipr.dest, ipr.rnumber));
-                assert(ipr.rnumber < 10);
-            end            
-            
-            this.product_ = ipr.resolved;
+            ipr.resolved = ipr.source; 
+            if (~this.isfinished)
+                while (ipr.rnumber <= this.NRevisions)
+                    ipr = this.revise(ipr, ...
+                        ipr.resolved, ...
+                        this.fileprefixesRevision(ipr.dest, ipr.rnumber));
+                    assert(ipr.rnumber < 10);
+                end        
+            end
+            this.sessionData.rnumber = this.NRevisions;
+            this = this.finalize(ipr);
+            this.ipResults_ = ipr;
         end
         function ipr  = revise(this, ipr, source, dest)
             ipr.source = source;

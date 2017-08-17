@@ -607,8 +607,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             addParameter(ip, 'options', '', @ischar); % supplies -Oreference
             parse(ip, varargin{:});  
             [t4source,t4dest] = this.buildVisitor.parseFilenameT4(ip.Results.t4fn);  
-            t4source = this.markLastRevisionMarking(t4source);
-            sourceFqfp = this.markLastRevisionMarking(myfileprefix(ip.Results.source));
+            t4source = this.clipLastRevisionMarking(t4source);
+            sourceFqfp = this.clipLastRevisionMarking(myfileprefix(ip.Results.source));
             outFqfp = myfileprefix(ip.Results.out);
             if (isempty(outFqfp))
                 outFqfp = sprintf('%s_op_%s', this.ensureLastRnumber(sourceFqfp, 1), this.resolveDest(t4dest));
@@ -648,8 +648,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             addParameter(ip, 'options', '', @ischar); % supplies -Oreference
             parse(ip, varargin{:});  
             [t4source,t4dest] = this.buildVisitor.parseFilenameT4(ip.Results.t4fn);  
-            t4source = this.markLastRevisionMarking(t4source);
-            sourceFqfp = this.markLastRevisionMarking(myfileprefix(ip.Results.source));
+            t4source = this.clipLastRevisionMarking(t4source);
+            sourceFqfp = this.clipLastRevisionMarking(myfileprefix(ip.Results.source));
             outFqfp = myfileprefix(ip.Results.out);
             if (isempty(outFqfp))
                 outFqfp = sprintf('%s_op_%s', this.ensureLastRnumber(sourceFqfp, 2), this.resolveDest(t4dest));
@@ -665,27 +665,16 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             end
                      
             outr1Fqfp = sprintf('%s_op_%s', this.ensureLastRnumber(sourceFqfp, 1), this.resolveDest(t4dest));
-            if (~lexist(sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest), 'file'))
-                disp(this)
-                error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr2 could not find %s', ...
-                    sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest));
-            end
             this.buildVisitor.t4img_4dfp( ...
-                sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest), ...
+                sprintf('%sr1_to_%s_t4', t4source, t4dest), ...
                 sourceFqfp, ...
                 'out', outr1Fqfp, ...
                 'options', options);
-            if (~lexist(sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2), t4dest), 'file'))
-                disp(this)
-                error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr2 could not find %s', ...
-                    sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2), t4dest));
-            end
             this.buildVisitor.t4img_4dfp( ...
-                sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2), t4dest), ...
+                sprintf('%sr2_to_%s_t4', t4source, t4dest), ...
                 outr1Fqfp, ...
                 'out', outFqfp, ...
                 'options', options); 
-            deleteExisting([outr1Fqfp '.4dfp.*']);
             this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
         end
  	end 
@@ -720,13 +709,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
                 return
             end
             fqfp = sprintf('%sr%i', fqfp, r);
-        end
-        function fp   = markLastRevisionMarking(~, fp)
-            pos = regexp(fp, 'r\d$');
-            if (~isempty(pos))
-                pos = pos(end);
-                fp(pos:pos+1) = 'r0';
-            end
         end
         function this = pushTrash(this, t)
             this.trash_ = [this.trash_ t];

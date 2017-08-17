@@ -1356,7 +1356,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
         end 
         function         msktgenInitial(this, ipr)
             %% MSKTGENINITIAL 
-            %  @params ipr is ip.Results from this.t4ResolveParser
+            %  @param ipr is ip.Results from this.t4ResolveParser
             %  @returns
             %  - blurred MPRAGE named [ipr.mprage '_gNN']
             %  -         summed dynamic imaging named [ipr.dest '_sumt']
@@ -1433,7 +1433,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
         end
     end
     
-    %% DEPRECATED
+    %  @deprecated
     
     properties (Hidden)
         NIterations = 1
@@ -1563,7 +1563,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
         end
         function this  = msktgenInitial0(this, ipr)
             %% MSKTGENINITIAL 
-            %  @params ipr is ip.Results from this.t4ResolveParser
+            %  @param ipr is ip.Results from this.t4ResolveParser
             %  @returns
             %  - blurred MPRAGE named [ipr.mprage '_gNN']
             %  -         summed dynamic imaging named [ipr.dest '_sumt']

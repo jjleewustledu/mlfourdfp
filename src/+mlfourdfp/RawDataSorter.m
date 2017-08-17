@@ -86,7 +86,7 @@ classdef RawDataSorter
         end
         function this = copy(varargin)
             %% COPY is a convenience static function for copyRawData, copyUTE
-            %  @params rawdataFolder from /path/to/rawdata.
+            %  @param rawdataFolder from /path/to/rawdata.
             
             import mlfourdfp.* mlraichle.*;            
             ip = inputParser;
@@ -123,7 +123,7 @@ classdef RawDataSorter
         end
         function this = move(varargin)
             %% MOVE is a convenience static function for moveRawData, copyUTE
-            %  @params rawdataFolder from /path/to/rawdata.
+            %  @param rawdataFolder from /path/to/rawdata.
             
             import mlfourdfp.* mlraichle.*;            
             ip = inputParser;

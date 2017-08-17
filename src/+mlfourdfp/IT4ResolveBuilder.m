@@ -34,7 +34,7 @@ classdef IT4ResolveBuilder < mlfourdfp.IImageBuilder
         t4Path(this)
         teardownLogs(this)
         teardownT4s(this)
-        teardownResolve(this)
+        teardownRevision(this)
  	end 
 
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy

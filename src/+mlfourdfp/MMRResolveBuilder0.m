@@ -474,7 +474,7 @@ classdef MMRResolveBuilder0 < mlfourdfp.T4ResolveBuilder0
         end
     end
     
-    %% DEPRECATED
+    %  @deprecated
     
     methods (Hidden)
         function revertToLM00(this, nacPth)
