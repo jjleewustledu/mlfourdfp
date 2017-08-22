@@ -72,7 +72,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
         end
         
         function [this,umap] = buildUmap(this, varargin)
-                [this,umap] = this.buildCarneyUmap(varargin{:});
+            [this,umap] = this.buildCarneyUmap(varargin{:});
         end
         function [this,umap] = buildCarneyUmap(this)
             if (this.isfinished)

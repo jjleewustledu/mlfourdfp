@@ -37,19 +37,6 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         end
         
         function this         = resolve(this, varargin)
-            %% RESOLVE iteratively calls t4_resolve and writes a log.
-            %  @param dest       is a f.q. fileprefix.
-            %  @param destMask   "
-            %  @param source     "
-            %  @param sourceMask "
-            %  @param destBlur   is the fwhm blur applied by imgblur_4dfp to dest.            
-            %  @param sourceBlur is the fwhm blur applied by imgblur_4dfp to source.
-            %  @param maskForImages is a f.q. fileprefix.
-            %  @param indicesLogical is logical.
-            %  @param t40        is the initial t4-file for the transformation:  transverse is default.
-            %  @param resolveTag is char.
-            %  @param log        is the f.q. filename of the log file.
-            
             import mlfourdfp.*;
             ip = inputParser;
             addParameter(ip, 'dest',           {},                  @iscell);
@@ -92,7 +79,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             this.imageReg(ipr);
             ipr = this.resolveAndPaste(ipr); 
-            this.teardownRevision;
+            this.teardownRevision(ipr);
             this.rnumber = this.rnumber + 1;
         end  
         function                imageReg(this, ipr)

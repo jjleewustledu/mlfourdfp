@@ -39,19 +39,6 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         end
                 
         function this         = resolve(this, varargin)
-            %% RESOLVE iteratively calls t4_resolve and writes a log.
-            %  @param dest       is a f.q. fileprefix.
-            %  @param destMask   "
-            %  @param source     "
-            %  @param sourceMask "
-            %  @param destBlur   is the fwhm blur applied by imgblur_4dfp to dest.            
-            %  @param sourceBlur is the fwhm blur applied by imgblur_4dfp to source.
-            %  @param maskForImages is a f.q. fileprefix.
-            %  @param indicesLogical is logical.
-            %  @param t40        is the initial t4-file for the transformation:  transverse is default.
-            %  @param resolveTag is char.
-            %  @param log        is the f.q. filename of the log file.
-            
             import mlfourdfp.*;
             ip = inputParser;
             addParameter(ip, 'dest',           '',                  @ischar);
@@ -93,7 +80,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             this.imageReg(ipr);
             ipr = this.resolveAndPaste(ipr); 
-            this.teardownRevision;
+            this.teardownRevision(ipr);
             this.rnumber = this.rnumber + 1;
         end
         function                imageReg(this, ipr)
@@ -199,7 +186,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end
             prev.save;
         end             
-        function this         = finalize(this, ipr)            
+        function this         = finalize(this, ipr)
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;
             this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);              
@@ -207,7 +194,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.teardownResolve(ipr);
             this.finished.touchFinishedMarker;          
         end
-        function this         = alreadyFinalized(this, ipr)            
+        function this         = alreadyFinalized(this, ipr)
             dest = this.fileprefixRevision(ipr.dest, this.NRevisions);
             ipr.resolved = sprintf('%s_%s', dest, this.resolveTag);            
             this.ipResults_ = ipr;
@@ -219,13 +206,13 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             for r = 1:this.NRevisions                
                 fp0 = this.fileprefixRevision(ipr.dest, r);
-                for f = 1:length(this.indicesLogical)
-                    if (this.indicesLogical(f))
+                for il = 1:length(this.indicesLogical)
+                    if (this.indicesLogical(il))
                         %delete(sprintf('%s_frame%i.4dfp.*', fp0, f));
-                        delete(sprintf('%s_frame%i_b*.4dfp.*', fp0, f));
-                        delete(sprintf('%s_frame%i_C*.4dfp.*', fp0, f));
+                        delete(sprintf('%s_frame%i_b*.4dfp.*', fp0, il));
+                        delete(sprintf('%s_frame%i_C*.4dfp.*', fp0, il));
                         %delete(sprintf('%s_frame%i_%s.4dfp.*', fp0, f, this.resolveTag));
-                        delete(sprintf('%s_frame%i_g*.nii.gz', fp0, f));
+                        delete(sprintf('%s_frame%i_g*.nii.gz', fp0, il));
                     end
                 end
             end            

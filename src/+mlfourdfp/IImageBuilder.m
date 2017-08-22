@@ -10,7 +10,6 @@ classdef (Abstract) IImageBuilder < mlpipeline.IImageBuilder
  	
 
 	properties (Abstract)
-        buildVisitor
  	end
 
 	methods (Abstract, Static)

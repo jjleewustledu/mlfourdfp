@@ -11,7 +11,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
 
 	properties
         doMaskBoundaries = false
-        finished
         mprToAtlT4
         msktgenThresh = 0
         NRevisions 
@@ -37,7 +36,42 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
         theImages
     end
     
-    methods %% GET/SET
+    methods (Static)
+        function      diaryv(name)
+            assert(ischar(name));
+            if (~isempty(getenv('PRINTV')))
+                diary(sprintf('mlfourdfp_AbstractT4ResolveBuilder%s.txt', name)); 
+            end
+        end
+        function fn = fourdfpHdr(fp)
+            fn = [fp '.4dfp.hdr'];
+        end
+        function fn = fourdfpIfh(fp)
+            fn = [fp '.4dfp.ifh'];
+        end
+        function fn = fourdfpImg(fp)
+            fn = [fp '.4dfp.img'];
+        end
+        function fn = fourdfpImgRec(fp)
+            fn = [fp '.4dfp.img.rec'];
+        end
+        function f  = frameNumber(str, offset)
+            names = regexp(str, '\w+(-|_)(F|f)rame(?<f>\d+)', 'names');
+            f = str2double(names.f) + offset;
+        end
+        function      printv(varargin)
+            if (~isempty(getenv('PRINTV')))
+                fprintf('mlfourdfp.AbstractT4ResolveBuilder.');
+                fprintf(varargin{:});
+                fprintf('\n');
+            end
+        end
+    end
+    
+    methods 
+        
+        %% GET/SET
+        
         function g    = get.blurArg(this)
             if (~isempty(this.blurArg_))
                 g = this.blurArg_;
@@ -116,109 +150,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
         function this = set.theImages(this, s)
             this.imageComposite_.theImages = s;
         end
-    end
     
-    methods (Static)
-        function      diaryv(name)
-            assert(ischar(name));
-            if (~isempty(getenv('PRINTV')))
-                diary(sprintf('mlfourdfp_AbstractT4ResolveBuilder%s.txt', name)); 
-            end
-        end
-        function fn = fourdfpHdr(fp)
-            fn = [fp '.4dfp.hdr'];
-        end
-        function fn = fourdfpIfh(fp)
-            fn = [fp '.4dfp.ifh'];
-        end
-        function fn = fourdfpImg(fp)
-            fn = [fp '.4dfp.img'];
-        end
-        function fn = fourdfpImgRec(fp)
-            fn = [fp '.4dfp.img.rec'];
-        end
-        function f  = frameNumber(str, offset)
-            names = regexp(str, '\w+(-|_)(F|f)rame(?<f>\d+)', 'names');
-            f = str2double(names.f) + offset;
-        end
-        function      printv(varargin)
-            if (~isempty(getenv('PRINTV')))
-                fprintf('mlfourdfp.AbstractT4ResolveBuilder.');
-                fprintf(varargin{:});
-                fprintf('\n');
-            end
-        end
-    end
-    
-	methods 
-		function this = AbstractT4ResolveBuilder(varargin)
- 			%% ABSTRACTT4RESOLVEBUILDER
- 			%  @param named blurArg
- 			%  @param named buildVisitor
-            %  @param named sessionData
-            %  @param named indicesLogical
-            %  @param named indexOfReference
-            %  @param named NRevisions
-            %  @param named keepForensics
-            %  @param named resolveTag
- 			
-            if (0 == nargin); return; end
-            
-            %% invoke copy-ctor
-            
-            if (1 == nargin && isa(varargin{1}, 'mlfourdfp.AbstractT4ResolveBuilder'))
-                aCopy = varargin{1};
-                
-                %% properties
-                this.doMaskBoundaries = aCopy.doMaskBoundaries;
-                this.finished = aCopy.finished;
-                this.keepForensics = aCopy.keepForensics;
-                this.logger_ = aCopy.logger;
-                this.mprToAtlT4 = aCopy.mprToAtlT4;
-                this.msktgenThresh = aCopy.msktgenThresh;
-                this.NRevisions = aCopy.NRevisions;
-                
-                this.imageRegLog = aCopy.imageRegLog;
-                this.resolveLog = aCopy.resolveLog;
-                
-                %% properties (Access = protected)
-                this.blurArg_ = aCopy.blurArg_;
-                this.buildVisitor_ = aCopy.buildVisitor_;
-                this.imageComposite_ = aCopy.imageComposite_;
-                this.product_ = aCopy.product_;
-                this.sessionData_ = aCopy.sessionData_;
-                this.trash_ = aCopy.trash_;
-                this.xfm_ = aCopy.xfm_; 
-                this.ipResults_ = aCopy.ipResults_;
-                return
-            end
-            
-            %% manage parameters 
-            
-            import mlfourdfp.*;
-            ip = inputParser;
-            ip.KeepUnmatched = true;
-            addParameter(ip, 'buildVisitor',     FourdfpVisitor, @(x) isa(x, 'mlfourdfp.FourdfpVisitor'));
-            addParameter(ip, 'sessionData',      [],             @(x) isa(x, 'mlpipeline.ISessionData'));
-            addParameter(ip, 'NRevisions',       1,              @isnumeric);
-            addParameter(ip, 'keepForensics',    true,           @islogical);
-            %addParameter(ip, 'resolveTag',       '',             @ischar);
-            addParameter(ip, 'theImages',        {},             @(x) iscell(x) || ischar(x));
-            addParameter(ip, 'ipResults',        struct([]),     @isstruct);
-            parse(ip, varargin{:});
-            
-            this.buildVisitor_ = ip.Results.buildVisitor;
-            this.sessionData_ = ip.Results.sessionData;
-            this.NRevisions = ip.Results.NRevisions;
-            this.keepForensics = ip.Results.keepForensics;
-            %if (~isempty(ip.Results.resolveTag))
-            %    this.resolveTag = ip.Results.resolveTag;
-            %end
-            this.theImages = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
-            this.ipResults_ = ip.Results.ipResults;
-            
-            this = this.mpr2atl;
-        end
+        %%
         
         function        teardownLogs(this)
             if (this.keepForensics); return; end
@@ -241,7 +174,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
                     sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
                 pwd);
         end
-        function        teardownRevision(this)
+        function        teardownRevision(this, ipr)
+            delete(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
             if (this.keepForensics); return; end
             
             this.teardownLogs;
@@ -265,15 +199,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
                 mkdir(pth);
             end
         end
-        function tf   = isfinished(this, varargin)
-            if (isempty(this.finished))
-                tf = false; 
-                return
-            end
-            tf = this.finished.isfinished;
-        end
-        
-        %% UTILITY
         
         function a     = atlas(this, varargin) 
             a = this.sessionData.atlas(varargin{:});
@@ -688,6 +613,74 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             deleteExisting([outr1Fqfp '.4dfp.*']);
             this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
         end
+        
+		function this = AbstractT4ResolveBuilder(varargin)
+ 			%% ABSTRACTT4RESOLVEBUILDER
+ 			%  @param named blurArg
+ 			%  @param named buildVisitor
+            %  @param named sessionData
+            %  @param named indicesLogical
+            %  @param named indexOfReference
+            %  @param named NRevisions
+            %  @param named keepForensics
+            %  @param named resolveTag
+ 			
+            if (0 == nargin); return; end
+            this = this@mlpipeline.AbstractDataBuilder(varargin{:});
+            
+            %% invoke copy-ctor
+            
+            if (1 == nargin && isa(varargin{1}, 'mlfourdfp.AbstractT4ResolveBuilder'))
+                aCopy = varargin{1};
+                
+                %% properties
+                this.doMaskBoundaries = aCopy.doMaskBoundaries;
+                this.finished = aCopy.finished;
+                this.keepForensics = aCopy.keepForensics;
+                this.logger_ = aCopy.logger;
+                this.mprToAtlT4 = aCopy.mprToAtlT4;
+                this.msktgenThresh = aCopy.msktgenThresh;
+                this.NRevisions = aCopy.NRevisions;
+                
+                this.imageRegLog = aCopy.imageRegLog;
+                this.resolveLog = aCopy.resolveLog;
+                
+                %% properties (Access = protected)
+                this.blurArg_ = aCopy.blurArg_;
+                this.buildVisitor_ = aCopy.buildVisitor_;
+                this.imageComposite_ = aCopy.imageComposite_;
+                this.product_ = aCopy.product_;
+                this.sessionData_ = aCopy.sessionData_;
+                this.trash_ = aCopy.trash_;
+                this.xfm_ = aCopy.xfm_; 
+                this.ipResults_ = aCopy.ipResults_;
+                return
+            end
+            
+            %% manage parameters 
+            
+            import mlfourdfp.*;
+            ip = inputParser;
+            ip.KeepUnmatched = true;
+            addParameter(ip, 'buildVisitor',     FourdfpVisitor,   @(x) isa(x, 'mlfourdfp.FourdfpVisitor'));
+            addParameter(ip, 'NRevisions',       2,                @isnumeric);
+            addParameter(ip, 'keepForensics',    true,             @islogical);
+            %addParameter(ip, 'resolveTag',       '',               @ischar);
+            addParameter(ip, 'theImages',        {},               @(x) iscell(x) || ischar(x));
+            addParameter(ip, 'ipResults',        struct([]),       @isstruct);
+            parse(ip, varargin{:});
+            
+            this.buildVisitor_ = ip.Results.buildVisitor;
+            this.NRevisions = ip.Results.NRevisions;
+            this.keepForensics = ip.Results.keepForensics;
+            %if (~isempty(ip.Results.resolveTag))
+            %    this.resolveTag = ip.Results.resolveTag;
+            %end
+            this.theImages = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
+            this.ipResults_ = ip.Results.ipResults;
+            
+            this = this.mpr2atl;
+        end        
  	end 
 
     %% PROTECTED
