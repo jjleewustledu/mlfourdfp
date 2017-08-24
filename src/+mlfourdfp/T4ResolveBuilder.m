@@ -31,11 +31,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     'indexOfReference', ip.Results.indexOfReference);
                 this.blurArg_ = ip.Results.blurArg;
             end
-            this.finished = mlpipeline.Finished(this, ...
-                'path', this.logPath, ...
-                'tag', sprintf('%s_NRev%i_idxOfRef%i', ...
-                       lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference));
-            cd(this.sessionData.tracerLocation);
+            this = this.updateFinished;
         end
                 
         function this         = resolve(this, varargin)
@@ -123,46 +119,32 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function [ipr,imgFps] = resolveAndPaste(this, ipr)
             %% RESOLVEANDPASTE - preassign ipr.dest, this.resolveTag, this.indexOfReference as needed.
             %  @param ipr is a struct w/ field dest, a string fileprefix || is a string.
+
+            assert(isstruct(ipr));
             
-            dest_ = mybasename(ipr.dest);
-            imgFps = this.fileprefixOfReference(ipr, this.indexOfReference); % initial on ipr.dest
+            pwd0   = pushd(fileparts(ipr.dest));
+            imgFps = mybasename(this.fileprefixOfReference(ipr, this.indexOfReference)); % initial on ipr.dest
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f) && f ~= this.indexOfReference)
                     %                    fileprefix of frame != this.indexOfReference
-                    imgFps = [imgFps ' ' this.fileprefixIndexed(dest_, f)]; %#ok<AGROW>
+                    imgFps = [imgFps ' ' mybasename(this.fileprefixIndexed(ipr.dest, f))]; %#ok<AGROW>
                 end
-            end
-            
+            end  
+            %% Must use short fileprefixes in calls to t4_resolve to avoid filenaming error by t4_resolve.  
+            %  t4_resolve: /data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame1_to_/data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame8_t4 read error          
             this.buildVisitor.t4_resolve( ...
                 this.resolveTag, imgFps, ...
                 'options', '-v -m -s', 'log', this.resolveLog);
             this.t4imgAll(ipr, this.resolveTag); % transform ipr.dest on this.resolveTag
-            this.reconstituteImages(ipr, this.resolveTag); % reconstitute (concat) all frames            
-            ipr.resolved = sprintf('%s_%s', dest_, this.resolveTag); 
-        end
-        function this         = resolveWithoutPaste(this, ipr)
-            %% RESOLVEANDPASTE - preassign ipr.dest, this.resolveTag, this.indexOfReference as needed.
-            %  @param ipr is a struct w/ field dest, a string fileprefix || is a string.
-            
-            this.resolveTag = '';
-            this.resolveTag = this.sessionData.resolveTagFrame(this.indexOfReference);     
-            this.resolveLog = loggerFilename( ...
-                ipr.dest, 'func', 'T4ResolveBuilder_resolveWithoutPaste', 'path', this.logPath);
-            dest_ = mybasename(ipr.dest);
-            imgFps = this.fileprefixOfReference(ipr, this.indexOfReference); % initial on ipr.dest
-            for f = 1:length(this.indicesLogical)
-                if (this.indicesLogical(f) && f ~= this.indexOfReference)
-                    %                    fileprefix of frame != this.indexOfReference
-                    imgFps = [imgFps ' ' this.fileprefixIndexed(dest_, f)]; %#ok<AGROW>
-                end
-            end
-            
-            this.buildVisitor.t4_resolve( ...
-                this.resolveTag, imgFps, ...
-                'options', '-v -m -s', 'log', this.resolveLog);            
-            ipr.resolved = sprintf('%s_%s', dest_, this.resolveTag); 
+            this.reconstituteImages(ipr, this.resolveTag); % reconstitute all frames            
+            ipr.resolved = sprintf('%s_%s', ipr.dest, this.resolveTag);
+            popd(pwd0);
         end
         function                reconstituteImages(this, ipr, varargin)
+            if (this.skipT4imgAll)
+                return
+            end
+            
             ip = inputParser;
             addRequired(ip, 'ipr', @isstruct);
             addOptional(ip, 'tag', '', @ischar);
@@ -222,6 +204,10 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         %% UTILITY         
               
         function         copySourceToDest(this, ipr)
+            if (this.skipT4imgAll)
+                return
+            end
+            
             if (1 == this.rnumber)
                 try
                     if (~this.buildVisitor.lexist_4dfp(ipr.dest) && ...
@@ -273,7 +259,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addOptional(ip, 'indexOfRef', this.indexOfReference, @isnumeric)
             parse(ip, varargin{:});
             
-            fp = this.fileprefixIndexed(mybasename(ipr.dest), ip.Results.indexOfRef);
+            fp = this.fileprefixIndexed(ipr.dest, ip.Results.indexOfRef); % mybasename =: BUG?
         end
         function fqfp  = lazyBlurImage(this, ipr, blur)
             %% LAZYBLURIMAGE uses specifiers in ipr; will not replace any existing image
@@ -313,6 +299,9 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     
     methods (Access = protected)
         function this = t4imgAll(this, ipr, tag)
+            if (this.skipT4imgAll)
+                return
+            end
             tag = mybasename(tag);
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f))

@@ -23,6 +23,8 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
         
         frameRegLog     
         t4ResolveLog
+        
+        finished
     end
     
 	properties (Dependent)

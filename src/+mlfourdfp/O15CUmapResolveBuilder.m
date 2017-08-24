@@ -97,7 +97,7 @@ classdef O15CUmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             sessd.tracer = 'FDG';
             assert(this.f18UmapResolveBuilder_.isfinished);
             cd(sessd.vLocation);
-            this.finished = mlpipeline.Finished(this, 'path', this.logPath, 'tag', lower(this.sessionData.tracer));
+            this.finished_ = mlpipeline.Finished(this, 'path', this.logPath, 'tag', lower(this.sessionData.tracer));
         end
         
         function this = buildUmaps(this, varargin)

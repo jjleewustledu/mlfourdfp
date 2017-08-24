@@ -171,7 +171,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
                 
                 %% properties
                 this.doMaskBoundaries = aCopy.doMaskBoundaries;
-                this.finished = aCopy.finished;
+                this.finished_ = aCopy.finished;
                 this.keepForensics = aCopy.keepForensics;
                 this.logger_ = aCopy.logger;
                 this.mprToAtlT4 = aCopy.mprToAtlT4;

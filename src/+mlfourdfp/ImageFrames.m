@@ -47,6 +47,19 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             end
             g = this.theImages_;
         end
+        
+        function this = set.theImages(this, s)
+            assert(iscell(s) || ischar(s));
+            this.theImages_ = mlfourdfp.FourdfpVisitor.ensureSafeFileprefix(s);
+            this.length_ = this.readLength(this.theImages);
+            if (this.fractionalImageFrameThresh < eps)
+                this.nonEmptyImageIndices_ = true(1, this.length_);
+            else
+                this.nonEmptyImageIndices_ = this.nonEmptyImageIndices;
+            end
+            this.indicesLogical = true;
+            [this.indexMin_,this.indexMax_] = this.findIndexBounds;
+        end
     end
     
 	methods
@@ -77,7 +90,8 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             this.indicesLogical = ip.Results.indicesLogical;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
             %this.sourceImageTable_ = this.readSourceImageTable__;
-        end        
+        end       
+        
         function fqfp  = lazyExtractImage(this, ipr)
             %% LAZYEXTRACTIMAGE uses specifiers in ipr; will not replace any existing frame
             

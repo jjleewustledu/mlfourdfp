@@ -17,11 +17,14 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
         
         imageRegLog
         resolveLog
+        skipT4imgAll = false
     end
     
     properties (Dependent)
         blurArg
-        buildVisitor        
+        buildVisitor  
+        epoch
+        epochLabel      
         gaussArg
         imageComposite
         indicesLogical
@@ -91,6 +94,16 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
         function this = set.buildVisitor(this, v)
             assert(isa(v, 'mlfourdfp.FourdfpVisitor'));
             this.buildVisitor_ = v;
+        end
+        function g    = get.epoch(this)
+            g = this.sessionData_.epoch;
+        end
+        function this = set.epoch(this, s)
+            assert(isnumeric(s));
+            this.sessionData_.epoch = s;
+        end
+        function g    = get.epochLabel(this)
+            g = this.sessionData_.epochLabel;
         end
         function g    = get.gaussArg(this)
             %g = 1.1;
@@ -489,7 +502,10 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             log = sprintf('msktgenMprage_%s.log', datestr(now, 30));
             this.buildVisitor.mpr2atl_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
             this.buildVisitor.msktgen_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
-        end        
+        end   
+        function tag   = resolveTagFrame(this, varargin)
+            tag = this.sessionData.resolveTagFrame(varargin{:});
+        end    
         function fqfp  = sumTimes(this, varargin)
             ip = inputParser;
             ip.KeepUnmatched = true;
@@ -613,6 +629,16 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             deleteExisting([outr1Fqfp '.4dfp.*']);
             this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
         end
+        function this  = updateFinished(this, varargin)
+            ip = inputParser;
+            addParameter(ip, 'tag', ...
+                sprintf('%s_NRev%i_idxOfRef%i', ...
+                    lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference), ...
+                @ischar);
+            parse(ip, varargin{:});
+            
+            this.finished_ = mlpipeline.Finished(this, 'path', this.logPath, 'tag', ip.Results.tag);
+        end
         
 		function this = AbstractT4ResolveBuilder(varargin)
  			%% ABSTRACTT4RESOLVEBUILDER
@@ -635,7 +661,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
                 
                 %% properties
                 this.doMaskBoundaries = aCopy.doMaskBoundaries;
-                this.finished = aCopy.finished;
+                this.finished_ = aCopy.finished;
                 this.keepForensics = aCopy.keepForensics;
                 this.logger_ = aCopy.logger;
                 this.mprToAtlT4 = aCopy.mprToAtlT4;
@@ -662,22 +688,20 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             import mlfourdfp.*;
             ip = inputParser;
             ip.KeepUnmatched = true;
-            addParameter(ip, 'buildVisitor',     FourdfpVisitor,   @(x) isa(x, 'mlfourdfp.FourdfpVisitor'));
-            addParameter(ip, 'NRevisions',       2,                @isnumeric);
-            addParameter(ip, 'keepForensics',    true,             @islogical);
-            %addParameter(ip, 'resolveTag',       '',               @ischar);
-            addParameter(ip, 'theImages',        {},               @(x) iscell(x) || ischar(x));
-            addParameter(ip, 'ipResults',        struct([]),       @isstruct);
+            addParameter(ip, 'buildVisitor',  FourdfpVisitor, @(x) isa(x, 'mlfourdfp.FourdfpVisitor'));
+            addParameter(ip, 'NRevisions',    2,              @isnumeric);
+            addParameter(ip, 'keepForensics', true,           @islogical);
+            addParameter(ip, 'resolveTag',    this.sessionData.resolveTag, @ischar);
+            addParameter(ip, 'theImages',     {},             @(x) iscell(x) || ischar(x));
+            addParameter(ip, 'ipResults',     struct([]),     @isstruct);
             parse(ip, varargin{:});
             
             this.buildVisitor_ = ip.Results.buildVisitor;
-            this.NRevisions = ip.Results.NRevisions;
+            this.NRevisions    = ip.Results.NRevisions;
             this.keepForensics = ip.Results.keepForensics;
-            %if (~isempty(ip.Results.resolveTag))
-            %    this.resolveTag = ip.Results.resolveTag;
-            %end
-            this.theImages = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
-            this.ipResults_ = ip.Results.ipResults;
+            this.resolveTag    = ip.Results.resolveTag;
+            this.theImages     = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
+            this.ipResults_    = ip.Results.ipResults;
             
             this = this.mpr2atl;
         end        
@@ -770,6 +794,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             nii.saveas([fqfp '.4dfp.ifh']);
         end
         function this = t4imgAll(this, ipr, tag)
+            if (this.skipT4imgAll)
+                return
+            end
             tag = mybasename(tag);
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f))

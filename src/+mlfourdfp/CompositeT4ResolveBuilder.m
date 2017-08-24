@@ -28,12 +28,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 'indicesLogical', ip.Results.indicesLogical, ...
                 'indexOfReference', ip.Results.indexOfReference);
             this.indexOfReference = ip.Results.indexOfReference;
-            this.blurArg_ = ip.Results.blurArg; 
-            this.finished = mlpipeline.Finished(this, ...
-                'path', this.logPath, ...
-                'tag', sprintf('%s_NRev%i_idxOfRef%i', ...
-                       lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference));
-            %cd(this.sessionData.tracerLocation);
+            this.blurArg_ = ip.Results.blurArg;             
+            this = this.updateFinished;
         end
         
         function this         = resolve(this, varargin)
@@ -111,7 +107,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             this.deleteTrash;
         end  
-        function [ipr,imgFns] = resolveAndPaste(this, ipr)
+        function [ipr,imgFps] = resolveAndPaste(this, ipr)
             %% RESOLVEANDPASTE - preassign ipr.dest, this.resolveTag, this.indexOfReference as needed.
             %  @param ipr is a struct w/ field dest, a cell array of fileprefixes || is a cell
             
@@ -120,25 +116,30 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 ipr = struct('dest', '');
                 ipr.dest = ipr_cell;
             end
-            dest_ = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
-            imgFns = this.fileprefixOfReference(ipr); % initial on ipr.dest
+            %pwd0   = pushd(fileparts(ipr.dest));
+            dest_  = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
+            imgFps = this.fileprefixOfReference(ipr); % initial on ipr.dest
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f) && f ~= this.indexOfReference)
                     %                    fileprefix of frame != this.indexOfReference
-                    imgFns = [imgFns ' ' dest_{f}]; %#ok<AGROW>
+                    imgFps = [imgFps ' ' dest_{f}]; %#ok<AGROW>
                 end
             end
                      
             this.buildVisitor.t4_resolve( ...
-                this.resolveTag, imgFns, ...
+                this.resolveTag, imgFps, ...
                 'options', '-v -m -s', 'log', this.resolveLog);
             this.t4imgAll(ipr, this.resolveTag); % transform ipr.dest on this.resolveTag
-
             ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest_, 'UniformOutput', false); 
             movefile([this.resolveTag '.mat0'], [ipr.resolved{this.indexOfReference} '_' datestr(now, 30) '.mat0']);
             movefile([this.resolveTag '.sub'],  [ipr.resolved{this.indexOfReference} '_' datestr(now, 30) '.sub']);
+            %popd(pwd0);
         end
         function dest1        = reconstituteImages(this, ipr, varargin)
+            if (this.skipT4imgAll)
+                return
+            end
+            
             ip = inputParser;
             addRequired(ip, 'ipr', @(x) isstruct(x) && ...
                                         isfield(x, 'fqfps') && length(x.fqfps) > 1 && ...
@@ -210,6 +211,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         %% UTILITY
         
         function ipr   = copySourceToDest(this, ipr)
+            if (this.skipT4imgAll)
+                return
+            end
+            
             if (1 == this.rnumber)
                 try              
                     for s = 1:length(ipr.source)

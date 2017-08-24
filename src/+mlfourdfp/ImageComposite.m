@@ -49,7 +49,8 @@ classdef ImageComposite < mlfourdfp.AbstractImageComposite
             this.theImages_ = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
             this.indicesLogical = ip.Results.indicesLogical;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
-        end        
+        end       
+        
         function len  = length(this)
             len = length(this.theImages_);
         end

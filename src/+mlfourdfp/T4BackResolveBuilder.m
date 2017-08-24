@@ -29,10 +29,7 @@ classdef T4BackResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     'indexOfReference', ip.Results.indexOfReference);
                 this.blurArg_ = ip.Results.blurArg;
             end            
-            this.finished = mlpipeline.Finished(this, ...
-                'path', this.logPath, ...
-                'tag', sprintf('%s_NRev%i_idxOfRef%i', ...
-                       lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference));
+            this = this.updateFinished;
             cd(this.sessionData.tracerLocation);
  		end
                 

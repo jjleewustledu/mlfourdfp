@@ -127,7 +127,7 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
 
  			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
             assert(~isempty(this.sessionData.tracer));
-            this.finished = mlpipeline.Finished(this, 'path', this.logPath, 'tag', lower(this.sessionData.tracer));
+            this = this.updateFinished;
         end  
         
         function [this,umaps]      = buildUmaps(this, varargin)
