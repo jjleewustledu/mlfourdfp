@@ -629,15 +629,76 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             deleteExisting([outr1Fqfp '.4dfp.*']);
             this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
         end
+        function this  = t4img_4dfpr0(this, varargin)
+            %% T4IMG_4DFPR0 supplies transformations for NRevisions = 2.
+            %  @param t4fn is proposed filename structure of the t4 file, e.g., t4source[r2]_to_t4dest_t4.  
+            %  @param source is the filename of the new source to be affine transformed according to t4fn;
+            %  the present working directory is extracted from source.
+            %  @param named out is the filename of the affine transformed image; filepath := fileparts(source).
+            %  @param named ref is the filename of the image that specifies voxel metrics.
+            %  @param named options explicitly sends options to mlfourdfp.FourdfpVisitor.t4img_4dfp.  
+            %  @returns this with this.product := mlfourd.ImagingContext(out)
+            
+            ip = inputParser;
+            addRequired( ip, 't4fn', @ischar);
+            addRequired( ip, 'source', @lexist_4dfp);
+            addParameter(ip, 'out', '', @ischar);
+            addParameter(ip, 'ref', '', @ischar); % fed to options -Oreference
+            addParameter(ip, 'options', '', @ischar); % supplies -Oreference
+            parse(ip, varargin{:});  
+            [t4source,t4dest] = this.buildVisitor.parseFilenameT4(ip.Results.t4fn);  
+            assert(lstrfind(t4source, 'r0'));
+            assert(lstrfind(t4dest,   'r0'));
+            sourceFqfp = myfileprefix(ip.Results.source);
+            outFqfp = myfileprefix(ip.Results.out);
+            if (isempty(outFqfp))
+                outFqfp = sprintf('%s_op_%s', this.ensureAllRnumbers(sourceFqfp, 2), this.resolveDest(t4dest));
+            end
+            refFqfp = myfileprefix(ip.Results.ref);
+            if (isempty(refFqfp))
+                refFqfp = fullfile(fileparts(t4source), this.resolveDest(t4dest));
+            end
+            options = ip.Results.options;
+            if (isempty(options))
+                assert(~isempty(refFqfp));
+                options = ['-O' refFqfp];
+            end
+                     
+            outr1Fqfp = sprintf('%s_op_%s', this.ensureAllRnumbers(sourceFqfp, 1), this.resolveDest(t4dest));
+            if (~lexist(sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,1), t4dest), 'file'))
+                disp(this)
+                error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr0 could not find %s', ...
+                    sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,1), t4dest));
+            end
+            this.buildVisitor.t4img_4dfp( ...
+                sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,1), t4dest), ...
+                sourceFqfp, ...
+                'out', outr1Fqfp, ...
+                'options', options);
+            if (~lexist(sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,2), t4dest), 'file'))
+                disp(this)
+                error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr0 could not find %s', ...
+                    sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,2), t4dest));
+            end
+            this.buildVisitor.t4img_4dfp( ...
+                sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,2), t4dest), ...
+                outr1Fqfp, ...
+                'out', outFqfp, ...
+                'options', options); 
+            deleteExisting([outr1Fqfp '.4dfp.*']);
+            this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
+        end
         function this  = updateFinished(this, varargin)
             ip = inputParser;
             addParameter(ip, 'tag', ...
                 sprintf('%s_NRev%i_idxOfRef%i', ...
                     lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference), ...
                 @ischar);
+            addParameter(ip, 'tag2', '', @ischar);
             parse(ip, varargin{:});
             
-            this.finished_ = mlpipeline.Finished(this, 'path', this.logPath, 'tag', ip.Results.tag);
+            this.finished_ = mlpipeline.Finished(this, ...
+                'path', this.logPath, 'tag', sprintf('%s%s', ip.Results.tag, ip.Results.tag2));
         end
         
 		function this = AbstractT4ResolveBuilder(varargin)
@@ -729,6 +790,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
                delete(this.trash_{it}); 
             end
             this.trash_ = {};
+        end
+        function fqfp = ensureAllRnumbers(~, fqfp, r)
+            fqfp = strrep(fqfp, 'r0', sprintf('r%i', r));
         end
         function fqfp = ensureLastRnumber(~, fqfp, r)
             startIdx = regexp(fqfp, 'r\d');

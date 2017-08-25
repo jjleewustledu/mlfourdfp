@@ -116,13 +116,12 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 ipr = struct('dest', '');
                 ipr.dest = ipr_cell;
             end
-            %pwd0   = pushd(fileparts(ipr.dest));
-            dest_  = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
-            imgFps = this.fileprefixOfReference(ipr); % initial on ipr.dest
+            pwd0   = pushd(fileparts(ipr.dest{1}));
+            imgFps = mybasename(this.fileprefixOfReference(ipr)); % initial on ipr.dest
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f) && f ~= this.indexOfReference)
                     %                    fileprefix of frame != this.indexOfReference
-                    imgFps = [imgFps ' ' dest_{f}]; %#ok<AGROW>
+                    imgFps = [imgFps ' ' mybasename(ipr.dest{f})]; %#ok<AGROW>
                 end
             end
                      
@@ -130,10 +129,11 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 this.resolveTag, imgFps, ...
                 'options', '-v -m -s', 'log', this.resolveLog);
             this.t4imgAll(ipr, this.resolveTag); % transform ipr.dest on this.resolveTag
+            dest_ = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
             ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest_, 'UniformOutput', false); 
             movefile([this.resolveTag '.mat0'], [ipr.resolved{this.indexOfReference} '_' datestr(now, 30) '.mat0']);
             movefile([this.resolveTag '.sub'],  [ipr.resolved{this.indexOfReference} '_' datestr(now, 30) '.sub']);
-            %popd(pwd0);
+            popd(pwd0);
         end
         function dest1        = reconstituteImages(this, ipr, varargin)
             if (this.skipT4imgAll)

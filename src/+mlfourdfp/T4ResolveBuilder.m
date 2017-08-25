@@ -130,7 +130,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     imgFps = [imgFps ' ' mybasename(this.fileprefixIndexed(ipr.dest, f))]; %#ok<AGROW>
                 end
             end  
-            %% Must use short fileprefixes in calls to t4_resolve to avoid filenaming error by t4_resolve.  
+            %% Must use short fileprefixes in calls to t4_resolve to avoid filenaming error by t4_resolve  
             %  t4_resolve: /data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame1_to_/data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame8_t4 read error          
             this.buildVisitor.t4_resolve( ...
                 this.resolveTag, imgFps, ...
@@ -171,8 +171,10 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function this         = finalize(this, ipr)
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;
-            this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);              
-            this.buildVisitor.imgblur_4dfp(ipr.resolved, this.blurArg);
+            this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);      
+            if (this.buildVisitor.lexist_4dfp(ipr.resolved))
+                this.buildVisitor.imgblur_4dfp(ipr.resolved, this.blurArg);
+            end
             this.teardownResolve(ipr);
             this.finished.touchFinishedMarker;          
         end

@@ -68,7 +68,8 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
  			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
             this.sessionData_.tracer = '';
             this.NRevisions = 2;
-            this.finished_ = mlpipeline.Finished(this, 'path', this.logPath, 'tag', lower(this.sessionData.tracer));
+            this.finished_ = mlpipeline.Finished(this, ...
+                'path', this.logPath, 'tag', lower(this.sessionData.tracer));
         end
         
         function [this,umap] = buildUmap(this, varargin)
