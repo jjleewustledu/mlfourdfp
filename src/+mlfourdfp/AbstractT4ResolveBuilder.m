@@ -589,23 +589,31 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             addParameter(ip, 'options', '', @ischar); % supplies -Oreference
             parse(ip, varargin{:});  
             [t4source,t4dest] = this.buildVisitor.parseFilenameT4(ip.Results.t4fn);  
+            % t4source->${E}/fdgv1${e}r0_frame${e}
+            % t4dest->op_fdgv1${e}r1_frame${idxRef}
             t4source = this.markLastRevisionMarking(t4source);
+            % t4source->${E}fdgv1${e}r0_frame${e}
             sourceFqfp = this.markLastRevisionMarking(myfileprefix(ip.Results.source));
+            % sourceFqfp ~ E1to9/umapSynth_op_fdgv1e1to9r1_frame${e}
             outFqfp = myfileprefix(ip.Results.out);
+            % outFqfp ~ ${E}/umapSynth_op_fdgv1${e}r1_frame${idxRef}
             if (isempty(outFqfp))
                 outFqfp = sprintf('%s_op_%s', this.ensureLastRnumber(sourceFqfp, 2), this.resolveDest(t4dest));
             end
             refFqfp = myfileprefix(ip.Results.ref);
+            % refFqfp ~ ${E}/fdgv1${e}r1_frame${idxRef}
             if (isempty(refFqfp))
                 refFqfp = fullfile(fileparts(t4source), this.resolveDest(t4dest));
             end
             options = ip.Results.options;
+            % options ~ -O${E}/fdgv1${e}r1_frame${idxRef}
             if (isempty(options))
                 assert(~isempty(refFqfp));
                 options = ['-O' refFqfp];
             end
                      
             outr1Fqfp = sprintf('%s_op_%s', this.ensureLastRnumber(sourceFqfp, 1), this.resolveDest(t4dest));
+            % outr1Fqfp ~ E1to9/umapSynth_op_fdgv1e1to9r1_frame${e}_op_fdgv1${e}r1_frame${idxRef}
             if (~lexist(sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest), 'file'))
                 disp(this)
                 error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr2 could not find %s', ...
@@ -616,6 +624,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
                 sourceFqfp, ...
                 'out', outr1Fqfp, ...
                 'options', options);
+            % t4->${E}/fdgv1${e}r1_frame${e}_to_op_fdgv1${e}r1_frame${idxRef}_t4
             if (~lexist(sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2), t4dest), 'file'))
                 disp(this)
                 error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr2 could not find %s', ...
@@ -626,6 +635,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
                 outr1Fqfp, ...
                 'out', outFqfp, ...
                 'options', options); 
+            % t4->${E}/umapSynth_op_fdgv1e1to9r1_frame${e}_op_fdgv1${e}r1_frame${idxRef}
+            fprintf('t4img_4dfpr2 wrote out:  %s\n', outFqfp);
             deleteExisting([outr1Fqfp '.4dfp.*']);
             this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
         end
