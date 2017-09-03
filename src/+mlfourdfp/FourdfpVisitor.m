@@ -125,6 +125,9 @@ classdef FourdfpVisitor
             error('mlfourdfp:unsupportedTypeclass', 'AbstractT4ResolveBuilder.ensureSafeFileprefix');
         end
         function m     = ifhMatrixSize(fqfn)
+            if (~lstrfind(fqfn, '.4dfp.ifh'))
+                fqfn = [fqfn '.4dfp.ifh'];
+            end
             assert(lexist(fqfn));
             ifhp       = mlfourdfp.IfhParser.load(fqfn);
             m          = [0 0 0 0];

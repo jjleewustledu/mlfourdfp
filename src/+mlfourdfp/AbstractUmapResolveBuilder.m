@@ -29,7 +29,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
  			%  Usage:  this = AbstractUmapResolveBuilder()
 
  			this = this@mlfourdfp.CompositeT4ResolveBuilder(varargin{:});
-            this.mmrBuilder_ = mlfourdfp.MMRBuilder('sessionData', this.sessionData);
+            this.mmrBuilder_ = mlsiemens.MMRBuilder('sessionData', this.sessionData);
             this.NRevisions = 2;
             this.blurArg_ = 1.5; % per Avi, 2016oct25
         end

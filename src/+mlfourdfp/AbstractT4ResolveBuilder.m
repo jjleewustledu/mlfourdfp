@@ -547,6 +547,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             addParameter(ip, 'ref', '', @ischar); % fed to options -Oreference
             addParameter(ip, 'options', '', @ischar); % supplies -Oreference
             parse(ip, varargin{:});  
+            
             [t4source,t4dest] = this.buildVisitor.parseFilenameT4(ip.Results.t4fn);  
             t4source = this.markLastRevisionMarking(t4source);
             sourceFqfp = this.markLastRevisionMarking(myfileprefix(ip.Results.source));
@@ -588,115 +589,52 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             addParameter(ip, 'ref', '', @ischar); % fed to options -Oreference
             addParameter(ip, 'options', '', @ischar); % supplies -Oreference
             parse(ip, varargin{:});  
+            
             [t4source,t4dest] = this.buildVisitor.parseFilenameT4(ip.Results.t4fn);  
-            % t4source->${E}/fdgv1${e}r0_frame${e}
-            % t4dest->op_fdgv1${e}r1_frame${idxRef}
+                % t4source->${E}/fdgv1${e}r0_frame${e}
+                % t4dest->op_fdgv1${e}r1_frame${idxRef}
             t4source = this.markLastRevisionMarking(t4source);
-            % t4source->${E}fdgv1${e}r0_frame${e}
+                % t4source->${E}/fdgv1${e}r0_frame${e}
             sourceFqfp = this.markLastRevisionMarking(myfileprefix(ip.Results.source));
-            % sourceFqfp ~ E1to9/umapSynth_op_fdgv1e1to9r1_frame${e}
+                % sourceFqfp ~ E1to9/umapSynth_op_fdgv1e1to9r1_frame${e}
             outFqfp = myfileprefix(ip.Results.out);
-            % outFqfp ~ ${E}/umapSynth_op_fdgv1${e}r1_frame${idxRef}
+                % outFqfp ~ ${E}/umapSynth_op_fdgv1${e}r1_frame${idxRef}
             if (isempty(outFqfp))
                 outFqfp = sprintf('%s_op_%s', this.ensureLastRnumber(sourceFqfp, 2), this.resolveDest(t4dest));
             end
             refFqfp = myfileprefix(ip.Results.ref);
-            % refFqfp ~ ${E}/fdgv1${e}r1_frame${idxRef}
+                % refFqfp ~ ${E}/fdgv1${e}r1_frame${idxRef}
             if (isempty(refFqfp))
                 refFqfp = fullfile(fileparts(t4source), this.resolveDest(t4dest));
             end
             options = ip.Results.options;
-            % options ~ -O${E}/fdgv1${e}r1_frame${idxRef}
+                % options ~ -O${E}/fdgv1${e}r1_frame${idxRef}
             if (isempty(options))
                 assert(~isempty(refFqfp));
                 options = ['-O' refFqfp];
-            end
-                     
-            outr1Fqfp = sprintf('%s_op_%s', this.ensureLastRnumber(sourceFqfp, 1), this.resolveDest(t4dest));
-            % outr1Fqfp ~ E1to9/umapSynth_op_fdgv1e1to9r1_frame${e}_op_fdgv1${e}r1_frame${idxRef}
-            if (~lexist(sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest), 'file'))
-                disp(this)
-                error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr2 could not find %s', ...
-                    sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest));
-            end
-            this.buildVisitor.t4img_4dfp( ...
-                sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest), ...
-                sourceFqfp, ...
-                'out', outr1Fqfp, ...
-                'options', options);
-            % t4->${E}/fdgv1${e}r1_frame${e}_to_op_fdgv1${e}r1_frame${idxRef}_t4
-            if (~lexist(sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2), t4dest), 'file'))
-                disp(this)
-                error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr2 could not find %s', ...
-                    sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2), t4dest));
-            end
-            this.buildVisitor.t4img_4dfp( ...
-                sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2), t4dest), ...
-                outr1Fqfp, ...
-                'out', outFqfp, ...
-                'options', options); 
-            % t4->${E}/umapSynth_op_fdgv1e1to9r1_frame${e}_op_fdgv1${e}r1_frame${idxRef}
-            fprintf('t4img_4dfpr2 wrote out:  %s\n', outFqfp);
-            deleteExisting([outr1Fqfp '.4dfp.*']);
-            this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
-        end
-        function this  = t4img_4dfpr0(this, varargin)
-            %% T4IMG_4DFPR0 supplies transformations for NRevisions = 2.
-            %  @param t4fn is proposed filename structure of the t4 file, e.g., t4source[r2]_to_t4dest_t4.  
-            %  @param source is the filename of the new source to be affine transformed according to t4fn;
-            %  the present working directory is extracted from source.
-            %  @param named out is the filename of the affine transformed image; filepath := fileparts(source).
-            %  @param named ref is the filename of the image that specifies voxel metrics.
-            %  @param named options explicitly sends options to mlfourdfp.FourdfpVisitor.t4img_4dfp.  
-            %  @returns this with this.product := mlfourd.ImagingContext(out)
+            end                     
             
-            ip = inputParser;
-            addRequired( ip, 't4fn', @ischar);
-            addRequired( ip, 'source', @lexist_4dfp);
-            addParameter(ip, 'out', '', @ischar);
-            addParameter(ip, 'ref', '', @ischar); % fed to options -Oreference
-            addParameter(ip, 'options', '', @ischar); % supplies -Oreference
-            parse(ip, varargin{:});  
-            [t4source,t4dest] = this.buildVisitor.parseFilenameT4(ip.Results.t4fn);  
-            assert(lstrfind(t4source, 'r0'));
-            assert(lstrfind(t4dest,   'r0'));
-            sourceFqfp = myfileprefix(ip.Results.source);
-            outFqfp = myfileprefix(ip.Results.out);
-            if (isempty(outFqfp))
-                outFqfp = sprintf('%s_op_%s', this.ensureAllRnumbers(sourceFqfp, 2), this.resolveDest(t4dest));
-            end
-            refFqfp = myfileprefix(ip.Results.ref);
-            if (isempty(refFqfp))
-                refFqfp = fullfile(fileparts(t4source), this.resolveDest(t4dest));
-            end
-            options = ip.Results.options;
-            if (isempty(options))
-                assert(~isempty(refFqfp));
-                options = ['-O' refFqfp];
-            end
-                     
-            outr1Fqfp = sprintf('%s_op_%s', this.ensureAllRnumbers(sourceFqfp, 1), this.resolveDest(t4dest));
-            if (~lexist(sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,1), t4dest), 'file'))
-                disp(this)
-                error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr0 could not find %s', ...
-                    sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,1), t4dest));
-            end
+            assert(lexist(sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest), 'file'), ...
+                'mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr2 could not find %s', ...
+                sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest));          
+            assert(lexist(sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2), t4dest), 'file'), ...
+                'mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr2 could not find %s', ...
+                sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2), t4dest));
+            this.buildVisitor.t4_mul( ...
+                sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1),    t4dest), ...
+                sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,2),    t4dest), ...
+                sprintf('%s_to_%s_t4', this.ensureLastRnumbers(t4source,1,2), t4dest));        
+            assert(lexist(sprintf('%s_to_%s_t4', this.ensureLastRnumbers(t4source,1,2), t4dest), 'file'), ...
+                'mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr2 could not find %s', ...
+                sprintf('%s_to_%s_t4', this.ensureLastRnumbers(t4source,1,2), t4dest));  
+            
             this.buildVisitor.t4img_4dfp( ...
-                sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,1), t4dest), ...
+                sprintf('%s_to_%s_t4', this.ensureLastRnumbers(t4source,1,2), t4dest), ...
                 sourceFqfp, ...
-                'out', outr1Fqfp, ...
-                'options', options);
-            if (~lexist(sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,2), t4dest), 'file'))
-                disp(this)
-                error('mlfourdfp:IOErr:fileNotFound', 'AbstractT4ResolveBuilder.t4img_4dfpr0 could not find %s', ...
-                    sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,2), t4dest));
-            end
-            this.buildVisitor.t4img_4dfp( ...
-                sprintf('%s_to_%s_t4', this.ensureAllRnumbers(t4source,2), t4dest), ...
-                outr1Fqfp, ...
                 'out', outFqfp, ...
                 'options', options); 
-            deleteExisting([outr1Fqfp '.4dfp.*']);
+                % t4->${E}/fdgv1${e}r1r2_frame${e}_to_op_fdgv1${e}r1_frame${idxRef}_t4
+            fprintf('t4img_4dfpr2 wrote out:\n    %s\n\n', outFqfp);
             this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
         end
         function this  = updateFinished(this, varargin)
@@ -723,8 +661,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             %  @param named keepForensics
             %  @param named resolveTag
  			
-            if (0 == nargin); return; end
             this = this@mlpipeline.AbstractDataBuilder(varargin{:});
+            if (0 == nargin); return; end
             
             %% invoke copy-ctor
             
@@ -806,12 +744,44 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             fqfp = strrep(fqfp, 'r0', sprintf('r%i', r));
         end
         function fqfp = ensureLastRnumber(~, fqfp, r)
+            %% ENSURELASTRNUMBER
+            %  @param fqfp
+            %  @param r integer
+            %  @return             ${fqfp}r${r}                     if not fqfp has r[0-9]
+            %  @return ${fqfp_upto_r[0-9]}r${r}${fqfp_after_r[0-9]} if fqfp has r[0-9]
+            
+            assert(isnumeric(r));
+            
             startIdx = regexp(fqfp, 'r\d');
             if (~isempty(startIdx))
                 fqfp(startIdx(end)+1) = num2str(r);
                 return
             end
             fqfp = sprintf('%sr%i', fqfp, r);
+        end
+        function fqfp = ensureLastRnumbers(~, fqfp, varargin)
+            %% ENSURELASTRNUMBERS
+            %  @param fqfp
+            %  @param ra integer
+            %  @param [rb,rc, ...] integer
+            %  @return             ${fqfp}r${ra}[r${rb}r${rc} ...]                     if not fqfp has r[0-9]
+            %  @return ${fqfp_upto_r[0-9]}r${ra}[r${rb}r${rc} ...]${fqfp_after_r[0-9]} if fqfp has r[0-9]
+            
+            ip = inputParser;
+            addRequired(ip, 'rcell', @(x) iscell(x) && ~isempty(x) && isnumeric(x{1}));
+            parse(ip, varargin);
+            rcell = ip.Results.rcell;
+
+            concatRs = '';
+            for rIdx = 1:length(rcell)
+                concatRs = [concatRs sprintf('r%i', rcell{rIdx})]; %#ok<AGROW>
+            end
+            startIdx = regexp(fqfp, 'r\d');
+            if (~isempty(startIdx))                
+                fqfp = [fqfp(1:startIdx(end)-1) concatRs fqfp(startIdx(end)+2:end)];
+                return
+            end
+            fqfp = [fqfp concatRs ];
         end
         function fp   = markLastRevisionMarking(~, fp)
             pos = regexp(fp, 'r\d$');

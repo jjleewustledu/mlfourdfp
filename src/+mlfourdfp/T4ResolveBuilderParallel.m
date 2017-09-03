@@ -57,7 +57,7 @@ classdef T4ResolveBuilderParallel < mlfourdfp.AbstractT4ResolveBuilder
  			%  Usage:  this = T4ResolveBuilderParallel()
 
  			this = this@mlfourdfp.AbstractT4ResolveBuilder(varargin{:});
-            this.mmrBuilder_ = mlfourdfp.MMRBuilder('sessionData', this.sessionData);
+            this.mmrBuilder_ = mlsiemens.MMRBuilder('sessionData', this.sessionData);
         end
         
         function batchClusterResolve(this)
