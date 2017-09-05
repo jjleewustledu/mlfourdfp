@@ -104,6 +104,7 @@ classdef DicomSorter
         end        
         function this  = session_to_4dfp(varargin)
             ip = inputParser;
+            ip.KeepUnmatched = true;
             addRequired( ip, 'srcPath',            @isdir); % top-level folder for session raw data
             addOptional( ip, 'destPath', pwd,      @ischar);
             addParameter(ip, 'sessionData', [],      @(x) isa(x, 'mlpipeline.SessionData'));

@@ -644,10 +644,12 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
                     lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference), ...
                 @ischar);
             addParameter(ip, 'tag2', '', @ischar);
+            addParameter(ip, 'neverTouch', false, @islogical);
             parse(ip, varargin{:});
             
             this.finished_ = mlpipeline.Finished(this, ...
                 'path', this.logPath, 'tag', sprintf('%s%s', ip.Results.tag, ip.Results.tag2));
+            this.finished_.neverTouch = ip.Results.neverTouch;
         end
         
 		function this = AbstractT4ResolveBuilder(varargin)
