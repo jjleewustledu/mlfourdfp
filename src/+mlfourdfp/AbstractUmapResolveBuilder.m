@@ -98,12 +98,18 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 sprintf('%s.v',        umap), 'f');
             delete(sprintf('%s.4dfp.*', flipped));
             delete(sprintf('%sfz.4dfp.*', umap));
+            
+            this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
         end
         function this  = convertUmapsToE7Format(this, umaps)
             assert(iscell(umaps));
+            prodCell = {};
             for fr = 1:length(umaps)
                 this = this.convertUmapToE7Format(umaps{fr});
+                prodCell{fr} = this.product_.fqfilename; %#ok<AGROW>
             end
+            
+            this.product_ = prodCell;
         end  
         function this  = loadSessionDataCache(this, varargin)
             ip = inputParser;

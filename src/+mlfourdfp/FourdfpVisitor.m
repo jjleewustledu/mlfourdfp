@@ -160,7 +160,8 @@ classdef FourdfpVisitor
         end
         function [s,r] = lns(fqfn)
             s = 0; r = '';
-            if (~lexist(fullfile(pwd, mybasename(fqfn)), 'file'))
+            if (~lexist(fullfile(pwd, mybasename(fqfn)), 'file') && ...
+                 lexist(fqfn))
                 [s,r] = mlbash(sprintf('ln -s %s', fqfn));
             end
         end
@@ -176,13 +177,15 @@ classdef FourdfpVisitor
             ext = { '.hdr' '.ifh' '.img' '.img.rec' };
             if (isempty(fqfpDest))
                 for e = 1:length(ext) 
-                    if (~lexist(fullfile(pwd, [mybasename(fqfpSrc) '.4dfp' ext{e}]), 'file'))
+                    if (~lexist(fullfile(pwd, [mybasename(fqfpSrc) '.4dfp' ext{e}]), 'file') && ...
+                         lexist([fqfpSrc '.4dfp.ifh']))
                         [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s', fqfpSrc, ext{e}));
                     end
                 end
             else                
                 for e = 1:length(ext) 
-                    if (~lexist(fullfile(pwd, [mybasename(fqfpDest) '.4dfp' ext{e}]), 'file'))
+                    if (~lexist(fullfile(pwd, [mybasename(fqfpDest) '.4dfp' ext{e}]), 'file') && ...
+                         lexist([fqfpSrc '.4dfp.ifh']))
                         [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s %s.4dfp%s', fqfpSrc, ext{e}, fqfpDest, ext{e}));
                     end
                 end

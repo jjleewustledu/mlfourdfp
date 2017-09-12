@@ -122,7 +122,8 @@ classdef T4ResolveUtilities
             if (isdir(d))
                 movefile(d, [d '-Backup']); 
             end
-            [s,m,mid] = mkdir(d);
+            [s,m] = mlfourdfp.FourdfpVisitor.mkdir(d);
+            mid = '';
         end
         function [s,m,mid] = safeMovefile(f, g)
             if (isdir(g))

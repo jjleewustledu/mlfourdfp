@@ -196,21 +196,15 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
         end
         function pth  = logPath(this)
             pth = fullfile(this.sessionData.tracerLocation, 'Log', '');
-            if (~isdir(pth))
-                mkdir(pth);
-            end
+            ensuredir(pth);
         end
         function pth  = onAtlasPath(this)
             pth = fullfile(this.sessionData.tracerLocation, 'Atlas', '');
-            if (~isdir(pth))
-                mkdir(pth);
-            end
+            ensuredir(pth);
         end
         function pth  = t4Path(this)
             pth = fullfile(this.sessionData.tracerLocation, 'T4', '');
-            if (~isdir(pth))
-                mkdir(pth);
-            end
+            ensuredir(pth);
         end
         
         function a     = atlas(this, varargin) 
