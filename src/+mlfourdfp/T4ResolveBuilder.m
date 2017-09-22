@@ -301,7 +301,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     
     methods (Access = protected)
         function this = t4imgAll(this, ipr, tag)
-            if (this.skipT4imgAll)
+            if (this.skipT4imgAll || this.rnumber < this.NRevisions)
                 return
             end
             tag = mybasename(tag);
