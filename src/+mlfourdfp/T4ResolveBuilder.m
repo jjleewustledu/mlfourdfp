@@ -22,6 +22,10 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'theImages', {}, @(x) iscell(x) || ischar(x));
             addParameter(ip, 'indexOfReference', 1, @isnumeric);
             parse(ip, varargin{:});
+            ims = ensureCell(ip.Results.theImages);
+            assert(lexist(ims{1}) || this.buildVisitor.lexist_4dfp(ims{1}), ....
+                'mlfourdfp.T4ResolveBuilder.ctor.ip.Results.theImages->%s does not exist', ...
+                cell2str(ims));
             
             if (isempty(ip.Results.cctor))
                 import mlfourdfp.*;
@@ -301,7 +305,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     
     methods (Access = protected)
         function this = t4imgAll(this, ipr, tag)
-            if (this.skipT4imgAll || this.rnumber < this.NRevisions)
+            if (this.skipT4imgAll) % || this.rnumber < this.NRevisions)
                 return
             end
             tag = mybasename(tag);

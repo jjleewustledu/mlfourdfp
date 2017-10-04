@@ -497,6 +497,70 @@ classdef FourdfpVisitor
                 fqfp = ''; s = 0; r = '';
             end
         end
+        function [t4,fqfp,s,r] = ...
+                              align_TOF(this, varargin)
+            %% ALIGN_TOF calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] and writes a log.
+            %  @param dest       is a f.q. fileprefix.
+            %  @param destMask   "
+            %  @param source     "
+            %  @param sourceMask "
+            %  @param destBlur   is the fwhm blur applied by imgblur_4dfp to dest.            
+            %  @param sourceBlur is the fwhm blur applied by imgblur_4dfp to source.
+            %  @param t40        is the initial t4-file for the transformation:  transverse is default.
+            %  @param t4         is the cumulative t4-file for the transformation.
+            %  @param log        is the f.q. filename of the log file.
+            %  @param useMetricGradient:  is logical; cf. ${TRANSFER}/cross_modal_intro.pdf.
+            %  @param t4img_4dfp is logical.
+            %  @returns t4       is the t4-file for the transformation.
+            %  @returns fqfp     is the f.q. fileprefix of the co-registered output.
+            
+            ip = inputParser;
+            addParameter(ip, 'dest',       '',     @this.lexist_4dfp);
+            addParameter(ip, 'source',     '',     @this.lexist_4dfp);
+            addParameter(ip, 'destMask',   'none', @ischar);
+            addParameter(ip, 'sourceMask', 'none', @ischar);
+            addParameter(ip, 'destBlur',   0,      @isnumeric);
+            addParameter(ip, 'sourceBlur', 0,      @isnumeric);
+            addParameter(ip, 't40',        this.transverse_t4, @(x) lexist(x, 'file')); 
+            addParameter(ip, 't4',         '',     @ischar);
+            addParameter(ip, 'useMetricGradient', false, @islogical);
+            addParameter(ip, 't4img_4dfp',        true, @islogical);
+            addParameter(ip, 'log',        '/dev/null', @ischar);
+            parse(ip, varargin{:});
+            dest       = ip.Results.dest;
+            source     = ip.Results.source;
+            destMask   = ip.Results.destMask;
+            sourceMask = ip.Results.sourceMask;
+            t4         = ip.Results.t4;
+            log        = ip.Results.log;
+            
+            if (strcmp(dest, source))
+                t4 = this.filenameT4(source, dest);
+                copyfile(this.transverse_t4, t4); % identity transformation
+                fqfp = '';
+                return
+            end
+            if (isempty(t4))
+                t4 = this.filenameT4(source, dest); end
+            if (ip.Results.destBlur > 0)
+                dest = this.imgblur_4dfp(dest, ip.Results.destBlur); end
+            if (ip.Results.sourceBlur > 0)
+                source = this.imgblur_4dfp(source, ip.Results.sourceBlur); end
+            
+            if (~strcmp(ip.Results.t40, t4))
+                [s,r] = copyfile(ip.Results.t40, t4, 'f'); %#ok<ASGLU>
+            end
+            [s,r] = dbbash(sprintf('chmod 777 %s', t4)); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 4099, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 4099, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 3075, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051, log); %#ok<ASGLU>       
+            if (ip.Results.t4img_4dfp)
+                [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
+            else
+                fqfp = ''; s = 0; r = '';
+            end
+        end
         function      [s,r] = compute_defined_4dfp(this, varargin)
             ip = inputParser;
             addRequired(ip, 'in',          @this.lexist_4dfp);
@@ -758,8 +822,13 @@ classdef FourdfpVisitor
             addRequired( ip, 'out', @ischar);
             parse(ip, varargin{:});
             
-            [s,r] = this.move_4dfp__( ...
+            [s,r] = this.copy_4dfp__( ...
                 sprintf(' %s %s', ip.Results.in, ip.Results.out));
+            x = {'ifh' 'hdr' 'img' 'img.rec'};
+            for ix = 1:length(x)
+                assert(lexist( sprintf(   '%s.4dfp.%s', ip.Results.out, x{ix})));
+                [s,r] = mlbash(sprintf('rm %s.4dfp.%s', ip.Results.in,  x{ix}));
+            end
         end
         function      [s,r] = mpr2atl_4dfp(this, varargin)
             ip = inputParser;

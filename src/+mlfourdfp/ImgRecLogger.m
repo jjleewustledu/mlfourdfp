@@ -1,4 +1,4 @@
-classdef ImgRecLogger <mlpipeline.AbstractLogger
+classdef ImgRecLogger < mlpipeline.AbstractLogger
 	%% IMGRECLOGGER accumulates logging strings in a CellArrayList.  It is a handle class.
 
 	%  $Revision$
@@ -20,7 +20,8 @@ classdef ImgRecLogger <mlpipeline.AbstractLogger
     
 	methods 		  
  		function this = ImgRecLogger(varargin)
-            this = this@mlpipeline.AbstractLogger(varargin{:});                    
+            this = this@mlpipeline.AbstractLogger(varargin{:});  
+            this.cellArrayList_ = mlpatterns.CellArrayList; % reset                  
         end
         
         function c = clone(this)
@@ -28,6 +29,41 @@ classdef ImgRecLogger <mlpipeline.AbstractLogger
             %  @return c is a deep copy of a handle class
             
             c = mlfourdfp.ImgRecLogger(this);
+        end
+        function cons(this, preface)
+            %  @param preface is char or cell array.
+            %  @return internal_representation := [header preface internal_representation footer].
+            
+            preface = ensureCell(preface);
+            newList = mlpatterns.CellArrayList; % handle
+            newList.add(this.header);
+            for p = 1:length(preface)
+                newList.add(preface{p});
+            end
+            for q = 1:length(this.cellArrayList_)
+                newList.add(this.cellArrayList_.get(q));
+            end
+            newList.add(this.footer);
+            this.cellArrayList_ = clone(newList);
+        end
+        function consNoHeadFoot(this, preface)
+            %  @param preface is char or cell array.
+            %  @return internal_representation := [header preface internal_representation footer].
+            
+            preface = ensureCell(preface);
+            newList = mlpatterns.CellArrayList; % handle
+            for p = 1:length(preface)
+                newList.add(preface{p});
+            end
+            for q = 1:length(this.cellArrayList_)
+                newList.add(this.cellArrayList_.get(q));
+            end
+            this.cellArrayList_ = clone(newList);
+        end
+        function save(this)
+            this = this.ensureExtension;
+            mlsystem.FilesystemRegistry.cellArrayListToTextfile( ...
+                this.cellArrayList_, this.fqfilename, 'w');
         end
     end 
     

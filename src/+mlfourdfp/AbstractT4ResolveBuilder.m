@@ -1,4 +1,4 @@
-classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & mlfourdfp.IT4ResolveBuilder
+classdef (Abstract) AbstractT4ResolveBuilder < mlpet.AbstractTracerBuilder & mlfourdfp.IT4ResolveBuilder
 	%% ABSTRACTT4RESOLVEBUILDER  
 
 	%  $Revision$
@@ -22,7 +22,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
     
     properties (Dependent)
         blurArg
-        buildVisitor  
         epoch
         epochLabel      
         gaussArg
@@ -87,13 +86,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
         function this = set.blurArg(this, s)
             assert(isnumeric(s));
             this.blurArg_ = s;
-        end
-        function v    = get.buildVisitor(this)
-            v = this.buildVisitor_;
-        end
-        function this = set.buildVisitor(this, v)
-            assert(isa(v, 'mlfourdfp.FourdfpVisitor'));
-            this.buildVisitor_ = v;
         end
         function g    = get.epoch(this)
             g = this.sessionData_.epoch;
@@ -648,41 +640,28 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
         
 		function this = AbstractT4ResolveBuilder(varargin)
  			%% ABSTRACTT4RESOLVEBUILDER
- 			%  @param named blurArg
- 			%  @param named buildVisitor
-            %  @param named sessionData
-            %  @param named indicesLogical
-            %  @param named indexOfReference
             %  @param named NRevisions
             %  @param named keepForensics
             %  @param named resolveTag
+            %  @param named theImages
+            %  @param named ipResults
+
  			
-            this = this@mlpipeline.AbstractDataBuilder(varargin{:});
+            this = this@mlpet.AbstractTracerBuilder(varargin{:});
             if (0 == nargin); return; end
             
             %% invoke copy-ctor
             
             if (1 == nargin && isa(varargin{1}, 'mlfourdfp.AbstractT4ResolveBuilder'))
                 aCopy = varargin{1};
-                
-                %% properties
+                this.blurArg_ = aCopy.blurArg_;
                 this.doMaskBoundaries = aCopy.doMaskBoundaries;
-                this.finished_ = aCopy.finished;
-                this.keepForensics = aCopy.keepForensics;
-                this.logger_ = aCopy.logger;
+                this.imageRegLog = aCopy.imageRegLog;
                 this.mprToAtlT4 = aCopy.mprToAtlT4;
                 this.msktgenThresh = aCopy.msktgenThresh;
                 this.NRevisions = aCopy.NRevisions;
-                
-                this.imageRegLog = aCopy.imageRegLog;
                 this.resolveLog = aCopy.resolveLog;
-                
-                %% properties (Access = protected)
-                this.blurArg_ = aCopy.blurArg_;
-                this.buildVisitor_ = aCopy.buildVisitor_;
                 this.imageComposite_ = aCopy.imageComposite_;
-                this.product_ = aCopy.product_;
-                this.sessionData_ = aCopy.sessionData_;
                 this.trash_ = aCopy.trash_;
                 this.xfm_ = aCopy.xfm_; 
                 this.ipResults_ = aCopy.ipResults_;
@@ -694,7 +673,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             import mlfourdfp.*;
             ip = inputParser;
             ip.KeepUnmatched = true;
-            addParameter(ip, 'buildVisitor',  FourdfpVisitor, @(x) isa(x, 'mlfourdfp.FourdfpVisitor'));
             addParameter(ip, 'NRevisions',    2,              @isnumeric);
             addParameter(ip, 'keepForensics', true,           @islogical);
             addParameter(ip, 'resolveTag',    this.sessionData.resolveTag, @ischar);
@@ -702,9 +680,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
             addParameter(ip, 'ipResults',     struct([]),     @isstruct);
             parse(ip, varargin{:});
             
-            this.buildVisitor_ = ip.Results.buildVisitor;
             this.NRevisions    = ip.Results.NRevisions;
-            this.keepForensics = ip.Results.keepForensics;
+            this.keepForensics = ip.Results.keepForensics; % override mlpipeline.AbstractDataBuilder
             this.resolveTag    = ip.Results.resolveTag;
             this.theImages     = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
             this.ipResults_    = ip.Results.ipResults;
@@ -716,8 +693,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
     %% PROTECTED
     
     properties (Access = protected)
-        blurArg_
-        buildVisitor_        
+        blurArg_      
         imageComposite_
         trash_ = {};
         xfm_
@@ -866,8 +842,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractDataBuilder & 
         ipResults_ % caching
     end
     
-    %% HIDDEN
-    %  @deprecated
+    %% HIDDEN @deprecated
     
     methods (Hidden) 
         function out = t4img_4dfp_0(this, varargin)
