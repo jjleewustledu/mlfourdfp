@@ -124,10 +124,13 @@ classdef DicomSorter
             [infos,fqdns] = this.findDcmInfos(ip.Results.seriesFilter);
             
             filteredNames = {};
+            fv = mlfourdfp.FourdfpVisitor;
             for idns = 1:length(fqdns)
                 try
                     canonFp = this.dcm_to_4dfp(infos{idns}, fqdns{idns});
-                    movefile([canonFp '.4dfp.*'], ip.Results.destPath, 'f');
+                    if (~fv.lexist_4dfp(fullfile(ip.Results.destPath, canonFp)))
+                        movefile([canonFp '.4dfp.*'], ip.Results.destPath);
+                    end
                     canonFqfp = fullfile(ip.Results.destPath, canonFp);
                     filteredNames = [filteredNames canonFqfp]; %#ok<AGROW>
                 catch ME
@@ -140,7 +143,9 @@ classdef DicomSorter
             
             cd(pwd0);
         end
-        function this  = sessionSort(varargin)   
+        function this  = sessionSort(varargin)  
+            %% SESSIONSORT sorts t1_mprage_sag, t2_spc_sag, TOF.
+            
             ip = inputParser;
             addRequired( ip, 'srcPath',       @isdir); % top-level folder for session raw data
             addOptional( ip, 'destPath', pwd, @ischar);
@@ -155,25 +160,6 @@ classdef DicomSorter
                 seriesList = {'t1_mprage_sag' 't2_spc_sag' 'TOF'};
                 targetList = {'mpr' 't2' 'tof'};
             end
-            %seriesList = DicomSorter.SERIES_LIST;
-            for s = 1:length(seriesList)
-                this = DicomSorter.session_to_4dfp( ...
-                    ip.Results.srcPath, ip.Results.destPath, ...
-                    'seriesFilter', seriesList{s}, ...
-                    'sessionData', ip.Results.sessionData, ...
-                    'preferredName', targetList{s});
-            end
-        end
-        function this  = sessionSort2(varargin)   
-            ip = inputParser;
-            addRequired( ip, 'srcPath',       @isdir); % top-level folder for session raw data
-            addOptional( ip, 'destPath', pwd, @ischar);
-            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData'));
-            parse(ip, varargin{:});
-
-            import mlfourdfp.*;
-            seriesList = {'t2_spc_sag' 'TOF'};
-            targetList = {'t2' 'tof'};
             %seriesList = DicomSorter.SERIES_LIST;
             for s = 1:length(seriesList)
                 this = DicomSorter.session_to_4dfp( ...

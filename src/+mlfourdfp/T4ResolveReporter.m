@@ -1,5 +1,7 @@
 classdef T4ResolveReporter 
-	%% T4RESOLVEREPORTER  
+	%% T4RESOLVEREPORTER 
+    %  @param parameters needed by ctor.
+    %  @return cell-array of instances of mlfourdfp.T4ResolveReport.  
 
 	%  $Revision$
  	%  was created 04-May-2016 23:14:05

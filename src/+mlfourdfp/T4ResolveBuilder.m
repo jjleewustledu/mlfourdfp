@@ -200,11 +200,13 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         delete(sprintf('%s_frame%i_b*.4dfp.*', fp0, il));
                         delete(sprintf('%s_frame%i_C*.4dfp.*', fp0, il));
                         %delete(sprintf('%s_frame%i_%s.4dfp.*', fp0, f, this.resolveTag));
+                        delete(sprintf('%s_frame%i_g*.4dfp.*', fp0, il));
                         delete(sprintf('%s_frame%i_g*.nii.gz', fp0, il));
                     end
                 end
             end            
             delete(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
+            delete(sprintf('%s_*_*.log', ipr.maskForImages));
         end
         
         %% UTILITY         

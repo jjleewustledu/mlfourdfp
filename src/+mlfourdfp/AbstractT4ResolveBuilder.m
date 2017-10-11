@@ -686,7 +686,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpet.AbstractTracerBuilder & mlf
             this.theImages     = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
             this.ipResults_    = ip.Results.ipResults;
             
-            this = this.mpr2atl;
+%%%            this = this.mpr2atl; % FREEZES Matlab R2016a on william.
         end        
  	end 
 

@@ -294,6 +294,22 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 end
             end
         end
+        
+        function this  = prepareMprToAtlasT4(this)
+            %% PREPAREMPRTOATLAST4
+            %  @param this.sessionData.{mprage,atlas} are valid.
+            %  @return this.product_ := [mprage '_to_' atlas '_t4'], existing in the same folder as mprage.
+            
+            sessd      = this.sessionData;
+            mpr        = sessd.mprage('typ', 'fp');
+            mprToAtlT4 = [mpr '_to_' sessd.atlas('typ', 'fp') '_t4'];            
+            if (~lexist(fullfile(sessd.mprage('typ', 'path'), mprToAtlT4)))
+                pwd0 = pushd(sessd.mprage('typ', 'path'));
+                this.msktgenMprage(mpr);
+                popd(pwd0);
+            end
+            this.product_ = mprToAtlT4;
+        end
     end 
     
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
