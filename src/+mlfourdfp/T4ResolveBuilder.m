@@ -205,8 +205,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                 end
             end            
-            delete(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
-            delete(sprintf('%s_*_*.log', ipr.maskForImages));
+            delete(sprintf('%s_*_*.*', ipr.maskForImages));
+            delete(sprintf('*_g0_1.4dfp.*'));
         end
         
         %% UTILITY         

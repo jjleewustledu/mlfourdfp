@@ -98,6 +98,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 sprintf('%s.v',        umap), 'f');
             delete(sprintf('%s.4dfp.*', flipped));
             delete(sprintf('%sfz.4dfp.*', umap));
+            delete(sprintf('%s*.log', umap));
             
             this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
         end
