@@ -170,7 +170,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 if (this.indicesLogical(il))
                     il1 = il1 + 1;
                     this.product_{il1} = mlpet.PETImagingContext([ipr.resolved{il} '.4dfp.ifh']);
-                    this.buildVisitor.imgblur_4dfp(ipr.resolved{il}, this.blurArg)
+                    %this.buildVisitor.imgblur_4dfp(ipr.resolved{il}, this.blurArg)
                 end
             end
             this.teardownResolve(ipr);
@@ -193,19 +193,23 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function                teardownResolve(this, ipr)
             if (this.keepForensics); return; end
             
-            for r = 1:this.NRevisions                
-                for il = 1:length(this.indicesLogical)
-                    fp0 = ipr.dest{il};
-                    if (this.indicesLogical(il))
-                        %delete(sprintf('%sr%i.4dfp.*', fp0, r));
-                        delete(sprintf('%sr%i_b*.4dfp.*', fp0, r));
-                        delete(sprintf('%sr%i_C*.4dfp.*', fp0, r));
-                        %delete(sprintf('%sr%i_%s.4dfp.*', fp0, r, this.resolveTag));
-                        delete(sprintf('%sr%i_g*.nii.gz', fp0, r));
+            try
+                for r = 1:this.NRevisions                
+                    for il = 1:length(this.indicesLogical)
+                        fp0 = ipr.dest{il};
+                        if (this.indicesLogical(il))
+                            deleteExisting(sprintf('%sr%i.4dfp.*', fp0, r));
+                            deleteExisting(sprintf('%sr%i_b*.4dfp.*', fp0, r));
+                            deleteExisting(sprintf('%sr%i_C*.4dfp.*', fp0, r));
+                            deleteExisting(sprintf('%sr%i_%s.4dfp.*', fp0, r, this.resolveTag));
+                            deleteExisting(sprintf('%sr%i_g*.nii.gz', fp0, r));
+                        end
                     end
-                end
-            end            
-            delete(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
+                end            
+                deleteExisting(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
+            catch ME
+                handwarning(ME)
+            end
         end
         
         %% UTILITY

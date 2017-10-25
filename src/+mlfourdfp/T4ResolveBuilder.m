@@ -176,9 +176,9 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;
             this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);      
-            if (this.buildVisitor.lexist_4dfp(ipr.resolved))
-                this.buildVisitor.imgblur_4dfp(ipr.resolved, this.blurArg);
-            end
+            %if (this.buildVisitor.lexist_4dfp(ipr.resolved))
+            %    this.buildVisitor.imgblur_4dfp(ipr.resolved, this.blurArg);
+            %end
             this.teardownResolve(ipr);
             this.finished.touchFinishedMarker;          
         end
@@ -190,23 +190,27 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);
         end
         function                teardownResolve(this, ipr)
-            if (this.keepForensics); return; end
+            %if (this.keepForensics); return; end
             
-            for r = 1:this.NRevisions                
-                fp0 = this.fileprefixRevision(ipr.dest, r);
-                for il = 1:length(this.indicesLogical)
-                    if (this.indicesLogical(il))
-                        %delete(sprintf('%s_frame%i.4dfp.*', fp0, f));
-                        delete(sprintf('%s_frame%i_b*.4dfp.*', fp0, il));
-                        delete(sprintf('%s_frame%i_C*.4dfp.*', fp0, il));
-                        %delete(sprintf('%s_frame%i_%s.4dfp.*', fp0, f, this.resolveTag));
-                        delete(sprintf('%s_frame%i_g*.4dfp.*', fp0, il));
-                        delete(sprintf('%s_frame%i_g*.nii.gz', fp0, il));
+            try
+                for r = 1:this.NRevisions                
+                    fp0 = this.fileprefixRevision(ipr.dest, r);
+                    for il = 1:length(this.indicesLogical)
+                        if (this.indicesLogical(il))
+                            deleteExisting(sprintf('%s_frame%i.4dfp.*',    fp0, il));
+                            deleteExisting(sprintf('%s_frame%i_b*.4dfp.*', fp0, il));
+                            deleteExisting(sprintf('%s_frame%i_C*.4dfp.*', fp0, il));
+                            deleteExisting(sprintf('%s_frame%i_%s.4dfp.*', fp0, il, this.resolveTag));
+                            deleteExisting(sprintf('%s_frame%i_g*.4dfp.*', fp0, il));
+                            deleteExisting(sprintf('%s_frame%i_g*.nii.gz', fp0, il));
+                        end
                     end
-                end
-            end            
-            delete(sprintf('%s_*_*.*', ipr.maskForImages));
-            delete(sprintf('*_g0_1.4dfp.*'));
+                end            
+                deleteExisting(sprintf('%s_*_*.*', ipr.maskForImages));
+                deleteExisting(sprintf('*_g0_1.4dfp.*'));
+            catch ME
+                handwarning(ME);
+            end
         end
         
         %% UTILITY         

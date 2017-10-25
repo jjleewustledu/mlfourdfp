@@ -162,29 +162,41 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpet.AbstractTracerBuilder & mlf
             if (this.keepForensics); return; end
             
             ensuredir(this.logPath);
-            movefiles('*.log', this.logPath); 
-            movefiles('*.txt', this.logPath);   
-            movefiles('*.lst', this.logPath);    
-            movefiles('*.mat0', this.logPath);   
-            movefiles('*.sub', this.logPath); 
+            try
+                movefiles('*.log', this.logPath); 
+                movefiles('*.txt', this.logPath);   
+                movefiles('*.lst', this.logPath);    
+                movefiles('*.mat0', this.logPath);   
+                movefiles('*.sub', this.logPath); 
+            catch ME
+                handwarning(ME);
+            end
         end
         function        teardownT4s(this)
             if (this.keepForensics); return; end
             
-            ensuredir(this.t4Path);
-            movefiles('*_t4', this.t4Path);
-            sessd = this.sessionData;
-            movefile( ...
-                fullfile(this.t4Path, ...
-                    sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
-                pwd);
+            try
+                ensuredir(this.t4Path);
+                movefiles('*_t4', this.t4Path);
+                sessd = this.sessionData;
+                movefile( ...
+                    fullfile(this.t4Path, ...
+                        sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
+                    pwd);
+            catch ME
+                handwarning(ME);
+            end
         end
         function        teardownRevision(this, ipr)
-            delete(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
-            if (this.keepForensics); return; end
-            
-            this.teardownLogs;
-            this.teardownT4s;
+            try
+                deleteExisting(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
+                if (this.keepForensics); return; end
+
+                this.teardownLogs;
+                this.teardownT4s;
+            catch ME
+                handwarning(ME);
+            end
         end
         function pth  = logPath(this)
             pth = fullfile(this.sessionData.tracerLocation, 'Log', '');
