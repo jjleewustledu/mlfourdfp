@@ -456,6 +456,7 @@ classdef FourdfpVisitor
             addParameter(ip, 't4',         '',     @ischar);
             addParameter(ip, 'useMetricGradient', true, @islogical);
             addParameter(ip, 't4img_4dfp',        true, @islogical);
+            addParameter(ip, 'out',        '',     @ischar);
             addParameter(ip, 'log',        '/dev/null', @ischar);
             parse(ip, varargin{:});
             dest       = ip.Results.dest;
@@ -492,7 +493,11 @@ classdef FourdfpVisitor
                 [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243, log); %#ok<ASGLU>
             end
             if (ip.Results.t4img_4dfp)
-                [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
+                if (isempty(ip.Results.out))
+                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
+                else
+                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', 'out', ip.Results.out, ['-O' ip.Results.dest]);
+                end
             else
                 fqfp = ''; s = 0; r = '';
             end

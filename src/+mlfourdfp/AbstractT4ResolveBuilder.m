@@ -436,6 +436,30 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpet.AbstractTracerBuilder & mlf
             this.buildVisitor.nifti_4dfp_4([fqfp '_ones']);
             msk = this.zeroSlicesOnBoundaries([fqfp '_ones'], 3);
         end
+        function fp    = maskFromImage(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'fp1', @(x) lexist([x '.4dfp.ifh']));
+            addOptional(ip, 'fp',  ['mask_' varargin{1}], @ischar);
+            parse(ip, varargin{:});
+            
+            import mlfourd.* mlfourdfp.*;
+            fqfp1 = [ip.Results.fp1 '_g0_1'];
+            bv = this.buildVisitor;
+            if (~bv.lexist_4dfp(fqfp1))
+                fqfp_ = bv.gauss_4dfp(ip.Results.fp1, 0.1);
+                fqfp1 = strrep(fqfp_, '0.1','0_1');
+                bv.move_4dfp(fqfp_, fqfp1);
+            end
+            if (~bv.lexist_4dfp(ip.Results.fp))
+                ic = ImagingContext([fqfp1 '.4dfp.ifh']);
+                ic = ic.thresh(ic.numericalNiftid.dipmax/8);
+                ic = ic.binarized;
+                ic.saveas([ip.Results.fp '.4dfp.ifh']);
+                fp = ic.fqfileprefix;
+                return
+            end
+            fp = ip.Results.fp;
+        end        
         function fp    = maskForImages(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fp1', @(x) lexist([x '.4dfp.ifh']));
