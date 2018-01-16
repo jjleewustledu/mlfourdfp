@@ -884,9 +884,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpet.AbstractTracerBuilder & mlf
         function out = t4img_4dfp_0(this, varargin)
             switch (this.NRevisions)
                 case 1
-                    out = this.t4img_4dfpr1(varargin{:});
+                    out = this.t4img_4dfpr1_0(varargin{:});
                 case 2
-                    out = this.t4img_4dfpr2(varargin{:});
+                    out = this.t4img_4dfpr2_0(varargin{:});
                 otherwise
                     error('mlfourdfp:unsupportedSwitchCase', ...
                           'CompositeT4ResolveBuilder.t4img_4dfp.NRevisions->%i', this.NRevisions);

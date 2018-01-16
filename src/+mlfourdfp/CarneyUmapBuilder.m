@@ -93,6 +93,18 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             this.teardownBuildUmaps;
             popd(pwd0);
         end
+        function [this,umap] = buildPhantomUmap(this, varargin)            
+            pwd0 = pushd(this.sessionData.sessionPath);
+            ip = inputParser;
+            addOptional(ip, 'ctm', 'ctMasked', @lexist_4dfp);
+            parse(ip, varargin{:});
+
+            this.ensureCTForms;
+            ctr  = this.rescaleCT(ip.Results.ctm, 'ctOut', 'ctRescaled');
+            umap = this.assembleCarneyUmap(ctr, 'umapSynth');
+            umap = this.buildVisitor.imgblur_4dfp(umap, 4);
+            popd(pwd0);
+        end
         function               teardownBuildUmaps(this)
             sessd = this.sessionData;
             
@@ -152,8 +164,8 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             sp = sd.sessionPath;
             bv = this.buildVisitor;
             pwd0 = pushd(sd.sessionPath);
-            if (~lexist(sd.ct('typ', '4dfp.ifh')))
-                if (~lexist(fullfile(sp, 'AC_CT.4dfp.ifh')))
+            if (~lexist_4dfp(sd.ct('typ', 'fp')))
+                if (~lexist_4dfp(fullfile(sp, 'AC_CT')))
                     assert(lexist(fullfile(sp, 'AC_CT_series2.4dfp.ifh')))
                     bv.lns_4dfp(fullfile(sp, 'AC_CT_series2'), 'AC_CT');
                 end

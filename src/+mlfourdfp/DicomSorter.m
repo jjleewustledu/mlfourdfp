@@ -153,7 +153,7 @@ classdef DicomSorter
             parse(ip, varargin{:});
 
             import mlfourdfp.*;
-            if (lstrfind(ip.Results.srcPath, 'CT'))
+            if (lstrfind(ip.Results.srcPath, 'CT') || lstrfind(ip.Results.srcPath, 'CAL'))
                 seriesList = {'AC_CT'};
                 targetList = {'ct'};
             else
@@ -281,11 +281,11 @@ classdef DicomSorter
                             if (~isempty(dcms.fqfns))
                                 infos{iseries} = dicominfo(dcms.fqfns{1});
                             end
+                            save(this.cachedDcminfosFilename, 'infos');
                         catch ME
                             handwarning(ME);
                         end
                     end 
-                    save(this.cachedDcminfosFilename, 'infos');  
                 end                
             end
         end

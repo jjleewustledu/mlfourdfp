@@ -28,14 +28,14 @@ classdef IT4ResolveBuilder < mlfourdfp.IImageBuilder
         fileprefixMskt(this, fqfp)
         fileprefixMsktgen(this, fqfp)
         fileprefixSumt(this, fqfp)   
-        finalize(this)
+%        finalize(this)
             %% FINALIZE
             %  @param ipr are inputParser.Results from this.resolve.
             %  @return updates this.{rnumber,product}; calls this.teardownResolve.
             %%
         logPath(this)
         onAtlasPath(this)
-        reconstituteImages(this)        
+%        reconstituteImages(this)        
             %% RECONSTITUTEIMAGES
             %  @param ipr are inputParser.Results from this.resolve.
             %  @param optional tag is char added to filenames of reconstituted images.
@@ -63,7 +63,7 @@ classdef IT4ResolveBuilder < mlfourdfp.IImageBuilder
         teardownRevision(this)
         teardownResolve(this)
         
-        tf = alreadyFinalized(this)        
+%        tf = alreadyFinalized(this)        
  	end 
 
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
