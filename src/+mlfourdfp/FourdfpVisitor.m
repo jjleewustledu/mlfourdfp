@@ -926,6 +926,7 @@ classdef FourdfpVisitor
             end
             if (lexist([fp '.nii']))
                 [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh', fp, fp));
+                deleteExisting([fp '.4dfp.img_to_atlas_t4']);
                 gzipExisting(  [fp '.nii']);
                 deleteExisting([fp '.nii']);
                 return

@@ -167,23 +167,16 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             %deletefiles(fqfps{:});
         end  
         function this         = finalize(this, ipr)
-            this.ipResults_ = ipr;
-            this.rnumber = this.NRevisions;
-            this.product_ = cell(1, sum(this.indicesLogical));
-            il1 = 0;
-            for il = 1:length(this.indicesLogical)
-                if (this.indicesLogical(il))
-                    il1 = il1 + 1;
-                    this.product_{il1} = mlpet.PETImagingContext([ipr.resolved{il} '.4dfp.ifh']);
-                    %this.buildVisitor.imgblur_4dfp(ipr.resolved{il}, this.blurArg)
-                end
-            end
+            this = this.buildProduct(ipr);
             this.teardownResolve(ipr);
             this.finished.touchFinishedMarker;  
         end
         function this         = alreadyFinalized(this, ipr)    
             dest = cellfun(@(x) this.fileprefixRevision(x, this.NRevisions), ipr.dest, 'UniformOutput', false);
-            ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest, 'UniformOutput', false);             
+            ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest, 'UniformOutput', false);
+            this = this.buildProduct(ipr);
+        end
+        function this         = buildProduct(this, ipr)      
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;            
             this.product_ = cell(1, sum(this.indicesLogical));            
@@ -192,8 +185,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 if (this.indicesLogical(il))
                     il1 = il1 + 1;                    
                     this.product_{il1} = mlpet.PETImagingContext([ipr.resolved{il} '.4dfp.ifh']);
+                    %assert(~isempty(this.product_{il1}));
                 end
-            end
+            end            
         end
         function                teardownResolve(this, ipr)
             if (this.keepForensics); return; end

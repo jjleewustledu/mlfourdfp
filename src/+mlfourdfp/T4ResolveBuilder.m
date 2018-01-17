@@ -175,10 +175,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function this         = finalize(this, ipr)
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;
-            this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);      
-            %if (this.buildVisitor.lexist_4dfp(ipr.resolved))
-            %    this.buildVisitor.imgblur_4dfp(ipr.resolved, this.blurArg);
-            %end
+            this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);            
+            %assert(~isempty(this.product_));
             this.teardownResolve(ipr);
             this.finished.touchFinishedMarker;          
         end
@@ -188,6 +186,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;
             this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);
+            %assert(~isempty(this.product_));
         end
         function                teardownResolve(this, ipr)
             %if (this.keepForensics); return; end
