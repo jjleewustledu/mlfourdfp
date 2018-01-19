@@ -12,6 +12,7 @@ classdef FourdfpVisitor
 	properties (Constant)
         ASSERT_PLATFORM = false
  		FOURDFP_HOSTS = {'touch3' 'william' 'vertebral' 'maulinux1' 'linux5' 'bruckner' 'wagner' 'cluster'}
+        UNSAFE_FILEPREFIXES = {'_on_' '_op_' '+' '.a2009s'}
     end
     
     properties 
@@ -58,71 +59,40 @@ classdef FourdfpVisitor
                 cd(pth);
             end
         end
-        function obj1  = ensureSafeFileprefix(obj)
+        function obj   = ensureSafeFileprefix(obj)
             import mlfourdfp.*;
             if (isempty(obj))
-                obj1 = obj;
                 return
             end
             if (iscell(obj))
-                obj1 = cellfun(@(x) FourdfpVisitor.ensureSafeFileprefix(x), obj,  'UniformOutput', false);
+                obj = cellfun(@(x) FourdfpVisitor.ensureSafeFileprefix(x), obj,  'UniformOutput', false);
+                return
+            end
+            if (isa(obj, 'mlio.IOInterface') || isa(obj, 'mlio.HandleIOInterface'))
+                obj.fileprefix = FourdfpVisitor.ensureSafeFileprefix(obj.fileprefix);
                 return
             end
             if (ischar(obj))
-                if (~lstrfind(obj, '_on_'))
-                    obj1 = obj;
-                    return
-                end
                 [pth,fp,x] = myfileparts(obj);
-                idxs = regexp(fp, '_on_');
-                while (~isempty(idxs))
-                    idx1 = idxs(1);
-                    idx2 = idx1+4;
-                    assert(idx1 > 1, 'AbstractT4ResolveBuilder.ensureSafeFileprefix.fp->%s may be missing prefix', fp);
-                    assert(length(fp) >= idx2, 'AbstractT4ResolveBuilder.ensureSafeFileprefix.fp->%s may be missing suffix', fp);
-                    fp = sprintf('%sOn%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
-                    idxs = regexp(fp, '_on_');
+                fn = [fp x];
+                unsafe = FourdfpVisitor.UNSAFE_FILEPREFIXES;
+                for u = 1:length(unsafe)
+                    if (lstrfind(fn, unsafe{u}))
+                        idxs = regexp(fn, unsafe{u});
+                        while (~isempty(idxs))                            
+                            fn = FourdfpVisitor.unsafeSprintf(unsafe{u}, fn, idxs);
+                            idxs = regexp(fn, unsafe{u});
+                        end
+                    end
                 end
-                obj1 = fullfile(pth, [fp x]);
-                if (~FourdfpVisitor.lexist_4dfp(obj1))
-                    FourdfpVisitor.lns_4dfp(obj, obj1);
-                end
-                return
-            end
-            error('mlfourdfp:unsupportedTypeclass', 'AbstractT4ResolveBuilder.ensureSafeFileprefix');
-        end
-        function obj1  = ensureSafeOp(obj)
-            import mlfourdfp.*;
-            if (isempty(obj))
-                obj1 = obj;
-                return
-            end
-            if (iscell(obj))
-                obj1 = cellfun(@(x) FourdfpVisitor.ensureSafeOp(x), obj,  'UniformOutput', false);
-                return
-            end
-            if (ischar(obj))
-                if (~lstrfind(obj, '_op_'))
-                    obj1 = obj;
-                    return
-                end
-                [pth,fp,x] = myfileparts(obj);
-                idxs = regexp(fp, '_op_');
-                while (~isempty(idxs))
-                    idx1 = idxs(1);
-                    idx2 = idx1+4;
-                    assert(idx1 > 1, 'AbstractT4ResolveBuilder.ensureSafeOp.fp->%s may be missing prefix', fp);
-                    assert(length(fp) >= idx2, 'AbstractT4ResolveBuilder.ensureSafeOp.fp->%s may be missing suffix', fp);
-                    fp = sprintf('%sOp%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
-                    idxs = regexp(fp, '_op_');
-                end
-                obj1 = fullfile(pth, [fp x]);
-                if (~FourdfpVisitor.lexist_4dfp(obj1))
-                    FourdfpVisitor.lns_4dfp(obj, obj1);
+                obj0 = obj;
+                obj = fullfile(pth, fn);
+                if (lexist_4dfp(obj0) && ~lexist_4dfp(obj))
+                    lns_4dfp(obj0, obj);
                 end
                 return
             end
-            error('mlfourdfp:unsupportedTypeclass', 'AbstractT4ResolveBuilder.ensureSafeFileprefix');
+            error('mlfourdfp:unsupportedTypeclass', 'FourdfpVisitor.ensureSafeFileprefix');
         end
         function m     = ifhMatrixSize(fqfn)
             if (~lstrfind(fqfn, '.4dfp.ifh'))
@@ -575,6 +545,54 @@ classdef FourdfpVisitor
             [s,r] = this.compute_defined_4dfp__( ...
                 sprintf(' %s %s', ip.Results.options, ip.Results.in));
         end
+        function ic         = convertImageToLocal4dfp(this, varargin)
+            %% CONVERTIMAGETOLOCAL4DFP
+            %  @param required fqfn is char.
+            %  @param optional fqfn1 is char and may be lacking a file extension.
+            %  @return ic is an mlfourd.ImagingContext for 4dfp data created in the the cwd.
+            
+            ip = inputParser;
+            addRequired(ip, 'fqfn', @(x) lexist(x, 'file'));
+            addOptional(ip, 'fqfn1', '', @ischar);
+            parse(ip, varargin{:});
+            ipr = ip.Results;
+            
+            if (isempty(ipr.fqfn1))
+                ic = this.convertImageToLocal4dfp_1arg(ipr);
+            else
+                ic = this.convertImageToLocal4dfp_2arg2(ipr);
+            end
+        end
+        function ic         = convertImageToLocal4dfp_1arg(this, ipr)
+            % See also:  convertImageToLocal4dfp
+            assert(isstruct(ipr));
+            [~,fp] = myfileparts(ipr.fqfn);
+            locfp  = fullfile(pwd, fp);
+            nii    = [locfp '.nii'];
+            ifh    = [locfp '.4dfp.ifh'];
+            if (~lexist_4dfp(ifh))
+                mlsurfer.SurferVisitor.mri_convert(ipr.fqfn, nii);
+                this.nifti_4dfp_4(locfp);
+            end
+            ic = mlfourd.ImagingContext(ifh);
+        end
+        function ic         = convertImageToLocal4dfp_2arg2(this, ipr)
+            % See also:  convertImageToLocal4dfp
+            assert(isstruct(ipr));
+            [~,fp]  = myfileparts(ipr.fqfn);
+            [~,fp1] = myfileparts(ipr.fqfn1);
+            locfp   = fullfile(pwd, fp);
+            locfp1  = fullfile(pwd, fp1);
+            nii     = [locfp '.nii'];
+            ifh     = [locfp '.4dfp.ifh'];
+            ifh1    = [locfp1 '.4dfp.ifh'];
+            if (~lexist_4dfp(ifh1))
+                mlsurfer.SurferVisitor.mri_convert(ipr.fqfn, nii);
+                this.nifti_4dfp_4(locfp);
+                this.move_4dfp(locfp, locfp1);
+            end
+            ic = mlfourd.ImagingContext(ifh);
+        end        
         function      [s,r] = copy_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'in',  @this.lexist_4dfp);
@@ -1187,6 +1205,37 @@ classdef FourdfpVisitor
     end
 
     %% PRIVATE
+    
+    methods (Static, Access = private)        
+        function s     = unsafeSprintf(unsafeStr, fp, idxs)
+            idx1 = idxs(1);
+            idx2 = idx1;
+            try
+                switch (unsafeStr)
+                    case '_on_'
+                        idx2 = idx1+4;
+                        s = sprintf('%sOn%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
+                    case '_op_'
+                        idx2 = idx1+4;
+                        s = sprintf('%sOp%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
+                    case '+'
+                        idx2 = idx1+1;
+                        s = sprintf('%s%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
+                    case '.a2009s'
+                        idx2 = idx1+1;
+                        s = sprintf('%s%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
+                    otherwise
+                        error('mlfourdfp:unsupportedSwitchcase', 'FourdfpVisitor.unsafeSprintf.fp->%s', fp)
+                end
+            catch ME
+                assert(idx1 > 1, ...
+                    'FourdfpVisitor.unsafeSprintf.fp->%s may be missing prefix', fp);
+                assert(length(fp) >= idx2, ...
+                    'FourdfpVisitor.unsafeSprintf.fp->%s may be missing suffix', fp);
+                handexcept(ME);
+            end
+        end
+    end
     
     methods (Access = private)
         function [s,r] = CT2mpr_4dfp__(~, args)

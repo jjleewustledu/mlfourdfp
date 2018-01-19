@@ -32,7 +32,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         referenceImage
         referenceWeight
         resolveTag
-        rnumber
         sourceImage
         sourceWeight
         theImages
@@ -135,13 +134,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         function this = set.resolveTag(this, s)
             assert(ischar(s));
             this.sessionData_.resolveTag = s;
-        end
-        function g    = get.rnumber(this)
-            g = this.sessionData.rnumber;
-        end
-        function this = set.rnumber(this, s)
-            assert(isnumeric(s));
-            this.sessionData_.rnumber = s;
         end
         function si   = get.sourceImage(this)
             si = this.imageComposite.sourceImage;
