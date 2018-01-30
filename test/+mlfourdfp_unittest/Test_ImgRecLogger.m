@@ -7,11 +7,11 @@ classdef Test_ImgRecLogger < matlab.unittest.TestCase
 
 	%  $Revision$
  	%  was created 19-Sep-2017 18:04:33 by jjlee,
- 	%  last modified $LastChangedDate$ and placed into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/test/+mlfourdfp_unittest.
+ 	%  last modified $LastChangedDate$ and placed into repository /Users/jjlee/MATLAB-Drive/mlfourdfp/test/+mlfourdfp_unittest.
  	%% It was developed on Matlab 9.2.0.538062 (R2017a) for MACI64.  Copyright 2017 John Joowon Lee.
  	
 	properties
-        pwd0 = '~/Local/src/mlcvl/mlfourdfp/test/+mlfourdfp_unittest'
+        pwd0 = '~/MATLAB-Drive/mlfourdfp/test/+mlfourdfp_unittest'
  		registry
  		testObj
  	end

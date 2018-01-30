@@ -85,20 +85,23 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 fullfile(sessd.tracerNACLocation, ...
                     sprintf('%s_op_%s', sessd.umapSynth('typ', 'fp'), sessd.tracerNACRevision('typ', 'fp'))), ...
                 @lexist_4dfp);
+            addParameter(ip, 'zoom', this.mmrBuilder_.inverseCrop, @isnumeric);
             parse(ip, varargin{:});
             umap = ip.Results.umap;
             
             flipped = this.buildVisitor.flip_4dfp('z', umap);
             ic = mlfourd.ImagingContext([flipped '.4dfp.ifh']);
-            ic = ic.zoomed(this.mmrBuilder_.inverseCrop);
+            ic = ic.zoomed(ip.Results.zoom);
             ic.noclobber = false;
             ic.saveas([flipped '.4dfp.ifh']);
             movefile( ...
                 sprintf('%s.4dfp.img', flipped), ...
                 sprintf('%s.v',        umap), 'f');
-            delete(sprintf('%s.4dfp.*', flipped));
-            delete(sprintf('%sfz.4dfp.*', umap));
-            delete(sprintf('%s*.log', umap));
+            if (~this.keepForensics)
+                delete(sprintf('%s.4dfp.*', flipped));
+                delete(sprintf('%sfz.4dfp.*', umap));
+                delete(sprintf('%s*.log', umap));
+            end
             
             this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
         end
