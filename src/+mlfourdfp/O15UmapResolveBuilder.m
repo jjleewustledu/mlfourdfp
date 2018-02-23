@@ -204,10 +204,10 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             this.teardownLogs;
             this.teardownT4s;
             
-            delete([this.resolveSequenceTag '*_frame*4dfp*']);
-            delete([this.resolveSequenceTag '*_frame*nii.gz']);
-            ensuredir(this.resolveSequenceLocation);
-            movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
+            %delete([this.resolveSequenceTag '*_frame*4dfp*']);
+            %delete([this.resolveSequenceTag '*_frame*nii.gz']);
+            %ensuredir(this.resolveSequenceLocation);
+            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
             this.finished.touchFinishedMarker;
         end 
         function this            = buildO15AfterAC(this, sdc)

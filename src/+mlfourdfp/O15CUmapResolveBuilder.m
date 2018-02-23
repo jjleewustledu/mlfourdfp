@@ -152,12 +152,12 @@ classdef O15CUmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             
             %ensuredir(this.onAtlasPath);
             %movefiles(sprintf('*%s*', this.atlas('typ', 'fp')), this.onAtlasPath);
-            ensuredir(this.resolveSequenceLocation);
-            movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
+            %ensuredir(this.resolveSequenceLocation);
+            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
             
-            delete([this.resolveSequenceTag '*_frame*4dfp*']);
-            delete(sprintf('%s_on_*.4dfp.*', this.sessionData.ct('typ', 'fp')));  
-            delete(sprintf('%s_on_*.4dfp.*', this.sessionData.ctMasked('typ', 'fp')));
+            %delete([this.resolveSequenceTag '*_frame*4dfp*']);
+            %delete(sprintf('%s_on_*.4dfp.*', this.sessionData.ct('typ', 'fp')));  
+            %delete(sprintf('%s_on_*.4dfp.*', this.sessionData.ctMasked('typ', 'fp')));
             this.finished.touchFinishedMarker;
         end        
     end 

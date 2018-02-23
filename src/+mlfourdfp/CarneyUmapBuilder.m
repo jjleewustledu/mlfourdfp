@@ -113,18 +113,18 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             
             %ensuredir(this.onAtlasPath);
             %movefiles(sprintf('*%s*', this.atlas('typ', 'fp')), this.onAtlasPath);
-            ensuredir(this.resolveSequenceLocation);
-            movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
-            movefiles(sprintf('%sOnMprT*.4dfp.*', sessd.ctMasked('typ','fp')), this.resolveSequenceLocation);
-            movefiles(sprintf('%sr*.4dfp.*', sessd.ctRescaled('typ','fp')), this.resolveSequenceLocation);
-            copyfiles(sprintf('%sr*.4dfp.*', sessd.T1('typ','fp')), this.resolveSequenceLocation);
+            %ensuredir(this.resolveSequenceLocation);
+            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
+            %movefiles(sprintf('%sOnMprT*.4dfp.*', sessd.ctMasked('typ','fp')), this.resolveSequenceLocation);
+            %movefiles(sprintf('%sr*.4dfp.*', sessd.ctRescaled('typ','fp')), this.resolveSequenceLocation);
+            %copyfiles(sprintf('%sr*.4dfp.*', sessd.T1('typ','fp')), this.resolveSequenceLocation);
             
-            delete([this.resolveSequenceTag '*_frame*4dfp*']);
-            delete(sprintf('%s_on_*.4dfp.*', sessd.ct('typ', 'fp')));  
-            delete(sprintf('%s_on_*.4dfp.*', sessd.ctMasked('typ', 'fp')));
-            delete(sprintf('%s_on_*.4dfp.*', sessd.T1('typ', 'fp'))); 
-            delete(sprintf('%s_on_*.4dfp.*', sessd.umapSynth('typ', 'fp')));
-            delete(sprintf('%sr*_op_%s*', sessd.T1('typ','fp')));
+%             delete([this.resolveSequenceTag '*_frame*4dfp*']);
+%             delete(sprintf('%s_on_*.4dfp.*', sessd.ct('typ', 'fp')));  
+%             delete(sprintf('%s_on_*.4dfp.*', sessd.ctMasked('typ', 'fp')));
+%             delete(sprintf('%s_on_*.4dfp.*', sessd.T1('typ', 'fp'))); 
+%             delete(sprintf('%s_on_*.4dfp.*', sessd.umapSynth('typ', 'fp')));
+%             delete(sprintf('%sr*_op_%s*', sessd.T1('typ','fp')));
             
             this.finished.touchFinishedMarker;
         end

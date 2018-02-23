@@ -162,11 +162,15 @@ classdef DicomSorter
             end
             %seriesList = DicomSorter.SERIES_LIST;
             for s = 1:length(seriesList)
+                try
                 this = DicomSorter.session_to_4dfp( ...
                     ip.Results.srcPath, ip.Results.destPath, ...
                     'seriesFilter', seriesList{s}, ...
                     'sessionData', ip.Results.sessionData, ...
                     'preferredName', targetList{s});
+                catch ME
+                    dispwarning(ME);
+                end
             end
         end
         function         linkPreferredSeries(filteredNames, preferredName)

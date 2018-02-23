@@ -182,10 +182,10 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
             
             %ensuredir(this.onAtlasPath);
             %movefiles(sprintf('*%s*', this.atlas('typ', 'fp')), this.onAtlasPath);
-            ensuredir(this.resolveSequenceLocation);
-            movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
+            %ensuredir(this.resolveSequenceLocation);
+            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
             
-            delete([this.resolveSequenceTag '*_frame*4dfp*']);
+            %delete([this.resolveSequenceTag '*_frame*4dfp*']);
             this.finished.touchFinishedMarker;
         end
     end

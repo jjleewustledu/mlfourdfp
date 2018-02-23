@@ -393,6 +393,7 @@ classdef RawDataSorter
             end
         end
         function [s,r] = binaryFilesystemOperation(~, loc0, loc, funch)
+            s = 0; r = '';
             try
                 assert(isdir(loc0));
                 [s,r] = funch(loc0, loc);

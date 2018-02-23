@@ -12,7 +12,7 @@ classdef FourdfpVisitor
 	properties (Constant)
         ASSERT_PLATFORM = false
  		FOURDFP_HOSTS = {'touch3' 'william' 'vertebral' 'maulinux1' 'linux5' 'bruckner' 'wagner' 'cluster'}
-        UNSAFE_FILEPREFIXES = {'_on_' '_op_' '+' '.a2009s'}
+        UNSAFE_FILEPREFIXES = {'_on_' '+' '.a2009s'} % '_op_' removed 2018feb8
     end
     
     properties 
@@ -44,6 +44,8 @@ classdef FourdfpVisitor
                 return
             end
             error('mlfourdfp:backupRejected', 'FourdfpVisitor.backupn.ip.Results.n -> %i', ip.Results.n);
+        end
+        function         copyfile_4dfp(varargin)
         end
         function pth   = ensureConsistentPwd(fqfp)
             %% ENSURECONSISTENTPWD
@@ -80,7 +82,7 @@ classdef FourdfpVisitor
                     if (lstrfind(fn, unsafe{u}))
                         idxs = regexp(fn, unsafe{u});
                         while (~isempty(idxs))                            
-                            fn = FourdfpVisitor.unsafeSprintf(unsafe{u}, fn, idxs);
+                            fn = FourdfpVisitor.safesprintf(unsafe{u}, fn, idxs);
                             idxs = regexp(fn, unsafe{u});
                         end
                     end
@@ -134,32 +136,28 @@ classdef FourdfpVisitor
                  lexist(fqfn))
                 [s,r] = mlbash(sprintf('ln -s %s', fqfn));
             end
+            warning('mlfourdfp:symbolicLinksCreated', 'FourdfpVisitor.lns->%s', fqfn);
         end
         function [s,r] = lns_4dfp(varargin)
             ip = inputParser;
             addRequired(ip, 'fqfpSrc',      @mlfourdfp.FourdfpVisitor.lexist_4dfp);
             addOptional(ip, 'fqfpDest', '', @ischar);
-            parse(ip, varargin{:});
-            
+            parse(ip, varargin{:});            
             fqfpSrc  = myfileprefix(ip.Results.fqfpSrc);
             fqfpDest = myfileprefix(ip.Results.fqfpDest);
-            s = 0; r = '';
-            ext = { '.hdr' '.ifh' '.img' '.img.rec' };
             if (isempty(fqfpDest))
-                for e = 1:length(ext) 
-                    if (~lexist(fullfile(pwd, [mybasename(fqfpSrc) '.4dfp' ext{e}]), 'file') && ...
-                         lexist([fqfpSrc '.4dfp.ifh']))
-                        [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s', fqfpSrc, ext{e}));
-                    end
+                fqfpDest = fullfile(pwd, mybasename(fqfpSrc));
+            end     
+            
+            s = 0; r = '';
+            ext = { '.hdr' '.ifh' '.img' '.img.rec' };         
+            for e = 1:length(ext) 
+                if (~isempty(ls([fqfpDest '.4dfp' ext{e}])))
+                    mlbash(sprintf('rm -f %s.4dfp%s', fqfpDest, ext{e}));
                 end
-            else                
-                for e = 1:length(ext) 
-                    if (~lexist(fullfile(pwd, [mybasename(fqfpDest) '.4dfp' ext{e}]), 'file') && ...
-                         lexist([fqfpSrc '.4dfp.ifh']))
-                        [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s %s.4dfp%s', fqfpSrc, ext{e}, fqfpDest, ext{e}));
-                    end
-                end
+                [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s %s.4dfp%s', fqfpSrc, ext{e}, fqfpDest, ext{e}));
             end
+            warning('mlfourdfp:symbolicLinksCreated', 'FourdfpVisitor.lns->%s', fqfpDest);
         end
         function [s,r] = mkdir(pth)
             s = 0; r = '';
@@ -927,6 +925,18 @@ classdef FourdfpVisitor
             [s,r] = this.msktgen3_4dfp__( ...
                 sprintf('%s %i %s %s', ip.Results.in, ip.Results.threshold, ip.Results.options, log));
         end
+        function this       = msktgenMprage(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'fqfp', @lexist_4dfp);
+            addOptional(ip, 'atl', fullfile(getenv('REFDIR'), 'TRIO_Y_NDC'), @lexist_4dfp);
+            parse(ip, varargin{:});
+            fqfp = ip.Results.fqfp;
+            atl  = ip.Results.atl;
+            
+            log = sprintf('msktgenMprage_%s.log', datestr(now, 30));
+            this.mpr2atl_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
+            this.msktgen_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
+        end   
         function      [s,r] = nifti_4dfp_4(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fileprefix', @ischar);
@@ -1207,7 +1217,7 @@ classdef FourdfpVisitor
     %% PRIVATE
     
     methods (Static, Access = private)        
-        function s     = unsafeSprintf(unsafeStr, fp, idxs)
+        function s     = safesprintf(unsafeStr, fp, idxs)
             idx1 = idxs(1);
             idx2 = idx1;
             try
@@ -1225,13 +1235,13 @@ classdef FourdfpVisitor
                         idx2 = idx1+1;
                         s = sprintf('%s%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
                     otherwise
-                        error('mlfourdfp:unsupportedSwitchcase', 'FourdfpVisitor.unsafeSprintf.fp->%s', fp)
+                        error('mlfourdfp:unsupportedSwitchcase', 'FourdfpVisitor.safesprintf.fp->%s', fp)
                 end
             catch ME
                 assert(idx1 > 1, ...
-                    'FourdfpVisitor.unsafeSprintf.fp->%s may be missing prefix', fp);
+                    'FourdfpVisitor.safesprintf.fp->%s may be missing prefix', fp);
                 assert(length(fp) >= idx2, ...
-                    'FourdfpVisitor.unsafeSprintf.fp->%s may be missing suffix', fp);
+                    'FourdfpVisitor.safesprintf.fp->%s may be missing suffix', fp);
                 handexcept(ME);
             end
         end
