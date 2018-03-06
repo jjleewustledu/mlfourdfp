@@ -46,6 +46,38 @@ classdef FourdfpVisitor
             error('mlfourdfp:backupRejected', 'FourdfpVisitor.backupn.ip.Results.n -> %i', ip.Results.n);
         end
         function         copyfile_4dfp(varargin)
+            xs = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'};
+            if (lstrfind(varargin{1}, xs))
+                warning('mlfourdfp:usageErr', 'FourdfpVisitor.copyfile_4dfp');
+                return
+            end
+            if (nargin > 1 && isdir(varargin{2}))
+                for ix = 1:length(xs)
+                    copyfile([varargin{1} xs{ix}], varargin{2})
+                end
+                return
+            end
+            for ix = 1:length(xs)
+                fns = cellfun(@(x) [x xs{ix}], varargin, 'UniformOutput', false);
+                copyfile(fns{:});
+            end
+        end
+        function         movefile_4dfp(varargin)
+            xs = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'};
+            if (lstrfind(varargin{1}, xs))
+                warning('mlfourdfp:usageErr', 'FourdfpVisitor.movefile_4dfp');
+                return
+            end
+            if (nargin > 1 && isdir(varargin{2}))
+                for ix = 1:length(xs)
+                    movefile([varargin{1} xs{ix}], varargin{2})
+                end
+                return
+            end
+            for ix = 1:length(xs)
+                fns = cellfun(@(x) [x xs{ix}], varargin, 'UniformOutput', false);
+                movefile(fns{:});
+            end
         end
         function pth   = ensureConsistentPwd(fqfp)
             %% ENSURECONSISTENTPWD
@@ -59,6 +91,42 @@ classdef FourdfpVisitor
             end
             if (~strcmp(pwd, pth))
                 cd(pth);
+            end
+        end
+        function         ensureLocalFourdfp(toensure)
+            %% ENSURELOCALFOURDFP
+            %  @param tostage is a data object to ensure to be in the pwd.
+            %  @return ensure copy of desired data object is in the pwd.
+            
+            import mlfourdfp.*;
+            this = FourdfpVisitor;
+            if (~this.isLocalFourdfp(toensure))
+                try
+                    if (isa(toensure, 'mlio.HandleIOInterface') || isa(toensure, 'mlio.IOInterface'))
+                        toensure = toensure.fqfilename;
+                    end
+                    [pth,fp,x] = myfileparts(toensure);
+                    if (lexist_4dfp(fullfile(pth, fp)))
+                        this.copyfile_4dfp(fullfile(pth, fp));
+                    end
+                    if (strcmp(x, '.mgz') || strcmp(x, '.mgh'))
+                        fp = ensureSafenameMgz(fp);
+                        this.mri_convert(toensure, [fp '.nii']);
+                        this.nifti_4dfp_4(fp);
+                        return
+                    end
+                    if (lstrfind(x, '.gz'))
+                        gunzip(toensure, pwd);
+                        this.nifti_4dfp_4(fp)
+                        return
+                    end
+                    if (strcmp(x, '.nii'))
+                        this.nifti_4dfp_4(fullfile(pth, fp));
+                        this.movefile_4dfp(fullfile(pth, fp));
+                    end
+                catch ME
+                    dispexcept(ME);
+                end
             end
         end
         function obj   = ensureSafeFileprefix(obj)
@@ -108,7 +176,21 @@ classdef FourdfpVisitor
             [m(3),idx] = ifhp.rightSideNumeric('matrix size [3]', idx);
              m(4)      = ifhp.rightSideNumeric('matrix size [4]', idx);
         end
+        function tf    = isLocalFourdfp(obj)
+            %  @param obj is a fourdfp data object:  filename, fileprefix, mlio.IOInterface, mlio.HandleIOInterface.
+            %  @return tf is boolean for presence of fourdfp data object in the pwd.            
+
+            if (isa(obj, 'mlio.HandleIOInterface') || isa(obj, 'mlio.IOInterface'))
+                obj = obj.fqfilename;
+            end            
+            [~,fp] = myfileparts(obj);
+            tf = lexist_4dfp(fp);
+        end
         function tf    = lexist_4dfp(fqfp)
+            %  @param fqfp exist as a filename on the filesystem or 
+            %         fqfp is the fileprefix for 4dfp files on the filesystem.
+            %  @return tf := true if useful files exist.
+            
             tf = lexist(fqfp);
             if (~tf)
                 tf = lexist([fqfp '.4dfp.hdr']) && ...
@@ -152,12 +234,15 @@ classdef FourdfpVisitor
             s = 0; r = '';
             ext = { '.hdr' '.ifh' '.img' '.img.rec' };         
             for e = 1:length(ext) 
-                if (~isempty(ls([fqfpDest '.4dfp' ext{e}])))
+                if (lexist([fqfpDest '.4dfp' ext{e}], 'file'))
                     mlbash(sprintf('rm -f %s.4dfp%s', fqfpDest, ext{e}));
                 end
                 [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s %s.4dfp%s', fqfpSrc, ext{e}, fqfpDest, ext{e}));
             end
             warning('mlfourdfp:symbolicLinksCreated', 'FourdfpVisitor.lns->%s', fqfpDest);
+        end
+        function fn    = mri_convert(varargin)
+            fn = mlsurfer.SurferVisitor.mri_convert(varargin{:});
         end
         function [s,r] = mkdir(pth)
             s = 0; r = '';
@@ -593,8 +678,8 @@ classdef FourdfpVisitor
         end        
         function      [s,r] = copy_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'in',  @this.lexist_4dfp);
-            addRequired( ip, 'out', @ischar);
+            addRequired(ip, 'in',  @this.lexist_4dfp);
+            addRequired(ip, 'out', @ischar);
             parse(ip, varargin{:});
             
             [s,r] = this.copy_4dfp__( ...
