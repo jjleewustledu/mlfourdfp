@@ -235,7 +235,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
         function [ctm,ic]          = buildCTMasked(this)
             %% CTMASKED
             %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
-            %  @return ic  := ctMasked as ImagingContext
+            %  @return ic  := ctMasked as ImagingContext on CT-space
             
             import mlfourd.*;
             mpr  = this.sessionData.mpr('typ', 'fqfp');
@@ -246,7 +246,8 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 return
             end
             
-            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct);
+            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', datestr(now,30)));
             mprToCtT4 = this.buildVisitor.t4_inv(ctToMprT4);
             mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
             
@@ -257,7 +258,34 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             ctm  = this.buildVisitor.t4img_4dfp(mprToCtT4, ct__, 'out', ctm, 'options', ['-O' ct]); % back to ct-space
             ic = ImagingContext(ctm);
             delete([ct_ '.4dfp.*']);
-            delete([ct__ '.4dfp.*']);
+            %delete([ct__ '.4dfp.*']); ct__ in mpr-space has best
+            %registration
+        end
+        function [ctm,ic,ctToMprT4] = buildCTMasked2(this)
+            %% CTMASKED
+            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
+            %  @return ic  := ctMasked as ImagingContext on MPR-space
+            
+            import mlfourd.*;
+            mpr  = this.sessionData.mpr('typ', 'fqfp');
+            ct   = this.sessionData.ct('typ', 'fqfp');
+            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
+            if (lexist(this.fourdfpImg(ctm)) && this.reuseCTMasked)
+                ic = ImagingContext(ctm);
+                return
+            end
+            
+            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', datestr(now,30)));
+            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
+            
+            ct_  = sprintf('%s_%s', ct, datestr(now, 30));
+            this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
+            this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
+            ic = ImagingContext(ctm);
+            delete([ct_ '.4dfp.*']);
+            %delete([ct__ '.4dfp.*']); ct__ in mpr-space has best
+            %registration
         end
         function imageOnSumt       = ctOnPetSumt(this, ct, petSumt)
             assert(lexist(this.fourdfpImg(ct)));
@@ -269,7 +297,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             ctToPetT4         = this.buildVisitor.t4_mul(ctToMprT4, mprToPetT4);
             imageOnSumt       = this.buildVisitor.t4img_4dfp(ctToPetT4, ct, 'options', ['-O' petSumt]);
         end 
-        function [ctOnMpr,ctToMprT4] = CT2mpr_4dfp(this, ct)
+        function [ctOnMpr,ctToMprT4] = CT2mpr_4dfp(this, ct, varargin)
             assert(lexist(this.fourdfpImg(ct), 'file')); % not necessarily in pwd            
             mpr       = this.sessionData.mpr('typ', 'fqfp');
             pth       = fileparts(mpr);
@@ -277,7 +305,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             ctOnMpr   = fullfile(pth, [mybasename(ct) '_on_' mybasename(mpr)]);
             
             if (~lexist(this.fourdfpImg(ctOnMpr)))
-                ctOnMpr = this.buildVisitor.CT2mpr_4dfp(mpr, ct, 'options', ['-T' this.atlas('typ', 'fqfp')]);
+                ctOnMpr = this.buildVisitor.CT2mpr_4dfp(mpr, ct, 'options', ['-T' this.atlas('typ', 'fqfp')], varargin{:});
             end
             assert(lexist(ctToMprT4, 'file'));        
         end 

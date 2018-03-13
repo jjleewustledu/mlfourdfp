@@ -234,10 +234,14 @@ classdef FourdfpVisitor
             s = 0; r = '';
             ext = { '.hdr' '.ifh' '.img' '.img.rec' };         
             for e = 1:length(ext) 
-                if (lexist([fqfpDest '.4dfp' ext{e}], 'file'))
-                    mlbash(sprintf('rm -f %s.4dfp%s', fqfpDest, ext{e}));
+                try
+                    if (lexist([fqfpDest '.4dfp' ext{e}], 'file'))
+                        mlbash(sprintf('rm -f %s.4dfp%s', fqfpDest, ext{e}));
+                    end
+                    [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s %s.4dfp%s', fqfpSrc, ext{e}, fqfpDest, ext{e}));
+                catch ME
+                    dispwarning(ME);
                 end
-                [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s %s.4dfp%s', fqfpSrc, ext{e}, fqfpDest, ext{e}));
             end
             warning('mlfourdfp:symbolicLinksCreated', 'FourdfpVisitor.lns->%s', fqfpDest);
         end
@@ -938,36 +942,37 @@ classdef FourdfpVisitor
         end
         function      [s,r] = mpr2atl_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'in',               @this.lexist_4dfp);
+            addRequired( ip, 'in',               @ischar);
             addParameter(ip, 'options', '',      @ischar);
             addParameter(ip, 'log', '/dev/null', @ischar);
             parse(ip, varargin{:});
+            in_ = ip.Results.in;
             
             cmd = '%s %s';
             if (~strcmp(ip.Results.log, '/dev/null'))
                 cmd = [cmd ' &> ' ip.Results.log]; 
             end
             [s,r] = this.mpr2atl_4dfp__(sprintf( ...
-                cmd, ip.Results.in, ip.Results.options));
+                cmd, in_, ip.Results.options));
         end
         function      [s,r] = msktgen_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'in',           @this.lexist_4dfp);
+            addRequired( ip, 'in',             @ischar);
             addOptional( ip, 'threshold', 200, @isnumeric);
-            addParameter(ip, 'options',  '', @ischar);
-            addParameter(ip, 'log',      '', @ischar);
+            addParameter(ip, 'options',  '',   @ischar);
+            addParameter(ip, 'log',      '',   @ischar);
             parse(ip, varargin{:});
             log = ip.Results.log;
             if (~isempty(ip.Results.log))
                 log = [' &> ' log];
-            end
-            
+            end           
+            in_ = ip.Results.in;
             [s,r] = this.msktgen_4dfp__( ...
-                sprintf('%s %i %s %s', ip.Results.in, ip.Results.threshold, ip.Results.options, log));
+                sprintf('%s %i %s %s', in_, ip.Results.threshold, ip.Results.options, log));
         end
         function      [s,r] = msktgen_b110_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'in',           @this.lexist_4dfp);
+            addRequired( ip, 'in',           @ischar);
             addOptional( ip, 'threshold', 0, @isnumeric);
             addParameter(ip, 'options',  '', @ischar);
             addParameter(ip, 'log',      '', @ischar);
@@ -975,14 +980,14 @@ classdef FourdfpVisitor
             log = ip.Results.log;
             if (~isempty(ip.Results.log))
                 log = [' &> ' log];
-            end
-            
+            end            
+            in_ = ip.Results.in;
             [s,r] = this.msktgen_b110_4dfp__( ...
-                sprintf('%s %i %s %s', ip.Results.in, ip.Results.threshold, ip.Results.options, log));
+                sprintf('%s %i %s %s', in_, ip.Results.threshold, ip.Results.options, log));
         end
         function      [s,r] = msktgen2_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'in',           @this.lexist_4dfp);
+            addRequired( ip, 'in',           @ischar);
             addOptional( ip, 'threshold', 0, @isnumeric);
             addParameter(ip, 'options',  '', @ischar);
             addParameter(ip, 'log',      '', @ischar);
@@ -990,14 +995,14 @@ classdef FourdfpVisitor
             log = ip.Results.log;
             if (~isempty(ip.Results.log))
                 log = [' &> ' log];
-            end
-            
+            end            
+            in_ = ip.Results.in;
             [s,r] = this.msktgen2_4dfp__( ...
-                sprintf('%s %i %s %s', ip.Results.in, ip.Results.threshold, ip.Results.options, log));
+                sprintf('%s %i %s %s', in_, ip.Results.threshold, ip.Results.options, log));
         end
         function      [s,r] = msktgen3_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'in',             @this.lexist_4dfp);
+            addRequired( ip, 'in',             @ischar);
             addOptional( ip, 'threshold', 200, @isnumeric);
             addParameter(ip, 'options',   '',  @ischar);
             addParameter(ip, 'log',       '',  @ischar);
@@ -1006,14 +1011,14 @@ classdef FourdfpVisitor
             if (~isempty(ip.Results.log))
                 log = [' &> ' log];
             end
-            
+            in_ = ip.Results.in;          
             [s,r] = this.msktgen3_4dfp__( ...
-                sprintf('%s %i %s %s', ip.Results.in, ip.Results.threshold, ip.Results.options, log));
+                sprintf('%s %i %s %s', in_, ip.Results.threshold, ip.Results.options, log));
         end
         function this       = msktgenMprage(this, varargin)
             ip = inputParser;
-            addRequired(ip, 'fqfp', @lexist_4dfp);
-            addOptional(ip, 'atl', fullfile(getenv('REFDIR'), 'TRIO_Y_NDC'), @lexist_4dfp);
+            addRequired(ip, 'fqfp', @ischar);
+            addOptional(ip, 'atl', fullfile(getenv('REFDIR'), 'TRIO_Y_NDC'), @ischar);
             parse(ip, varargin{:});
             fqfp = ip.Results.fqfp;
             atl  = ip.Results.atl;
@@ -1038,7 +1043,7 @@ classdef FourdfpVisitor
                 gunzip([fp '.nii.gz']);
             end
             if (lexist([fp '.nii']))
-                [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh', fp, fp));
+                [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh -N', fp, fp));
                 deleteExisting([fp '.4dfp.img_to_atlas_t4']);
                 gzipExisting(  [fp '.nii']);
                 deleteExisting([fp '.nii']);

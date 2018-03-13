@@ -507,8 +507,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         end 
         function this  = msktgenMprage(this, varargin)
             ip = inputParser;
-            addRequired(ip, 'fqfp', @lexist_4dfp);
-            addOptional(ip, 'atl', fullfile(getenv('REFDIR'), 'TRIO_Y_NDC'), @lexist_4dfp);
+            addRequired(ip, 'fqfp', @ischar);
+            addOptional(ip, 'atl', fullfile(getenv('REFDIR'), 'TRIO_Y_NDC'), @ischar);
             parse(ip, varargin{:});
             fqfp = ip.Results.fqfp;
             atl  = ip.Results.atl;

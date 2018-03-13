@@ -75,19 +75,20 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
         function [this,umap] = buildUmap(this, varargin)
             [this,umap] = this.buildCarneyUmap(varargin{:});
         end
-        function [this,umap] = buildCarneyUmap(this)
+        function [this,umap] = buildCarneyUmap(this, varargin)
+            umap = [];
             if (this.isfinished)
                 return
             end            
             pwd0 = pushd(this.sessionData.vLocation);
             tracer0 = this.sessionData.tracer;
             this.sessionData_.tracer = 'FDG';
-            this.convertUmapTo4dfp;            
+            this.convertUmapTo4dfp; % convert FDG_V*-Converted-NAC/FDG_V*-LM-00/FDG_V*-LM-00-umap.v
             this.sessionData_.tracer = tracer0;
             this.ensureCTForms;
-                  ctm  = this.buildCTMasked;
-            [this,ctm] = this.alignCTToMpr(ctm); 
-                  ctm  = this.rescaleCT(ctm);
+                  ctm  = this.buildCTMasked2; % ct_on_T1001 has excellent alignment
+            % [this,ctm] = this.alignCTToMpr(ctm); % wrecks alignment
+                  ctm  = this.rescaleCT(ctm); 
                   umap = this.assembleCarneyUmap(ctm);
                   umap = this.buildVisitor.imgblur_4dfp(umap, 4);
             this.teardownBuildUmaps;
@@ -148,7 +149,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             import mlfourdfp.*;
             ip = inputParser;
             addRequired(ip, 'rescaledCT', @FourdfpVisitor.lexist_4dfp);
-            addOptional(ip, 'umap', this.sessionData.umapSynth('typ', 'fqfp'), @ischar);
+            addOptional(ip, 'umap', this.sessionData.umapSynth('tracer', '', 'blurTag', '', 'typ', 'fqfp'), @ischar);
             parse(ip, varargin{:});            
             umap = ip.Results.umap;
             
@@ -156,6 +157,8 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
                 return
             end
             delete([umap '.4dfp.*']);
+            delete([umap '_b40.4dfp.*']);
+            delete([umap '.log']);
             ic = this.CarneyImagingContext(ip.Results.rescaledCT);
             ic.saveas([umap '.4dfp.ifh']);
         end

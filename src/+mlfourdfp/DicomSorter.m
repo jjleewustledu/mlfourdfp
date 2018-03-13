@@ -183,7 +183,8 @@ classdef DicomSorter
             if (~isempty(pth)); cd(pth); end
             filteredNames = DicomSorter.sortBySeriesNumber(filteredNames);
             if (~FourdfpVisitor.lexist_4dfp(preferredName))
-                FourdfpVisitor.lns_4dfp(filteredNames{1}, preferredName);
+                fv = FourdfpVisitor;
+                fv.copy_4dfp(filteredNames{1}, preferredName);
             end
             cd(pwd0);
         end
