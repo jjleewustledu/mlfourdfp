@@ -153,7 +153,9 @@ classdef DicomSorter
             parse(ip, varargin{:});
 
             import mlfourdfp.*;
-            if (lstrfind(ip.Results.srcPath, 'CT') || lstrfind(ip.Results.srcPath, 'CAL'))
+            if (lstrfind(ip.Results.srcPath, 'CT')  || ...
+                lstrfind(ip.Results.srcPath, 'CAL') || ...
+                strcmpi( ip.Results.sessionData.modality, 'ct'))
                 seriesList = {'AC_CT'};
                 targetList = {'ct'};
             else

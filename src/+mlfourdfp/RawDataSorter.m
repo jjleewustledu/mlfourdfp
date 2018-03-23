@@ -102,8 +102,12 @@ classdef RawDataSorter
             sessd       = mlraichle.SessionData('studyData', studyd, 'sessionPath', RawDataSorter.destSessionPath(re.subjid));
             sessd.vnumber = str2double(re.visit);
             this        = RawDataSorter('sessionData', sessd);
-            this        = this.dcm_sort_PPG(srcRawData);
-            this        = this.copyRawData(srcRawData);
+            try
+                this    = this.dcm_sort_PPG(srcRawData);
+                this    = this.copyRawData(srcRawData);            
+            catch ME
+                dispwarning(ME);
+            end
             this        = this.copyUTE( ...
                           RawDataSorter.sourceScansPath(ip.Results.rawdataFolder));
         end
