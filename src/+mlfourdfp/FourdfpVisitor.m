@@ -651,10 +651,12 @@ classdef FourdfpVisitor
             [s,r] = dbbash(sprintf('chmod 777 %s', t4)); %#ok<ASGLU>
             [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 4099, log); %#ok<ASGLU>
             [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 4099, log); %#ok<ASGLU>
-            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051, log); %#ok<ASGLU>       
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 3075, log); %#ok<ASGLU>    
             if (~ip.Results.useMetricGradient)
                 [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051, log); %#ok<ASGLU>
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051, log); %#ok<ASGLU>
             else
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243, log); %#ok<ASGLU>
                 [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243, log); %#ok<ASGLU>
             end
             if (ip.Results.t4img_4dfp)

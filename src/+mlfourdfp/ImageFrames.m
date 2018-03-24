@@ -7,13 +7,9 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
  	%  last modified $LastChangedDate$
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64.  Copyright 2017 John Joowon Lee.
- 	
-
-    properties
-        fractionalImageFrameThresh = 0 % eps is most permissive; 1 is most restrictive
-    end
     
     properties (Dependent)
+        fractionalImageFrameThresh
         referenceImage
         sessionData   
         sourceImage
@@ -22,6 +18,9 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
     end
     
     methods %% GET, SET
+        function g    = get.fractionalImageFrameThresh(this)
+            g = this.sessionData.fractionalImageFrameThresh;
+        end
         function g    = get.referenceImage(this)
             g = this.it4ResolveBuilder_.fileprefixIndexed( ...
                 this.sessionData.tracerRevision('typ', 'fqfp'), this.indexOfReference);
@@ -57,7 +56,6 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             else
                 this.nonEmptyImageIndices_ = this.nonEmptyImageIndices;
             end
-            this.indicesLogical = true;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
         end
     end
@@ -72,7 +70,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             ip.KeepUnmatched = true;
             addRequired( ip, 'it4rb', @(x) isa(x, 'mlfourdfp.IT4ResolveBuilder'));
             addParameter(ip, 'theImages', {}, @(x) iscell(x) || ischar(x));
-            addParameter(ip, 'indicesLogical', true, @islogical);
+            addParameter(ip, 'indicesLogical', this.sessionData.indicesLogical, @islogical);
             parse(ip, varargin{:}); 
             
             import mlfourdfp.*;
@@ -82,12 +80,13 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             else
                 this.length_ = this.readLength(this.theImages);
             end
-            if (this.fractionalImageFrameThresh < eps)
+            %if (this.fractionalImageFrameThresh < eps)
                 this.nonEmptyImageIndices_ = true(1, this.length_);
-            else
-                this.nonEmptyImageIndices_ = this.nonEmptyImageIndices;
-            end
-            this.indicesLogical = ip.Results.indicesLogical;
+            %else 
+            %    % needs to be available to T4ResolveBuilder.resolveAndPaste when managing epochs
+            %    this.nonEmptyImageIndices_ = this.nonEmptyImageIndices;
+            %end
+            this.indicesLogical = ensureRowVector(ip.Results.indicesLogical) & ensureRowVector(this.nonEmptyImageIndices_);
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
             %this.sourceImageTable_ = this.readSourceImageTable__;
         end       
@@ -143,11 +142,11 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             end
             
             tr = mlfourd.NumericalNIfTId.load(ip.Results.fqfn);
-            tr = tr.volumeSummed;
-            tr = tr > ip.Results.fracThresh*max(tr.img);
+            tr = tr.volumeAveraged;
+            tr = tr > ip.Results.fracThresh*median(tr.img);
             tr.img = double(tr.img);
             tr.saveas(cache);
-            fr = tr.img';
+            fr = logical(ensureRowVector(tr.img));
         end
         function len   = readLength(this, varargin)
             ip = inputParser;

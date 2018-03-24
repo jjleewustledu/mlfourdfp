@@ -16,7 +16,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this = this@mlfourdfp.AbstractT4ResolveBuilder(varargin{:});            
             ip = inputParser;
             ip.KeepUnmatched = true;
-            addParameter(ip, 'blurArg', 1.5, @isnumeric);
+            addParameter(ip, 'blurArg', this.sessionData.compositeT4ResolveBuilderBlurArg, @isnumeric);
             addParameter(ip, 'theImages', {}, @(x) ~isempty(x));
             addParameter(ip, 'indicesLogical', true, @islogical);
             addParameter(ip, 'indexOfReference', 1, @isnumeric);

@@ -17,7 +17,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             ip = inputParser;
             ip.KeepUnmatched = true;
             addOptional( ip, 'cctor', []);
-            addParameter(ip, 'blurArg', 5.5, @isnumeric);
+            addParameter(ip, 'blurArg', this.sessionData.t4ResolveBuilderBlurArg, @isnumeric);
             addParameter(ip, 'indicesLogical', true, @islogical);
             addParameter(ip, 'theImages', {}, @(x) iscell(x) || ischar(x));
             addParameter(ip, 'indexOfReference', 1, @isnumeric);
