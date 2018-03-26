@@ -56,6 +56,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             else
                 this.nonEmptyImageIndices_ = this.nonEmptyImageIndices;
             end
+            this.indicesLogical = true;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
         end
     end
@@ -80,13 +81,13 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             else
                 this.length_ = this.readLength(this.theImages);
             end
-            %if (this.fractionalImageFrameThresh < eps)
+            if (this.fractionalImageFrameThresh < eps)
                 this.nonEmptyImageIndices_ = true(1, this.length_);
-            %else 
-            %    % needs to be available to T4ResolveBuilder.resolveAndPaste when managing epochs
-            %    this.nonEmptyImageIndices_ = this.nonEmptyImageIndices;
-            %end
-            this.indicesLogical = ensureRowVector(ip.Results.indicesLogical) & ensureRowVector(this.nonEmptyImageIndices_);
+            else 
+                % TODO: this.nonEmptyImageIndices_ would need to be available to T4ResolveBuilder.resolveAndPaste when managing epochs
+                this.nonEmptyImageIndices_ = this.nonEmptyImageIndices;
+            end
+            this.indicesLogical = ip.Results.indicesLogical;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
             %this.sourceImageTable_ = this.readSourceImageTable__;
         end       

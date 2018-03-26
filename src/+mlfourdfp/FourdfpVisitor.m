@@ -235,9 +235,11 @@ classdef FourdfpVisitor
             ext = { '.hdr' '.ifh' '.img' '.img.rec' };         
             for e = 1:length(ext) 
                 try
-                    if (lexist([fqfpDest '.4dfp' ext{e}], 'file'))
-                        mlbash(sprintf('rm -f %s.4dfp%s', fqfpDest, ext{e}));
-                    end
+                    mlbash(sprintf('rm -f %s.4dfp%s', fqfpDest, ext{e}));
+                catch ME
+                    dispwarning(ME);
+                end
+                try
                     [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s %s.4dfp%s', fqfpSrc, ext{e}, fqfpDest, ext{e}));
                 catch ME
                     dispwarning(ME);

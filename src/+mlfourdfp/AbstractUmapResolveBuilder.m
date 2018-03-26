@@ -16,9 +16,9 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
 	properties
         ct_rescaleSlope = 1
         ct_rescaleIntercept = -1024
-        reuseCTMasked = true
-        reuseCTRescaled = true
-        reuseCarneyUmap = true
+        reuseCTMasked = false
+        reuseCTRescaled = false
+        reuseCarneyUmap = false
         sessionDataCache
     end
     
@@ -115,6 +115,45 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             
             this.product_ = prodCell;
         end  
+        function this  = repUmapToE7Format(this, umaps)
+            assert(iscell(umaps));
+            prodCell = {};
+            for fr = 1:length(umaps)
+                this = this.repUmapToE7Format__(umaps{fr});
+                prodCell{fr} = this.product_.fqfilename; %#ok<AGROW>
+            end
+            
+            this.product_ = prodCell;
+        end 
+        function this  = repUmapToE7Format__(this, varargin)
+            sessd = this.sessionData;
+            sessd.rnumber = 1;
+            
+            ip = inputParser;
+            addOptional(ip, 'umap', ...
+                fullfile(sessd.tracerNACLocation, ...
+                    sprintf('%s_op_%s', sessd.umapSynth('typ', 'fp'), sessd.tracerNACRevision('typ', 'fp'))), ...
+                @lexist_4dfp);
+            addParameter(ip, 'zoom', this.mmrBuilder_.inverseCrop, @isnumeric);
+            parse(ip, varargin{:});
+            umap = ip.Results.umap;
+            
+            flipped = this.buildVisitor.flip_4dfp('z', umap);
+            ic = mlfourd.ImagingContext([flipped '.4dfp.ifh']);
+            ic = ic.zoomed(ip.Results.zoom);
+            ic.noclobber = false;
+            ic.saveas([flipped '.4dfp.ifh']);
+            movefile( ...
+                sprintf('%s.4dfp.img', flipped), ...
+                sprintf('%s.v',        umap), 'f');
+            if (~this.keepForensics)
+                delete(sprintf('%s.4dfp.*', flipped));
+                delete(sprintf('%sfz.4dfp.*', umap));
+                delete(sprintf('%s*.log', umap));
+            end
+            
+            this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
+        end 
         function this  = loadSessionDataCache(this, varargin)
             ip = inputParser;
             addOptional(ip, 'tracers', {'OC' 'HO' 'OO'}, @iscell);
