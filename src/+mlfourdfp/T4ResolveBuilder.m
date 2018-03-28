@@ -87,8 +87,10 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             stagedImgs  = this.lazyStageImages(ipr);
             blurredImgs = this.lazyBlurImages(ipr);
             assert(length(stagedImgs) == length(blurredImgs));
-            for m = 1:length(stagedImgs)
-                for n = 1:length(stagedImgs)
+            len = length(stagedImgs);
+            t4Failures = zeros(len, len);
+            for m = 1:len
+                for n = 1:len
                     if (m ~= n) 
                         try
                             t4 = this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m});
@@ -109,14 +111,18 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             % based on the names of frame files
                             % e. g., fdgv1r1_frame13_to_fdgv1r1_frame72_t4                            
                         catch ME
+                            t4Failures(m,n) = t4Failures(m,n) + 1;
                             copyfile( ...
                                 this.buildVisitor.transverse_t4, ...
                                 this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}), 'f');
-                            handwarning(ME);
+                            dispwarning(ME);
                         end
                     end
                 end
-            end            
+            end
+            t4Failures = sum(t4Failures, 1);
+            this.indicesLogical = ensureRowVector(this.indicesLogical) & ...
+                                  ensureRowVector(t4Failures < 0.25*len);
             
             this.deleteTrash;
         end
@@ -171,6 +177,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 prev.filename = [ipr.dest '.4dfp.ifh'];
             end
             prev.save;
+            indicesLogical = this.indicesLogical; %#ok<NASGU>
+            save([prev.fqfileprefix '_indicesLogical.mat'], 'indicesLogical');
         end             
         function this         = finalize(this, ipr)
             this.ipResults_ = ipr;

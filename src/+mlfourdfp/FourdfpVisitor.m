@@ -1952,6 +1952,9 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('imgreg_4dfp %s', args));
+            if (0 ~= s)
+                error('mlfourdfp:imreg_4dfp__:abnormalExit', 'FourdfpVisitor.imgreg_4dfp__.s->%i', s);
+            end
         end
         function [s,r] = maskimg_4dfp__(~, args)
             %% MASKIMG_4DFP
