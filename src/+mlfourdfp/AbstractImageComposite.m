@@ -118,6 +118,10 @@ classdef AbstractImageComposite < mlfourdfp.IImageComposite
                 imax = 1;
                 return
             end
+            if (~any(this.indicesLogical))
+                imax = 1;
+                return
+            end
             imax = length(this.indicesLogical);
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f))

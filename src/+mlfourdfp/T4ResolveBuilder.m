@@ -59,6 +59,13 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             ipr = this.expandBlurs(ipr);            
             if (isempty(ipr.dest)); ipr.dest = ipr.source; end
             ipr.resolved = ipr.source; % initialize this.revise   
+            if (~any(this.indicesLogical))    
+                ipr.dest = this.fileprefixRevision(ipr.dest, this.NRevisions);            
+                ipr.resolved = sprintf('%s_%s', ipr.dest, this.resolveTag);
+                this.buildVisitor_.copyfile_4dfp(ipr.source, ipr.resolved);
+                this = this.finalize(ipr);
+                return
+            end
             if (this.isfinished)  
                 this = this.alreadyFinalized(ipr);
                 return
@@ -121,8 +128,9 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 end
             end
             t4Failures = sum(t4Failures, 1);
-            this.indicesLogical = ensureRowVector(this.indicesLogical) & ...
-                                  ensureRowVector(t4Failures < 0.25*len);
+            this.indicesLogical(this.indicesLogical) = ...
+                ensureRowVector(this.indicesLogical(this.indicesLogical)) & ...
+                ensureRowVector(t4Failures < 0.25*len);
             
             this.deleteTrash;
         end

@@ -1246,7 +1246,11 @@ classdef FourdfpVisitor
                 gunzip([fp '.nii.gz']);
             end
             if (lexist([fp '.nii']))
-                [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh -N', fp, fp));
+                if (lstrfind(fp, '111') || lstrfind(fp, '222') || lstrfind(fp, '333') || ...
+                    lstrfind(fp, 'TRIO_Y_NDC') || lstrfind(fp, '711-2'))
+                else
+                    [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh -N', fp, fp));
+                end
                 deleteExisting([fp '.4dfp.img_to_atlas_t4']);
                 gzipExisting(  [fp '.nii']);
                 deleteExisting([fp '.nii']);

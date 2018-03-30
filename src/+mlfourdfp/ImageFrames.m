@@ -138,7 +138,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             cache = [myfileprefix(ip.Results.fqfn) '_nonEmptyImageIndices.nii.gz'];
             if (lexist(cache))
                 tr = mlfourd.NIfTId.load(cache);
-                fr = tr.img';
+                fr = ensureRowVector(tr.img);
                 return
             end
             
