@@ -1031,6 +1031,21 @@ classdef FourdfpVisitor
             fqfp = ip.Results.outroot;            
             [s,r] = this.flip_4dfp__(sprintf('-%s %s %s', ip.Results.basis, ip.Results.input, ip.Results.outroot));
         end
+        function      [s,r] = freesurfer2mpr_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'in',               @ischar);
+            addParameter(ip, 'options', '',      @ischar);
+            addParameter(ip, 'log', '/dev/null', @ischar);
+            parse(ip, varargin{:});
+            in_ = ip.Results.in;
+            
+            cmd = '%s %s';
+            if (~strcmp(ip.Results.log, '/dev/null'))
+                cmd = [cmd ' &> ' ip.Results.log]; 
+            end
+            [s,r] = this.freesurfer2mpr_4dfp__(sprintf( ...
+                cmd, in_, ip.Results.options));
+        end
         function [fqfp,s,r] = gauss_4dfp(this, varargin)
             ip = inputParser;
             addRequired(ip, 'input',   @this.lexist_4dfp);
@@ -1861,6 +1876,25 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('extract_frame_4dfp %s', args));
+        end
+        function [s,r] = freesurfer2mpr_4dfp__(~, args)
+            %% FREESURFER2MPR_4DFP__
+            % $Id: freesurfer2mpr_4dfp,v 1.9 2017/08/17 22:27:00 avi Exp $
+            % Usage:  freesurfer2mpr_4dfp <(4dfp) mpr> <(4dfp) orig> [options]
+            % e.g.,   freesurfer2mpr_4dfp vc1234_654-3[.4dfp.img] vc1234_orig
+            % e.g.,   freesurfer2mpr_4dfp vc1234_654-3 vc1234_orig -T711-2V apply
+            %         options
+            %         -skew           general affine orig->mpr registeration (default 6 parameter rigid body)
+            %         -T<target>      specify atlas representative target
+            %         -a<segimg>      add named (4dfp format) freesurfer segemntation result to "apply" list
+            %         apply   proceed directly to transform (4dfp format) segmentations
+            %         force   force atlas transformation of segmentation results even if it already exists
+            %         setecho set echo
+            % N.B.:   <(4dfp) orig> is the freesurfer-resampled 256x256x256 coronal mpr
+            % N.B.:   the default "apply" list includes (4dfp format) images named *parc* and *aseg*
+            
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('freesurfer2mpr_4dfp %s', args));
         end
         function [s,r] = flip_4dfp__(~, args)
             %% FLIP_4DFP__
