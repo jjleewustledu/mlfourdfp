@@ -49,17 +49,6 @@ classdef Viewer
                         return
                     end
                     
-                    % NIfTI extension
-                    if (lstrfind(targ, '.nii.gz'))
-                        targ = gunzip(targ);
-                        targ = targ{1};
-                    end
-                    if (lstrfind(targ, '.nii'))
-                        fv.nifti_4dfp_4(targ);                        
-                        interp = replace(targ, '.nii', '.4dfp.img');
-                        return
-                    end
-                    
                     % no extension found
                     if (lexist([targ '.4dfp.img'], 'file'))
                         interp = [targ '.4dfp.img'];
@@ -73,6 +62,18 @@ classdef Viewer
                     if (lexist([targ '.nii'], 'file'))
                         fv.nifti_4dfp_4([targ '.nii']);
                         interp = [targ '.4dfp.img'];
+                        return
+                    end
+                    
+                    % NIfTI extension
+                    if (lstrfind(targ, '.nii.gz') && lexist([targ '.nii.gz'], 'file'))
+                        fv.nifti_4dfp_4(targ);                        
+                        interp = replace(targ, '.nii.gz', '.4dfp.img');
+                        return
+                    end
+                    if (lstrfind(targ, '.nii') && lexist([targ '.nii'], 'file'))
+                        fv.nifti_4dfp_4(targ);                        
+                        interp = replace(targ, '.nii', '.4dfp.img');
                         return
                     end
                     
