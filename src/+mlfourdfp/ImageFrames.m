@@ -130,6 +130,13 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             addParameter(ip, 'fracThresh', this.fractionalImageFrameThresh, @isnumeric);
             parse(ip, varargin{:});
             
+            fr = true;
+            return
+            %% DEBUGGING
+            
+            
+            
+            
             if (~isempty(this.nonEmptyImageIndices_))
                 fr = this.nonEmptyImageIndices_;
                 return
