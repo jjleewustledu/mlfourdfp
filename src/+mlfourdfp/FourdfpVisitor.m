@@ -1248,6 +1248,7 @@ classdef FourdfpVisitor
             if (lexist([fp '.nii']))
                 if (lstrfind(fp, '111') || lstrfind(fp, '222') || lstrfind(fp, '333') || ...
                     lstrfind(fp, 'TRIO_Y_NDC') || lstrfind(fp, '711-2'))
+                    [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh', fp, fp));
                 else
                     [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh -N', fp, fp));
                 end
