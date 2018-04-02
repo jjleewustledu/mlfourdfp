@@ -42,8 +42,8 @@ classdef AbstractImageComposite < mlfourdfp.IImageComposite
             g = this.indexOfReference_;
             while (~this.indicesLogical(g))
                 g = g - 1;
+                if (g < 1); break; end
             end
-            assert(g > 0, 'mlfourdfp.AbstractImageComposite.get.indexOfReference:fatalError');
         end
         function this = set.indexOfReference(this, s)
             assert(isnumeric(s));
@@ -83,7 +83,7 @@ classdef AbstractImageComposite < mlfourdfp.IImageComposite
                 this.indicesLogical_ = s(1:maxIndex);
             end
             if (length(s) <= maxIndex)
-                s_ = zeros(1, maxIndex);
+                s_ = false(1, maxIndex);
                 s_(1:length(s)) = s;
                 this.indicesLogical_ = s_;
             end
