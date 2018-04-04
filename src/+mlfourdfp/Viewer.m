@@ -24,6 +24,10 @@ classdef Viewer
 	methods 
 		  
  		function this = Viewer(varargin)
+            ip = inputParser;
+            addOptional(ip, 'app', 'freeview', @ischar);
+            parse(ip, varargin{:});
+            this.app = ip.Results.app;
  		end
     end 
     
