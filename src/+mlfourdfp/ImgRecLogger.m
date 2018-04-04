@@ -21,7 +21,12 @@ classdef ImgRecLogger < mlpipeline.AbstractLogger
 	methods 		  
  		function this = ImgRecLogger(varargin)
             this = this@mlpipeline.AbstractLogger(varargin{:});  
-            this.cellArrayList_ = mlpatterns.CellArrayList; % reset                  
+            this.cellArrayList_ = mlpatterns.CellArrayList; % reset  
+            
+            if (lexist(this.fqfilename, 'file'))
+                ipr = mlfourdfp.ImgRecParser.loadx(this.fqfileprefix, this.filesuffix);
+                this.cons(ipr.cellContents);
+            end
         end
         
         function c = clone(this)
