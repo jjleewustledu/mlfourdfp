@@ -28,19 +28,8 @@ classdef IT4ResolveBuilder < mlfourdfp.IImageBuilder
         fileprefixMskt(this, fqfp)
         fileprefixMsktgen(this, fqfp)
         fileprefixSumt(this, fqfp)   
-%        finalize(this)
-            %% FINALIZE
-            %  @param ipr are inputParser.Results from this.resolve.
-            %  @return updates this.{rnumber,product}; calls this.teardownResolve.
-            %%
         logPath(this)
         onAtlasPath(this)
-%        reconstituteImages(this)        
-            %% RECONSTITUTEIMAGES
-            %  @param ipr are inputParser.Results from this.resolve.
-            %  @param optional tag is char added to filenames of reconstituted images.
-            %  @return reconstituted images saved to filesystem.
-            %%
         resolve(this)
             %% RESOLVE iteratively calls t4_resolve and writes a log.
             %  @param dest       is a f.q. fileprefix.
