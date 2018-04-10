@@ -400,9 +400,9 @@ classdef FourdfpVisitor
             %% ALIGN_COMMONMODAL calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] + 256 and writes a log.
             %  See also mlfourdfp.FourdfpVisitor.align_modes6, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
             
-            assert(~lstrfind(varargin, 'useCommonModal'), ...
-                'mlfourdfp:ambiguousVargin', ...
-                'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
+            %assert(~lstrfind(varargin, 'useCommonModal'), ...
+            %    'mlfourdfp:ambiguousVargin', ...
+            %    'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
             [t4,fqfp,s,r] = this.align_modes6('useCommonModal', true, varargin{:});
         end
         function [t4,fqfp,s,r] = ...
@@ -410,9 +410,9 @@ classdef FourdfpVisitor
             %% ALIGN_CROSSMODAL calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] and writes a log.
             %  See also mlfourdfp.FourdfpVisitor.align_modes6, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
             
-            assert(~lstrfind(varargin, 'useCommonModal'), ...
-                'mlfourdfp:ambiguousVargin', ...
-                'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
+            %assert(~lstrfind(varargin, 'useCommonModal'), ...
+            %    'mlfourdfp:ambiguousVargin', ...
+            %    'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
             [t4,fqfp,s,r] = this.align_modes6('useCommonModal', false, varargin{:});
         end
         function [t4,fqfp,s,r] = ...
@@ -578,7 +578,7 @@ classdef FourdfpVisitor
         end
         function      [s,r] = dcm_to_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'target',          @(x) isdir(fileparts(x)));
+            addRequired( ip, 'target',          @(x) isdir(fileparts(x))); %#ok<*ISDIR>
             addParameter(ip, 'base', 'analyze', @ischar);
             addParameter(ip, 'options', '',     @ischar);
             parse(ip, varargin{:});
@@ -846,7 +846,7 @@ classdef FourdfpVisitor
         function      [s,r] = mpr2atl_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'in',               @ischar);
-            addParameter(ip, 'options', '',      @ischar);
+            addParameter(ip, 'options', sprintf('-T%s/TRIO_Y_NDC -S711-2B', getenv('REFDIR')), @ischar);
             addParameter(ip, 'log', '/dev/null', @ischar);
             parse(ip, varargin{:});
             in_ = ip.Results.in;
@@ -1250,11 +1250,11 @@ classdef FourdfpVisitor
                 [s,r] = copyfile(ip.Results.t40, t4, 'f'); %#ok<ASGLU>
             end
             [s,r] = dbbash(sprintf('chmod 777 %s', t4)); %#ok<ASGLU>
-            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, ip.Results.mode, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, ip.Results.mode, log);
             if (ip.Results.t4img_4dfp)
                 [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
             else
-                fqfp = ''; s = 0; r = '';
+                fqfp = ''; 
             end
         end
         function [t4,fqfp,s,r] = ...
@@ -1312,11 +1312,11 @@ classdef FourdfpVisitor
             end
             [s,r] = dbbash(sprintf('chmod 777 %s', t4)); %#ok<ASGLU>
             [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, ip.Results.mode, log); %#ok<ASGLU>
-            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, ip.Results.mode, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, ip.Results.mode, log); 
             if (ip.Results.t4img_4dfp)
                 [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
             else
-                fqfp = ''; s = 0; r = '';
+                fqfp = ''; 
             end
         end
         function [t4,fqfp,s,r] = ...
@@ -1386,15 +1386,15 @@ classdef FourdfpVisitor
                 [s,r] = copyfile(ip.Results.t40, t4, 'f'); %#ok<ASGLU>
             end
             [s,r] = dbbash(sprintf('chmod 777 %s', t4)); %#ok<ASGLU>
-            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 4099+madj, log); %#ok<ASGLU>
-            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 4099+madj, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, 'none',   source, 'none',     t4, 4099+madj, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, 'none',   source, 'none',     t4, 4099+madj, log); %#ok<ASGLU>
             [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 3075+madj, log); %#ok<ASGLU>   
             if (~ip.Results.useMetricGradient)
                 [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051+madj, log); %#ok<ASGLU>
-                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051+madj, log); %#ok<ASGLU>
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051+madj, log); 
             else
                 [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243+madj, log); %#ok<ASGLU>
-                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243+madj, log); %#ok<ASGLU>
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243+madj, log); 
             end
             if (ip.Results.t4img_4dfp)
                 if (isempty(ip.Results.out))
@@ -1403,7 +1403,7 @@ classdef FourdfpVisitor
                     [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', 'out', ip.Results.out, ['-O' ip.Results.dest]);
                 end
             else
-                fqfp = ''; s = 0; r = '';
+                fqfp = ''; 
             end
         end
         function       assertPlatform(this)
@@ -1809,7 +1809,8 @@ classdef FourdfpVisitor
             assert(ischar(args));
             [s,r] = dbbash(sprintf('imgreg_4dfp %s', args));
             if (0 ~= s)
-                error('mlfourdfp:abnormalExit', 'FourdfpVisitor.imgreg_4dfp__.s->%i', s);
+                error('mlfourdfp:abnormalExit', ...
+                    'FourdfpVisitor.imgreg_4dfp__:  s->%i\n    r->%s', s, r);
             end
         end
         function [s,r] = maskimg_4dfp__(~, args)
@@ -2012,6 +2013,10 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('t4_inv %s', args));
+            if (0 ~= s)
+                error('mlfourdfp:abnormalExit', ...
+                    'FourdfpVisitor.t4_inv__:  s->%i\n    r->%s', s, r);
+            end
         end
         function [s,r] = t4_mul__(~, args)
             %% T4_MUL__
@@ -2022,6 +2027,10 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('t4_mul %s', args));
+            if (0 ~= s)
+                error('mlfourdfp:abnormalExit', ...
+                    'FourdfpVisitor.t4_mul__:  s->%i\n    r->%s', s, r);
+            end
         end
         function [s,r] = t4img_4dfp__(~, args)
             %% T4IMG_4DFP__
@@ -2037,6 +2046,10 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('t4img_4dfp %s', args));
+            if (0 ~= s)
+                error('mlfourdfp:abnormalExit', ...
+                    'FourdfpVisitor.t4img_4dfp__:  s->%i\n    r->%s', s, r);
+            end
         end
         function [s,r] = t4imgs_4dfp__(~, args)
             %% T4IMGS_4DFP__
@@ -2058,6 +2071,10 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('t4imgs_4dfp %s', args));
+            if (0 ~= s)
+                error('mlfourdfp:abnormalExit', ...
+                    'FourdfpVisitor.t4imgs_4dfp__:  s->%i\n    r->%s', s, r);
+            end
         end
         function [s,r] = t4_resolve__(~, args)
             %% T4_RESOLVE__
@@ -2076,6 +2093,10 @@ classdef FourdfpVisitor
             
             assert(ischar(args));
             [s,r] = dbbash(sprintf('t4_resolve %s', args));
+            if (0 ~= s)
+                error('mlfourdfp:abnormalExit', ...
+                    'FourdfpVisitor.t4_resolve__:  s->%i\n    r->%s', s, r);
+            end
         end
         function [s,r] = zero_slice_4dfp__(~, args)
             %% ZERO_SLICE_4DFP__
