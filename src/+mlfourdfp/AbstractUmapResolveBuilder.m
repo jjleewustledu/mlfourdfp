@@ -383,7 +383,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 't4', petToMprT4);              
             mprToAtlT4 = [mybasename(mpr) '_to_' this.atlas('typ', 'fp') '_t4'];
             if (~lexist(mprToAtlT4, 'file'))     
-                this = this.msktgenMprage(mpr, this.atlas('typ', 'fp'));          
+                this = this.buildVisitor.msktgenMprage(mpr, this.atlas('typ', 'fp'));          
             end
             
             petToAtlT4 = [pet '_to_' this.atlas('typ', 'fp') '_t4'];
