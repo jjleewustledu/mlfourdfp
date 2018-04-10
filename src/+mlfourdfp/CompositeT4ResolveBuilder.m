@@ -20,7 +20,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'theImages', {}, @(x) ~isempty(x));
             addParameter(ip, 'indicesLogical', true, @islogical);
             addParameter(ip, 'indexOfReference', 1, @isnumeric);
-            addParameter(ip, 'maskForImages', 'none', @ischar);
+            addParameter(ip, 'maskForImages', 'none', @(x) ~isempty(x));
             parse(ip, varargin{:});
             
             import mlfourdfp.*;
@@ -43,13 +43,12 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'sourceMask',     'none',              @ischar);
             addParameter(ip, 'destBlur',       this.blurArg,        @isnumeric); % fwhh/mm
             addParameter(ip, 'sourceBlur',     this.blurArg,        @isnumeric); % fwhh/mm
-            addParameter(ip, 'maskForImages',  this.maskForImages_, @ischar);
+            addParameter(ip, 'maskForImages',  this.maskForImages_, @(x) ischar(x) || iscell(x));
             addParameter(ip, 'indicesLogical', this.indicesLogical, @islogical);
             addParameter(ip, 't40',            this.buildVisitor.transverse_t4, @(x) ischar(x) || iscell(x));
             addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
             addParameter(ip, 'log',            '/dev/null',         @ischar);
             parse(ip, varargin{:});
-            %if (this.isfinished); return; end
             this.indicesLogical = ip.Results.indicesLogical;
             this.resolveTag = ip.Results.resolveTag;  
             ipr = ip.Results;            
@@ -75,19 +74,23 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.resolveLog = loggerFilename( ...
                 ipr.dest{this.indexOfReference}, 'func', 'CompositeT4ResolveBuilder_t4ResolveAndPaste', 'path', this.logPath);
             
-            this.imageReg(ipr);
+            this = this.imageReg(ipr);
             ipr = this.resolveAndPaste(ipr); 
             this.teardownRevision(ipr);
             this.rnumber = this.rnumber + 1;
         end  
-        function                imageReg(this, ipr)
+        function this =         imageReg(this, ipr)
             stagedImgs   = this.lazyStageImages(ipr);
             blurredImgs  = this.lazyBlurImages(ipr);
             maskImgs     = this.lazyMasksForImages(ipr);
             assert(length(stagedImgs) == length(blurredImgs));
+            len = length(stagedImgs);
+            t4Failures = zeros(len, len);
             for m = 1:length(stagedImgs)
                 for n = 1:length(stagedImgs)
-                    if (m ~= n) 
+                    if (m ~= n && ...
+                        this.indicesLogical(m) && this.indicesLogical(n)) 
+                    
                         try
                             t4 = this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m});
                             if (~lexist(t4))
@@ -102,16 +105,51 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             end
                             % t4_resolve requires an idiomatic naming convention for t4 files,
                             % based on the names of image files
-                            % e. g., image1_to_image2_t4                            
+                            % e. g., image1_to_image2_t4    
                         catch ME
-                            handerror(ME);
+                            t4Failures(m,n) = t4Failures(m,n) + 1;
+                            copyfile( ...
+                                this.buildVisitor.transverse_t4, ...
+                                this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}), 'f');
+                            dispwarning(ME);
                         end
+                        
                     end
                 end
-            end            
+            end 
+            t4Failures = sum(t4Failures, 1);
+            disp(t4Failures);
+            this.indicesLogical(this.indicesLogical) = ...
+                ensureRowVector(this.indicesLogical(this.indicesLogical)) & ...
+                ensureRowVector(t4Failures < 0.25*len);           
+            disp(this.indicesLogical);            
+            
+            this.t4_resolve_err = nan(len, len);
+            for m = 1:length(stagedImgs)
+                for n = 1:length(stagedImgs)
+                    if (m ~= n && ...
+                        this.indicesLogical(m) && this.indicesLogical(n)) 
+                    
+                        try               
+                            [rmsdeg,rmsmm] = this.t4_resolve_errParser(this.resolvePair( ...
+                                    mybasename(ipr.dest{m}), mybasename(ipr.dest{n})));
+                            this.t4_resolve_err(m,n) = this.t4_resolve_errAverage(rmsdeg, rmsmm);
+                        catch ME
+                            dispwarning(ME);
+                        end
+                        
+                    end
+                end
+            end 
+            disp(this.t4_resolve_err);
             
             this.deleteTrash;
         end  
+        function r            = resolvePair(this, f1, f2)
+            [~,r] = this.buildVisitor.t4_resolve( ...
+                this.resolveTag, [f1 ' ' f2], ...
+                'options', '-v -m -s');
+        end
         function [ipr,imgFps] = resolveAndPaste(this, ipr)
             %% RESOLVEANDPASTE - preassign ipr.dest, this.resolveTag, this.indexOfReference as needed.
             %  @param ipr is a struct w/ field dest, a cell array of fileprefixes || is a cell
@@ -166,28 +204,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             dest1 = ipr.dest1;
             %deletefiles(fqfps{:});
         end  
-        function this         = finalize(this, ipr)
-            this = this.buildProduct(ipr);
-            this.teardownResolve(ipr);
-            this.finished.touchFinishedMarker;  
-        end
         function this         = alreadyFinalized(this, ipr)    
-            dest = cellfun(@(x) this.fileprefixRevision(x, this.NRevisions), ipr.dest, 'UniformOutput', false);
+            dest         = cellfun(@(x) this.fileprefixRevision(x, this.NRevisions), ipr.dest, 'UniformOutput', false);
             ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest, 'UniformOutput', false);
-            this = this.buildProduct(ipr);
-        end
-        function this         = buildProduct(this, ipr)      
-            this.ipResults_ = ipr;
-            this.rnumber = this.NRevisions;            
-            this.product_ = cell(1, sum(this.indicesLogical));            
-            il1 = 0;
-            for il = 1:length(this.indicesLogical)
-                if (this.indicesLogical(il))
-                    il1 = il1 + 1;                    
-                    this.product_{il1} = mlpet.PETImagingContext([ipr.resolved{il} '.4dfp.ifh']);
-                    %assert(~isempty(this.product_{il1}));
-                end
-            end            
+            this         = this.buildProduct(ipr);
         end
         function                teardownResolve(this, ipr)
             if (this.keepForensics); return; end
@@ -256,54 +276,47 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end
             assert(length(ipr.source) == length(ipr.source));
         end
+        function fp    = fileprefixIndexed(~, ipr)
+            assert(isfield(ipr, 'dest'));
+            assert(isfield(ipr, 'currentIndex'));
+            fp = ipr.dest{ipr.currentIndex};
+        end
         function fp    = fileprefixOfReference(this, ipr)
             fp = ipr.dest{this.indexOfReference};
         end
-        function fqfp  = lazyBlurImage(this, ipr, blur)
-            %% LAZYBLURIMAGE uses specifiers in ipr; will not replace any existing image
-            %  @param ipr is a struct
-            %  @param blur is numeric
-            
-            fqfp_ = ipr.dest{ipr.currentIndex};
-            fqfp  = this.fileprefixBlurred(fqfp_, blur);
-            if (~this.buildVisitor.lexist_4dfp(fqfp))
-                this.buildVisitor.imgblur_4dfp(fqfp_, blur);
-            end
-        end
-        function mska  = lazyMasksForImages(this, ipr)
+        function lazyMsk = lazyMasksForImages(this, ipr)
             %  @param ipr.maskForImages is 'none' or the fileprefix/name of an anatomical image which will be 
             %  thresholded to generate a mask; the anatomical image must have transverse orientation.   
             %  See also:  mlfourdfp.FourdfpVisitor.transverse_t4.
             %  @param this.theImages must be populated with the images to be masked.
             %  @return mska, a cell-array of binary masks, identically sized to this.theImages.
             
+            lazyMsk = cell(1, length(ipr.source));
+            
             if (strcmp(ipr.maskForImages, 'none'))
-                mska = cell(1, length(ipr.dest));
-                for f = 1:length(mska)
-                    mska{f} = 'none';
+                for m = 1:length(lazyMsk)
+                    lazyMsk{m} = 'none';
                 end
                 return
             end
             
-            msk0    = myfileprefix(ipr.maskForImages);
-            [~,msk] = fileparts(this.maskFromImage(msk0));
-            bv      = this.buildVisitor;
-            theDest = bv.ensureSafeFileprefix(ensureCell(ipr.dest));
-            mska = cell(1, length(theDest));
-            for ii = 1:length(theDest)
-                mska{ii} = ['mask_' theDest{ii}];
-                if (~bv.lexist_4dfp(mska{ii}))
-                    t4 = bv.align_multiSpectral( ...
-                        'dest',       theDest{ii}, ...
-                        'source',     msk0, ...
-                        'destBlur',   this.blurArg, ...
-                        'sourceBlur', this.blurArg, ...
-                        't4img_4dfp', false, ...
-                        'log',        this.imageRegLog);
-                    bv.t4img_4dfp(t4, msk, 'out', mska{ii}, 'options', ['-O' theDest{ii}]);
+            assert(iscell(ipr.maskForImages));
+            assert(length(ipr.maskForImages) == length(ipr.source));
+            for ii = 1:length(ipr.source)
+                if (strcmp(ipr.maskForImages{ii}, 'none'))
+                    lazyMsk{ii} = 'none';
+                    continue
                 end
+                if (strcmp(ipr.maskForImages{ii}, 'T1001'))
+                    if (~lexist_4dfp( [ipr.maskForImages{ii} '_mskt']))
+                        this.buildVisitor.msktgenMprage(ipr.maskForImages{ii});
+                    end
+                    lazyMsk{ii} = [ipr.maskForImages{ii} '_mskt'];
+                    continue
+                end
+                lazyMsk{ii} = 'none';
             end
-        end
+        end      
         function fqfps = lazyStageImages(this, ipr)
             assert(iscell(ipr.dest));
             fqfps = {};
@@ -312,24 +325,25 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     fqfps = [fqfps ipr.dest{d}]; %#ok<AGROW>
                 end
             end
-        end
-        
-        function this  = prepareMprToAtlasT4(this)
-            %% PREPAREMPRTOATLAST4
-            %  @param this.sessionData.{mprage,atlas} are valid.
-            %  @return this.product_ := [mprage '_to_' atlas '_t4'], existing in the same folder as mprage.
-            
-            sessd      = this.sessionData;
-            mpr        = sessd.mprage('typ', 'fp');
-            mprToAtlT4 = [mpr '_to_' sessd.atlas('typ', 'fp') '_t4'];            
-            if (~lexist(fullfile(sessd.mprage('typ', 'path'), mprToAtlT4)))
-                pwd0 = pushd(sessd.mprage('typ', 'path'));
-                this.msktgenMprage(mpr);
-                popd(pwd0);
-            end
-            this.product_ = mprToAtlT4;
         end        
     end 
+    
+    %% PROTECTED
+    
+    methods (Access = protected)
+        function this = buildProduct(this, ipr)
+            this.ipResults_ = ipr;
+            this.rnumber = this.NRevisions;            
+            this.product_ = cell(1, sum(this.indicesLogical));            
+            il1 = 0;
+            for il = 1:length(this.indicesLogical)
+                if (this.indicesLogical(il))
+                    il1 = il1 + 1;                    
+                    this.product_{il1} = mlfourd.ImagingContext([ipr.resolved{il} '.4dfp.ifh']);
+                end
+            end            
+        end
+    end
 
     %% PRIVATE
 

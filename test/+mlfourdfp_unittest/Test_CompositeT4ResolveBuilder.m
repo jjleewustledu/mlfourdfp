@@ -15,24 +15,50 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
 
 	properties
         fvisitor
-        hyglyNN = 'HYGLY09'
+        hyglyNN = 'HYGLY28'
         ipr
         pwd0
  		studyd
-        resolveTag = 'Test_CompositeT4ResolveBuilder'
-        sessd
+        resolveTag = 'TestCT4RB'
+        sessdFDG
+        sessdHO
  		testObj
-        theImages = {'testNativeCropped1' 'testNativeCropped2' 'testNativeCropped3' 'testNativeCropped4' 'testNativeCropped5'}
+        theImages
+        tracers = {'FDG' 'OC' 'OO' 'HO'}
         
         view = false
         quick = false
     end
+    
+    methods
+        function c = allTracerSumtImages(this, varargin)
+            % @param named typ =: ImagingContext.imagingType
+            
+            c = {};
+            sd = this.sessdFDG;
+            for it = 1:length(this.tracers)
+                sd.tracer = this.tracers{it};
+                c = [c sd.tracerResolvedFinalSumt(varargin{:})]; %#ok<AGROW>
+            end
+        end
+        function h = partialTimeSumsHO(this, tinterval, varargin)
+            % @param tinterval has numeric form [t0 tF]
+            % @param named 'typ' =: ImagingContext.imagingType
+            
+            fp = sprintf('%s_t%ito%i', this.sessdHO.tracerResolvedFinalSumt('typ','fp'), tinterval(1), tinterval(2));
+            if (~lexist_4dfp(fp))
+                nn = mlfourd.NumericalNIfTId.load(this.sessdHO.tracerResolvedFinal);
+                nn = nn.timeContracted(tinterval);
+                nn.fileprefix = fp;
+                nn.save;
+            end
+            h = this.sessdHO.fqfilenameObject(fullfile(this.pwd0, [fp '.4dfp.ifh']));
+        end
+    end
 
 	methods (Test)
-        function test_setup(this)
-            this.verifyClass(this.testObj, 'mlfourdfp.CompositeT4ResolveBuilder');
-            this.verifyClass(this.testObj.studyData, 'mlraichle.SynthStudyData');
-            this.verifyClass(this.testObj.sessionData, 'mlraichle.SynthSessionData');
+        function test_ctor(this)
+            disp(this.testObj);
         end
         function test_finished(this)
             touchfile = fullfile(this.testObj.logPath, '.test_mlfourdfp.CompositeT4ResolveBuilder_isfinished.touch');
@@ -46,8 +72,9 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
         function test_resolve(this)
             tic
             this.testObj.NRevisions = 2;
-            this.testObj = this.testObj.resolve('source', {'testNativeCropped1' 'testNativeCropped2' 'testNativeCropped3' 'testNativeCropped4' 'testNativeCropped5'});
-            [e,c] = this.fvisitor.etaAndCurves('testNativeCropped3r2_Test_CompositeT4ResolveBuilder', 'testNativeCropped5r2_Test_CompositeT4ResolveBuilder');
+            this.testObj = this.testObj.resolve('source', this.theImages);
+            [e,c] = this.fvisitor.etaAndCurves( ...
+                cellfun(@(x) [x '_' this.resolveTag], {this.theImages{logical([0 0 1 0 1])}}));
             this.verifyEqual(e, 0.1631, 'RelTol', 0.05);
             this.verifyEqual(c, [130 133 21 89 161 66], 'RelTol', 1);
             prod = this.testObj.product;
@@ -102,41 +129,19 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
             this.testObj.resolveLog = loggerFilename('', 'func', 'Test_CompositeT4ResolveBuilder_test_t4ResolveAndPaste');
             [ipr_,imgFns_] = this.testObj.resolveAndPaste(this.ipr);
             this.verifyEqual(ipr_.resolved, ...
-                {'testNativeCropped1_Test_CompositeT4ResolveBuilder' ...
-                 'testNativeCropped2_Test_CompositeT4ResolveBuilder' ...
-                 'testNativeCropped3_Test_CompositeT4ResolveBuilder' ...
-                 'testNativeCropped4_Test_CompositeT4ResolveBuilder' ...
-                 'testNativeCropped5_Test_CompositeT4ResolveBuilder'});
+                {'testNativeCropped1_TestCT4RB' ...
+                 'testNativeCropped2_TestCT4RB' ...
+                 'testNativeCropped3_TestCT4RB' ...
+                 'testNativeCropped4_TestCT4RB' ...
+                 'testNativeCropped5_TestCT4RB'});
             this.verifyEqual(imgFns_, 'testNativeCropped3 testNativeCropped5');
             if (this.view)
                 mlbash('fslview testNativeCropped3_Test_CompositeT4ResolveBuilder.4dfp.img testNativeCropped5_Test_CompositeT4ResolveBuilder.4dfp.img');
             end
         end
-        function test_teardownT4s(this)
-            %this.testObj.teardownT4;
-        end
-        function test_teardownLogs(this)
-            %this.testObj.teardownLogs;
-        end
-        function test_teardownRevision(this)
-            %this.testObj.teardownRevision;
-        end
-        function test_teardownResolve(this)
-            %this.testObj.teardownResolve;
-        end
-        function test_resolveTag(this)
-        end
-        function test_product(this)
-        end
         
         %% UTILITY
         
-        function test_fileprefixBlurred(this)
-        end
-        function test_fileprefixGaussed(this)
-        end
-        function test_fileprefixSumt(this)
-        end
         function test_lazyStageImages(this)
             this.ipr.currentIndex = nan;
             
@@ -188,22 +193,24 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
             fprintf('test_lazyMaskForImages:  ');
             toc
         end
-        function test_frames(this)
-            this.verifyEqual(sum(this.testObj.indicesLogical), 2);
-        end
 	end
 
  	methods (TestClassSetup)
 		function setupCompositeT4ResolveBuilder(this)
             import mlraichle.*;
             this.studyd = SynthStudyData;
-            this.sessd = SynthSessionData( ...
+            this.sessdFDG = SynthSessionData( ...
                 'studyData', this.studyd, ...
-                'sessionPath', fullfile(this.studyd.subjectsDir, this.hyglyNN, ''), ...
-                'tracer', 'TEST');    
-            this.pwd0 = pushd(this.sessd.tracerLocation);        
+                'sessionFolder', this.hyglyNN, ...
+                'vnumber', 2, ...
+                'rnumber', 2, ...
+                'ac', true);  
+            this.sessdHO = this.sessdFDG;
+            this.sessdHO.tracer = 'HO';
+            
+            this.pwd0 = pushd(this.sessdFDG.vLocation);        
             this.testObj_ = mlfourdfp.CompositeT4ResolveBuilder( ... 
-                'sessionData', this.sessd, ...  
+                'sessionData', this.sessdFDG, ...  
                 'NRevisions', 1, ...
                 'resolveTag', this.resolveTag, ...   
                 'theImages', this.theImages, ...
@@ -254,7 +261,7 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
         end
         function ensureImages(this)
             if (~this.fvisitor.lexist_4dfp('testNativeCropped'))
-                this.fvisitor.copy_4dfp('TEST_V1-LM-00-OP', 'testNativeCropped');
+                this.fvisitor.copy_4dfp(this.sessdHO.tracerResolvedFinal, 'testNativeCropped');
             end
             for idx = 1:5
                 if (~this.fvisitor.lexist_4dfp(sprintf('testNativeCropped%i', idx)))
@@ -270,15 +277,14 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
             if (~this.quick)
                 this.testObj_.keepForensics = false;
                 this.testObj_.teardownResolve(this.ipr);
-                %delete('*Test_CompositeT4ResolveBuilder.4dfp.*');
-                delete('*.nii');
-                delete('*.nii.gz');
-                if (isdir('Log')); rmdir('Log', 's'); end
+                deleteExisting('*.nii');
+                deleteExisting('*.nii.gz');
+                if (isdir('Log')); rmdir('Log', 's'); end %#ok<*ISDIR>
                 if (isdir('T4'));  rmdir('T4', 's');  end
             end
-            delete('*.mat0');
-            delete('*.sub');
-            cd(this.pwd0);
+            deleteExisting('*.mat0');
+            deleteExisting('*.sub');
+            popd(this.pwd0);
  		end
 	end
 

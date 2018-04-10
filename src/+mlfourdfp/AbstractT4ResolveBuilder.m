@@ -18,6 +18,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         imageRegLog
         resolveLog
         skipT4imgAll = false
+        t4_resolve_tol = 2 % mm
+        t4_resolve_err
     end
     
     properties (Dependent)
@@ -150,59 +152,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
     
         %%
         
-        function        teardownLogs(this)
-            if (this.keepForensics); return; end
-            
-            ensuredir(this.logPath);
-            try
-                movefiles('*.log', this.logPath); 
-                movefiles('*.txt', this.logPath);   
-                movefiles('*.lst', this.logPath);    
-                movefiles('*.mat0', this.logPath);   
-                movefiles('*.sub', this.logPath); 
-            catch ME
-                handwarning(ME);
-            end
+        function this  = alreadyFinalized(this, ipr)
+            dest         = this.fileprefixRevision(ipr.dest, this.NRevisions);
+            ipr.resolved = sprintf('%s_%s', dest, this.resolveTag);
+            this         = this.buildProduct(ipr);
         end
-        function        teardownT4s(this)
-            if (this.keepForensics); return; end
-            
-            try
-                ensuredir(this.t4Path);
-                movefiles('*_t4', this.t4Path);
-                sessd = this.sessionData;
-                movefile( ...
-                    fullfile(this.t4Path, ...
-                        sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
-                    pwd);
-            catch ME
-                handwarning(ME);
-            end
-        end
-        function        teardownRevision(this, ipr)
-            try
-                deleteExisting(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
-                if (this.keepForensics); return; end
-
-                this.teardownLogs;
-                this.teardownT4s;
-            catch ME
-                handwarning(ME);
-            end
-        end
-        function pth  = logPath(this)
-            pth = fullfile(this.sessionData.tracerLocation, 'Log', '');
-            ensuredir(pth);
-        end
-        function pth  = onAtlasPath(this)
-            pth = fullfile(this.sessionData.tracerLocation, 'Atlas', '');
-            ensuredir(pth);
-        end
-        function pth  = t4Path(this)
-            pth = fullfile(this.sessionData.tracerLocation, 'T4', '');
-            ensuredir(pth);
-        end
-        
         function a     = atlas(this, varargin) 
             a = this.sessionData.atlas(varargin{:});
         end
@@ -328,6 +282,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             parse(ip, varargin{:});
             fqfp = this.buildVisitor.fileprefixGaussed(ip.Results.fqfp, ip.Results.gauss);
         end
+        function fp    = fileprefixIndexed(~, ipr)
+            assert(isfield(ipr, 'dest'));
+            assert(isfield(ipr, 'currentIndex'));
+            fp = sprintf('%s_frame%i', ipr.dest, ipr.currentIndex);
+        end
         function fqfp  = fileprefixMsk(~, fqfp)
             fqfp = [fqfp '_msk'];
         end
@@ -390,6 +349,12 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             
             fqfp = fullfile(ip.Results.path, sprintf('tmp_%s', datestr(now, 30)));            
         end    
+        function this  = finalize(this, ipr)
+            save([ipr.resolved{this.indexOfReference} '_this_' datestr(now, 30) '.mat'], 'this');
+            this = this.buildProduct(ipr);            
+            this.teardownResolve(ipr);
+            this.finished.touchFinishedMarker;  
+        end
         function this  = img2atl(this, fqfp)
             sd = this.sessionData;
             imgToAtlT4 = [fqfp '_to_' sd.atlas('typ', 'fp') '_t4'];
@@ -400,6 +365,17 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             end
             if (~lexist(mybasename(imgToAtlT4), 'file'))
                 this.buildVisitor.lns(imgToAtlT4);
+            end
+        end
+        function fqfp  = lazyBlurImage(this, ipr, blur)
+            %% LAZYBLURIMAGE uses specifiers in ipr; will not replace any existing image
+            %  @param ipr is a struct
+            %  @param blur is numeric
+            
+            fqfp_ = this.fileprefixIndexed(ipr);
+            fqfp  = this.fileprefixBlurred(fqfp_, blur);
+            if (~this.buildVisitor.lexist_4dfp(fqfp))
+                this.buildVisitor.imgblur_4dfp(fqfp_, blur);
             end
         end
         function fqfps = lazyBlurImages(this, ipr)
@@ -415,6 +391,10 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             end
             assert(length(fqfps) == sum(this.indicesLogical));
         end    
+        function pth   = logPath(this)
+            pth = fullfile(this.sessionData.tracerLocation, 'Log', '');
+            ensuredir(pth);
+        end
         function msk   = maskBoundaries(this, fqfp)
             if (~this.doMaskBoundaries)
                 msk = 'none';
@@ -506,17 +486,12 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             this.buildVisitor.msktgen_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
         end 
         function this  = msktgenMprage(this, varargin)
-            ip = inputParser;
-            addRequired(ip, 'fqfp', @ischar);
-            addOptional(ip, 'atl', fullfile(getenv('REFDIR'), 'TRIO_Y_NDC'), @ischar);
-            parse(ip, varargin{:});
-            fqfp = ip.Results.fqfp;
-            atl  = ip.Results.atl;
-            
-            log = sprintf('msktgenMprage_%s.log', datestr(now, 30));
-            this.buildVisitor.mpr2atl_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
-            this.buildVisitor.msktgen_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
+            this = this.buildVisitor.msktgenMprage(this, varargin{:});
         end   
+        function pth   = onAtlasPath(this)
+            pth = fullfile(this.sessionData.tracerLocation, 'Atlas', '');
+            ensuredir(pth);
+        end
         function tag   = resolveTagFrame(this, varargin)
             tag = this.sessionData.resolveTagFrame(varargin{:});
         end    
@@ -532,6 +507,104 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             else
                 fqfp = this.sumTimesActmapf4dfp(varargin{:});
             end
+        end
+        function [rmsdeg,rmsmm] = t4_resolve_errParser(~, r)
+            %% T4_RESOLVE_PAIR
+            %  @param r is the result from a call to mlbash.
+            %  @return rmsdeg is numeric error found by t4_resolve for pair.
+            %  @return rmsmm  is numeric error found by t4_resolve for pair.
+            % 
+            % jjlee@william
+            % [ /data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY14/V1 ]$ t4_resolve T1001 fdgv1r2_op_fdgv1e1to4r1_frame4_sumt -oT1001_to_op_fdgv1r2_op_fdgv1e1to4r1_frame4_sumt
+            % $Id: t4_resolve.c,v 1.6 2013/09/12 00:31:12 avi Exp $
+            % n=2
+            % rms error averaged over   2 pairs
+            %     0.2726    0.1902    0.2722    0.0986    0.2615    0.1313
+            % pairs total rotation error        0.4296 (rms deg)
+            % pairs total translation error     0.3088 (rms mm)
+            % t4_resolve: VOI rms radius=50.0000
+            % t4_resolve: begin Gauss-Newton trajectory estimation
+            % estimated observational error based on   2 observations
+            %     0.3722    0.2711    0.3963    0.0046    0.4277    0.2680
+            % estimate total rotation error     0.6075 (rms deg)
+            % estimate total translation error  0.5047 (rms mm)
+            % rigid body rmserr       0.2113
+            % JtJ condition number0.1638E+05
+            % scale rmserr            0.0000
+            % err=0.535842 err0=0.000000
+            % estimated observational error based on   2 observations
+            %     0.2845    0.1895    0.2715    0.0639    0.2449    0.0563
+            % estimate total rotation error     0.4365 (rms deg)
+            % estimate total translation error  0.2593 (rms mm)
+            % rigid body rmserr       0.1330
+            % JtJ condition number0.1633E+05
+            % scale rmserr            0.0000
+            % err=0.212365 err0=0.535842
+            % estimated observational error based on   2 observations
+            %     0.2846    0.1895    0.2715    0.0633    0.2449    0.0561
+            % estimate total rotation error     0.4366 (rms deg)
+            % estimate total translation error  0.2591 (rms mm)
+            % rigid body rmserr       0.1330
+            % JtJ condition number0.1633E+05
+            % scale rmserr            0.0000
+            % err=0.212343 err0=0.212365
+            % estimated observational error based on   2 observations
+            %     0.2846    0.1895    0.2715    0.0633    0.2449    0.0561
+            % estimate total rotation error     0.4366 (rms deg)
+            % estimate total translation error  0.2591 (rms mm)
+            % rigid body rmserr       0.1330
+            % JtJ condition number0.1633E+05
+            % scale rmserr            0.0000
+            % err=0.212343 err0=0.212343
+            % estimated observational error based on   2 observations
+            %     0.2846    0.1895    0.2715    0.0633    0.2449    0.0561
+            % estimate total rotation error     0.4366 (rms deg)
+            % estimate total translation error  0.2591 (rms mm)
+            % rigid body rmserr       0.1330
+            % JtJ condition number0.1633E+05
+            % scale rmserr            0.0000
+            % err=0.212343 err0=0.212343
+            % Writing: T1001_to_op_fdgv1r2_op_fdgv1e1to4r1_frame4_sumt.sub
+            % T1001	t4=T1001_to_T1001_to_op_fdgv1r2_op_fdgv1e1to4r1_frame4_sumt_t4
+            % fdgv1r2_op_fdgv1e1to4r1_frame4_sumt	t4=fdgv1r2_op_fdgv1e1to4r1_frame4_sumt_to_T1001_to_op_fdgv1r2_op_fdgv1e1to4r1_frame4_sumt_t4
+
+            rmsdeg = nan;
+            rmsmm  = nan;
+            
+            assert(ischar(r) || isstring(r))
+            r = splitlines(r);
+            %r(r == "") = [];
+            r = strip(r);
+            foundLabel = strfind(r, 'rms error averaged over');
+            ir = 0;
+            while (ir <= length(foundLabel))
+                ir = ir + 1;
+                if (~isempty(foundLabel{ir}))
+                    break
+                end
+            end
+            if (ir >= length(foundLabel))
+                return
+            end
+            if (contains(r(ir + 2), 'pairs total rotation error'))
+                toknames = regexp(r(ir + 2), '(?<rmsdeg>\d+.\d+) \(rms deg\)', 'names');
+                if (~isempty(toknames))
+                    rmsdeg = str2double(toknames.rmsdeg);
+                end
+            end
+            if (contains(r(ir + 3), 'pairs total translation error'))
+                toknames = regexp(r(ir + 3), '(?<rmsmm>\d+.\d+) \(rms mm\)', 'names');
+                if (~isempty(toknames))
+                    rmsmm = str2double(toknames.rmsmm);
+                end
+            end 
+        end
+        function a     = t4_resolve_errAverage(~, rmsdeg, rmsmm)
+            a = mean([rmsdeg rmsmm]);
+        end
+        function tf    = t4_resolve_errIsSmall(this, rmsdeg, rmsmm)
+            rmsarc = 100*pi*rmsdeg/180; % arc at 100 mm from center of mass
+            tf = rmsmm < this.t4_resolve_tol && rmsarc < this.t4_resolve_tol;
         end
         function this  = t4img_4dfp(this, varargin)
             switch (this.NRevisions)
@@ -651,6 +724,53 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             fprintf('t4img_4dfpr2 wrote out:\n    %s\n\n', outFqfp);
             this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
         end
+        function pth   = t4Path(this)
+            pth = fullfile(this.sessionData.tracerLocation, 'T4', '');
+            ensuredir(pth);
+        end   
+        function         teardownLogs(this)
+            if (this.keepForensics); return; end
+            
+            ensuredir(this.logPath);
+            try
+                movefiles('*.log', this.logPath); 
+                movefiles('*.txt', this.logPath);   
+                movefiles('*.lst', this.logPath);    
+                movefiles('*.mat0', this.logPath);   
+                movefiles('*.sub', this.logPath); 
+            catch ME
+                handwarning(ME);
+            end
+        end
+        function         teardownT4s(this)
+            if (this.keepForensics); return; end
+            
+            try
+                ensuredir(this.t4Path);
+                movefiles('*_t4', this.t4Path);
+                sessd = this.sessionData;
+                movefile( ...
+                    fullfile(this.t4Path, ...
+                        sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
+                    pwd);
+            catch ME
+                handwarning(ME);
+            end
+        end
+        function         teardownRevision(this, ipr)
+            if (iscell(ipr.maskForImages))
+                return
+            end
+            try
+                deleteExisting(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
+                if (this.keepForensics); return; end
+
+                this.teardownLogs;
+                this.teardownT4s;
+            catch ME
+                handwarning(ME);
+            end
+        end
         function this  = updateFinished(this, varargin)
             ip = inputParser;
             addParameter(ip, 'tag', ...
@@ -658,12 +778,17 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
                     lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference), ...
                 @ischar);
             addParameter(ip, 'tag2', '', @ischar);
-            addParameter(ip, 'neverTouch', false, @islogical);
+            addParameter(ip, 'neverTouchFinishfile', this.neverTouchFinishfile, @islogical);
+            addParameter(ip, 'ignoreFinishfile', this.ignoreFinishfile, @islogical);
             parse(ip, varargin{:});
+            this.neverTouchFinishfile = ip.Results.neverTouchFinishfile;
+            this.ignoreFinishfile = ip.Results.ignoreFinishfile;
             
             this.finished_ = mlpipeline.Finished(this, ...
-                'path', this.logPath, 'tag', sprintf('%s%s', ip.Results.tag, ip.Results.tag2));
-            this.finished_.neverTouch = ip.Results.neverTouch;
+                'path', this.logPath, ...
+                'tag', sprintf('%s%s', ip.Results.tag, ip.Results.tag2), ...
+                'neverTouchFinishfile', this.neverTouchFinishfile, ...
+                'ignoreFinishfile', this.ignoreFinishfile);
         end
         
 		function this = AbstractT4ResolveBuilder(varargin)
@@ -728,6 +853,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
     end
     
     methods (Access = protected)
+        function this = buildProduct(this, ipr)
+            this.ipResults_ = ipr;
+            this.rnumber = this.NRevisions;            
+            this.product_ = mlfourd.ImagingContext([ipr.resolved '.4dfp.ifh']);
+        end
         function fp   = clipLastRevisionMarking(~, fp)
             pos = regexp(fp, 'r\d$', 'ONCE');
             if (~isempty(pos))
@@ -936,7 +1066,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             this.buildVisitor.t4img_4dfp(t4, in, 'out', out, 'options', ['-O' ref_ ' ' opts]);
         end
         
-        function fqt4  = mapcycle( this, indexMin, indexMax, varargin)
+        function fqt4 = mapcycle( this, indexMin, indexMax, varargin)
             switch (this.NRevisions)
                 case 1
                     fqt4 = this.map1cycle(indexMin, indexMax, varargin{:});
@@ -949,7 +1079,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             end
             assert(lexist(fqt4, 'file'));
         end
-        function fqt4  = map1cycle(this, indexMin, indexMax, varargin)
+        function fqt4 = map1cycle(this, indexMin, indexMax, varargin)
             ip = inputParser;
             addRequired(ip, 'indexMin', @ischar);
             addRequired(ip, 'indexMax', @ischar);
@@ -964,7 +1094,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             fqt4 = fullfile(this.sessionData.tracerT4Location, fqt4);
             popd(pwd0);
         end
-        function fqt4  = map2cycle(this, indexMin, indexMax, varargin)
+        function fqt4 = map2cycle(this, indexMin, indexMax, varargin)
             ip = inputParser;
             addRequired(ip, 'indexMin', @ischar);
             addRequired(ip, 'indexMax', @ischar);
@@ -983,7 +1113,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             fqt4   = fullfile(this.sessionData.tracerT4Location, fqt4);
             popd(pwd0);
         end
-        function t4    = T(this, varargin)
+        function t4   = T(this, varargin)
             %% T selects an affine transformation file.
             %  @param f1 is the originating frame/image (char).
             %  @param r1 is the originating iteration of t4_resolve (numeric).

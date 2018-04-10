@@ -829,10 +829,8 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
             end
             m = this.sessionData.mprage(varargin{:});
         end
-        function this      = msktgenMprage(this, fqfp, atl)
-            log = sprintf('msktgenMprage_%s.log', datestr(now, 30));
-            this.buildVisitor.mpr2atl_4dfp(fqfp, 'options', ['-T' fullfile(getenv('REFDIR'), atl)], 'log', log);
-            this.buildVisitor.msktgen2_4dfp(fqfp, 'options', ['-T' fullfile(getenv('REFDIR'), atl)], 'log', log);
+        function this      = msktgenMprage(this, varargin)
+            this = this.buildVisitor.msktgenMprage(this, varargin{:});
         end
         function [fr,this] = nonEmptyFrames(this, varargin)
             %% NONEMPTYFRAMES
@@ -1227,7 +1225,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
             
             mprToAtlT4 = [ipr.mprage '_to_' ipr.atlas '_t4'];
             if (~lexist(mprToAtlT4, 'file'))
-                this.msktgenMprage(ipr.mprage, ipr.atlas);
+                this.buildVisitor.msktgenMprage(ipr.mprage, ipr.atlas);
             end
             dynToAtlT4 = [sumtG '_to_' ipr.atlas '_t4'];
             this.buildVisitor.t4_mul(toMprGT4, mprToAtlT4, dynToAtlT4);

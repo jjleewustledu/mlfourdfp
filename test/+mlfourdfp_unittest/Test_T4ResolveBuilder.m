@@ -27,6 +27,11 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
         quick = false
     end
     
+    methods (Static)
+        function constructTestData
+        end
+    end
+    
 	methods (Test)
         function test_setup(this)
             this.verifyClass(this.testObj, 'mlfourdfp.T4ResolveBuilder');

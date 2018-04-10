@@ -85,12 +85,12 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.resolveLog = loggerFilename( ...
                 ipr.dest, 'func', 'T4ResolveBuilder_resolveAndPaste', 'path', this.logPath);
             
-            this.imageReg(ipr);
+            this = this.imageReg(ipr);
             ipr = this.resolveAndPaste(ipr); 
             this.teardownRevision(ipr);
             this.rnumber = this.rnumber + 1;
         end
-        function                imageReg(this, ipr)
+        function this =         imageReg(this, ipr)
             stagedImgs  = this.lazyStageImages(ipr);
             blurredImgs = this.lazyBlurImages(ipr);
             assert(length(stagedImgs) == length(blurredImgs));
@@ -105,7 +105,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                                 maskFp = this.lazyMaskForImages( ...
                                     ipr.maskForImages, stagedImgs{m}, stagedImgs{n}, ...
                                     this.imageComposite.fortranImageIndices(m), this.imageComposite.fortranImageIndices(n));
-                                this.buildVisitor.(this.sessionData.alignMethod)( ...
+                                this.buildVisitor.(this.sessionData.frameAlignMethod)( ...
                                     'dest',       blurredImgs{m}, ...
                                     'source',     blurredImgs{n}, ...
                                     'destMask',   maskFp, ...
@@ -187,26 +187,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             prev.save;
             indicesLogical = this.indicesLogical; %#ok<NASGU>
             save([prev.fqfileprefix '_indicesLogical.mat'], 'indicesLogical');
-        end             
-        function this         = finalize(this, ipr)
-            this.ipResults_ = ipr;
-            this.rnumber = this.NRevisions;
-            this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);            
-            %assert(~isempty(this.product_));
-            this.teardownResolve(ipr);
-            this.finished.touchFinishedMarker;          
-        end
-        function this         = alreadyFinalized(this, ipr)
-            dest = this.fileprefixRevision(ipr.dest, this.NRevisions);
-            ipr.resolved = sprintf('%s_%s', dest, this.resolveTag);            
-            this.ipResults_ = ipr;
-            this.rnumber = this.NRevisions;
-            this.product_ = mlpet.PETImagingContext([ipr.resolved '.4dfp.ifh']);
-            %assert(~isempty(this.product_));
         end
         function                teardownResolve(this, ipr)
-            %if (this.keepForensics); return; end
-            
             try
                 for r = 1:this.NRevisions                
                     fp0 = this.fileprefixRevision(ipr.dest, r);
@@ -228,7 +210,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end
         end
         
-        %% UTILITY         
+        %% UTILITY
               
         function         copySourceToDest(this, ipr)
             if (this.skipT4imgAll)
@@ -268,11 +250,6 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 end
             end
         end
-        function fp    = fileprefixIndexed(~, fp, fr)
-            assert(ischar(fp));
-            assert(isnumeric(fr));
-            fp = sprintf('%s_frame%i', fp, fr);
-        end
         function fp    = fileprefixIndexedResolved(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fp', @ischar);
@@ -287,17 +264,6 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             parse(ip, varargin{:});
             
             fp = this.fileprefixIndexed(ipr.dest, ip.Results.indexOfRef); % mybasename =: BUG?
-        end
-        function fqfp  = lazyBlurImage(this, ipr, blur)
-            %% LAZYBLURIMAGE uses specifiers in ipr; will not replace any existing image
-            %  @param ipr is a struct
-            %  @param blur is numeric
-            
-            fqfp_ = this.fileprefixIndexed(ipr.dest, ipr.currentIndex);
-            fqfp  = this.fileprefixBlurred(fqfp_, blur);
-            if (~this.buildVisitor.lexist_4dfp(fqfp))
-                this.buildVisitor.imgblur_4dfp(fqfp_, blur);
-            end
         end
         function fp    = lazyMaskForImages(this, maskFp, fpm, fpn, m, n)
             if (isempty(maskFp))
@@ -326,7 +292,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     
     methods (Access = protected)
         function this = t4imgAll(this, ipr, tag)
-            if (this.skipT4imgAll) % || this.rnumber < this.NRevisions)
+            if (this.skipT4imgAll) 
                 return
             end
             tag = mybasename(tag);
