@@ -86,15 +86,15 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             this.convertUmapTo4dfp; % convert FDG_V*-Converted-NAC/FDG_V*-LM-00/FDG_V*-LM-00-umap.v
             this.sessionData_.tracer = tracer0;
             this.ensureCTForms;
-                  ctm  = this.buildCTMasked2; % ct_on_T1001 has excellent alignment
+            ctm  = this.buildCTMasked2; % ct_on_T1001 has excellent alignment
             % [this,ctm] = this.alignCTToMpr(ctm); % wrecks alignment
-                  ctm  = this.rescaleCT(ctm); 
-                  umap = this.assembleCarneyUmap(ctm);
-                  umap = this.buildVisitor.imgblur_4dfp(umap, 4);
+            ctm  = this.rescaleCT(ctm);
+            umap = this.assembleCarneyUmap(ctm);
+            umap = this.buildVisitor.imgblur_4dfp(umap, 4);
             this.teardownBuildUmaps;
             popd(pwd0);
         end
-        function [this,umap] = buildPhantomUmap(this, varargin)            
+        function [this,umap] = buildPhantomUmap(this, varargin)
             pwd0 = pushd(this.sessionData.sessionPath);
             ip = inputParser;
             addOptional(ip, 'ctm', 'ctMasked', @lexist_4dfp);
@@ -107,26 +107,8 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             popd(pwd0);
         end
         function               teardownBuildUmaps(this)
-            sessd = this.sessionData;
-            
             this.teardownLogs;
-            this.teardownT4s;
-            
-            %ensuredir(this.onAtlasPath);
-            %movefiles(sprintf('*%s*', this.atlas('typ', 'fp')), this.onAtlasPath);
-            %ensuredir(this.resolveSequenceLocation);
-            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
-            %movefiles(sprintf('%sOnMprT*.4dfp.*', sessd.ctMasked('typ','fp')), this.resolveSequenceLocation);
-            %movefiles(sprintf('%sr*.4dfp.*', sessd.ctRescaled('typ','fp')), this.resolveSequenceLocation);
-            %copyfiles(sprintf('%sr*.4dfp.*', sessd.T1('typ','fp')), this.resolveSequenceLocation);
-            
-%             delete([this.resolveSequenceTag '*_frame*4dfp*']);
-%             delete(sprintf('%s_on_*.4dfp.*', sessd.ct('typ', 'fp')));  
-%             delete(sprintf('%s_on_*.4dfp.*', sessd.ctMasked('typ', 'fp')));
-%             delete(sprintf('%s_on_*.4dfp.*', sessd.T1('typ', 'fp'))); 
-%             delete(sprintf('%s_on_*.4dfp.*', sessd.umapSynth('typ', 'fp')));
-%             delete(sprintf('%sr*_op_%s*', sessd.T1('typ','fp')));
-            
+            this.teardownT4s;            
             this.finished.touchFinishedMarker;
         end
         function umap        = testGroundTruth(this, ct)
