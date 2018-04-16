@@ -31,7 +31,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 import mlfourdfp.*;
                 this.imageComposite_ = ImageFrames(this, ...
                     'indicesLogical', ip.Results.indicesLogical, ...
-                    'theImages', FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages), ...
+                    'theImages', this.ensureSafeFileprefix(ip.Results.theImages), ...
                     'indexOfReference', ip.Results.indexOfReference);
                 this.blurArg_ = ip.Results.blurArg;
             end
@@ -56,10 +56,11 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.indicesLogical = ip.Results.indicesLogical;
             this.resolveTag = ip.Results.resolveTag;            
             ipr = ip.Results;
-            ipr = this.expandBlurs(ipr);            
+            ipr = this.expandBlurs(ipr);       
+            ipr = this.expandMasks(ipr);
             if (isempty(ipr.dest)); ipr.dest = ipr.source; end
             ipr.resolved = ipr.source; % initialize this.revise   
-            if (~any(this.indicesLogical))    
+            if (~any(this.indicesLogical))
                 ipr.dest = this.fileprefixRevision(ipr.dest, this.NRevisions);            
                 ipr.resolved = sprintf('%s_%s', ipr.dest, this.resolveTag);
                 this.buildVisitor_.copyfile_4dfp(ipr.source, ipr.resolved);
@@ -93,23 +94,25 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function this =         imageReg(this, ipr)
             stagedImgs  = this.lazyStageImages(ipr);
             blurredImgs = this.lazyBlurImages(ipr);
-            assert(length(stagedImgs) == length(blurredImgs));
+            maskedImgs  = this.lazyMasksForImages__(ipr, blurredImgs);
+            assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
             len = length(stagedImgs);
             t4Failures = zeros(len, len);
             for m = 1:len
                 for n = 1:len
-                    if (m ~= n) 
+                    if (m ~= n && ...
+                        this.indicesLogical(m) && this.indicesLogical(n)) 
                         try
                             t4 = this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m});
                             if (~lexist(t4))
-                                maskFp = this.lazyMaskForImages( ...
-                                    ipr.maskForImages, stagedImgs{m}, stagedImgs{n}, ...
-                                    this.imageComposite.fortranImageIndices(m), this.imageComposite.fortranImageIndices(n));
+                                %[mskm,mskn] = this.lazyMaskForImages( ...
+                                %    ipr, stagedImgs{m}, stagedImgs{n}, ...
+                                %    this.imageComposite.fortranImageIndices(m), this.imageComposite.fortranImageIndices(n));
                                 this.buildVisitor.(this.sessionData.frameAlignMethod)( ...
                                     'dest',       blurredImgs{m}, ...
                                     'source',     blurredImgs{n}, ...
-                                    'destMask',   maskFp, ...
-                                    'sourceMask', maskFp, ...
+                                    'destMask',   maskedImgs{m}, ...
+                                    'sourceMask', maskedImgs{n}, ...
                                     't4',         t4, ...
                                     't4img_4dfp', false, ...
                                     'log',        this.imageRegLog);
@@ -265,26 +268,83 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             fp = this.fileprefixIndexed(ipr.dest, ip.Results.indexOfRef); % mybasename =: BUG?
         end
-        function fp    = lazyMaskForImages(this, maskFp, fpm, fpn, m, n)
-            if (isempty(maskFp))
-                fp = '';
+        function [mskm,mskn] = lazyMaskForImages(this, ipr, fpm, fpn, m, n)
+            if (isempty(ipr.maskForImages))
+                mskm = 'none';
+                mskn = 'none';
                 return
             end
             
-            maskMN = sprintf('%s_%i_%i.4dfp.img', maskFp, m, n);
-            maskNM = sprintf('%s_%i_%i.4dfp.img', maskFp, n, m);
+            maskMN = sprintf('%s_%i_%i.4dfp.img', ipr.maskForImages, m, n);
+            maskNM = sprintf('%s_%i_%i.4dfp.img', ipr.maskForImages, n, m);
             if (lexist(maskMN, 'file'))
-                fp = maskMN;
+                mskm = maskMN;
+                mskn = mskm;
             else
                 if (lexist(maskNM, 'file'))
-                    fp = maskNM;
+                    mskm = maskNM;
+                    mskn = mskm;
                 else
-                    fp = this.maskForImages(fpm, fpn, maskMN);
+                    mskm = this.buildMaskForImages(fpm, fpn, maskMN);
+                    mskn = mskm;                    
+                end
+            end
+        end
+        function fqfps = lazyMasksForImages__(this, ipr, blurredImgs)
+            %  @param ipr.maskForImages is the base fileprefix for masks.
+            %  @param ipr.sourceMask is cell-array of fileprefixes for masks or cells of 'none'.
+            %  @param ipr.destmask   is cell-array of fileprefixes for masks or cells of 'none'.
+            %  @param blurredImgs are f.-q.-fileprefixes images to mask.
+            %  @return fqfps is a cell-array of f.-q. mask fileprefixes.
+            
+            if (isempty(ipr.maskForImages) || strcmpi(ipr.maskForImages, 'none'))
+                fqfps = repmat('none', size(blurredImgs));
+                return
+            end
+            sourceSumt = this.buildSourceTimeSummed(ipr);
+            fqfps = cell(size(blurredImgs));
+            for b = 1:length(blurredImgs)
+                fqfps{b} = sprintf('%s_%i', ipr.maskForImages, b);
+                if (~lexist_4dfp(fqfps{b}))
+                    this.buildMaskAdjustedForImage(fqfps{b}, blurredImgs{b}, ipr.sourceMask{b}, sourceSumt);
                 end
             end
         end
         function fqfps = lazyStageImages(this, ipr)
             fqfps = this.imageComposite.lazyExtractImages(ipr);
+        end
+        function fqfp  = buildSourceTimeSummed(~, ipr)
+            %  @param ipr.source is a f.-q.-fileprefix.
+            %  @return fqfp := [ipr.source '_sumt'] generated on the filesystem.  
+            %  See also mlfourd.ImagingContext.timeSummed.            
+            
+            ic = mlfourd.ImagingContext(ipr.source);
+            ic = ic.timeSummed;
+            ic.save;
+            fqfp = ic.fqfileprefix;
+        end
+        function         buildMaskAdjustedForImage(this, fqfp, blurredImg, sourceMask, sourceSumt)
+            if (lstrfind(sourceMask, 'msktgen'))
+                ab = mlpet.AtlasBuilder2('sessionData', this.sessionData);
+                assert(lexist(ab.tracer_to_atl_t4(sourceSumt, this.sessionData.atlas('typ','fqfp')), 'file')); 
+            end
+            bv = this.buildVisitor;
+            if (strcmpi(sourceMask, 'msktgen_4dfp'))
+                bv.msktgen_4dfp(sourceSumt, 0);
+                bv.move_4dfp([sourceSumt '_mskt'], fqfp);
+                return
+            end
+            if (strcmpi(sourceMask, 'msktgen_b110_4dfp'))
+                bv.msktgen_b110_4dfp(sourceSumt, 0);
+                bv.move_4dfp([sourceSumt '_mskt'], fqfp);
+                return
+            end
+            if (strcmpi(sourceMask, 'msktgen2_4dfp'))
+                bv.msktgen2_4dfp(sourceSumt, 0);
+                bv.move_4dfp([sourceSumt '_mskt'], fqfp);
+                return
+            end            
+            this.buildMaskForImage(blurredImg, fqfp);
         end
     end
     
