@@ -12,6 +12,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
 	properties
         doMaskBoundaries = false
         mprToAtlT4
+        maskForImagesThreshFactor = 0.25
         msktgenThresh = 0
         NRevisions 
         
@@ -160,6 +161,55 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         function a     = atlas(this, varargin) 
             a = this.sessionData.atlas(varargin{:});
         end
+        function fp    = buildMaskForImage(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'fp1', @(x) lexist([x '.4dfp.ifh']));
+            addOptional(ip, 'fp',  ['mask_' varargin{1} '_' varargin{2}], @ischar);
+            parse(ip, varargin{:});
+            
+            import mlfourd.* mlfourdfp.*;
+            fqfp1 = [ip.Results.fp1 '_g0_1'];
+            bv = this.buildVisitor;
+            if (~bv.lexist_4dfp(fqfp1))
+                fqfp_ = bv.gauss_4dfp(ip.Results.fp1, 0.1);
+                fqfp1 = strrep(fqfp_, '0.1','0_1');
+                bv.move_4dfp(fqfp_, fqfp1);
+            end
+            ic  = ImagingContext([fqfp1 '.4dfp.ifh']);
+            ic  = ic.thresh(ic.numericalNiftid.dipmax*this.maskForImagesThreshFactor);
+            ic  = ic.binarized;
+            ic.saveas([ip.Results.fp '.4dfp.ifh']);
+            fp  = ic.fqfileprefix;
+        end
+        function fp    = buildMaskForImages(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'fp1', @(x) lexist([x '.4dfp.ifh']));
+            addRequired(ip, 'fp2', @(x) lexist([x '.4dfp.ifh']));
+            addOptional(ip, 'fp',  ['mask_' varargin{1} '_' varargin{2}], @ischar);
+            parse(ip, varargin{:});
+            
+            import mlfourd.* mlfourdfp.*;
+            fqfp1 = [ip.Results.fp1 '_g0_1'];
+            fqfp2 = [ip.Results.fp2 '_g0_1'];
+            bv = this.buildVisitor;
+            if (~bv.lexist_4dfp(fqfp1))
+                fqfp_ = bv.gauss_4dfp(ip.Results.fp1, 0.1);
+                fqfp1 = strrep(fqfp_, '0.1','0_1');
+                bv.move_4dfp(fqfp_, fqfp1);
+            end
+            if (~bv.lexist_4dfp(fqfp2))
+                fqfp_ = bv.gauss_4dfp(ip.Results.fp2, 0.1);
+                fqfp2 = strrep(fqfp_, '0.1','0_1');
+                bv.move_4dfp(fqfp_, fqfp2);
+            end
+            ic1 = ImagingContext([fqfp1 '.4dfp.ifh']);
+            ic2 = ImagingContext([fqfp2 '.4dfp.ifh']);
+            ic  = ImagingContext(ic1.numericalNiftid + ic2.numericalNiftid);
+            ic  = ic.thresh(ic.numericalNiftid.dipmax*this.maskForImagesThreshFactor);
+            ic  = ic.binarized;
+            ic.saveas([ip.Results.fp '.4dfp.ifh']);
+            fp  = ic.fqfileprefix;
+        end   
         function [s,r] = ensureNifti(this, varargin)
             %% ENSURENIFTI
             %  @param filename is any string descriptor found in an existing file on the filesystem;
@@ -250,11 +300,30 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
                   'T4ResolveBuilder.ensureNifti could not find files of form %s', ip.Results.filename);     
         end
         function ipr   = expandBlurs(this, ipr)
+            %  @return ipr.sourceBlur has size(this.indicesLogical)
+            %  @return ipr.destBlur   has size(this.indicesLogical)
+            
             assert(isstruct(ipr));
             assert(isfield( ipr, 'sourceBlur'));
             assert(isfield( ipr, 'destBlur'));
             ipr.sourceBlur = ipr.sourceBlur .* this.indicesLogical;
             ipr.destBlur   = ipr.destBlur   .* this.indicesLogical;
+        end
+        function ipr   = expandMasks(~, ipr)
+            %  @return ipr.sourceMask is cell with size(this.indicesLogical)
+            %  @return ipr.destMask   is cell with size(this.indicesLogical)
+            
+            assert(isstruct(ipr));
+            assert(isfield( ipr, 'sourceMask'));
+            assert(isfield( ipr, 'destMask'));
+            if (~iscell(ipr.sourceMask))
+                assert(ischar(ipr.sourceMask));
+                ipr.sourceMask = repmat(ipr.sourceMask, size(ipr.indicesLogical));
+            end
+            if (~iscell(ipr.destMask))
+                assert(ischar(ipr.destMask));
+                ipr.destMask = repmat(ipr.destMask, size(ipr.indicesLogical));
+            end
         end
         function fn    = filenameHdr(~, fp)
             fn = [fp '.4dfp.hdr'];
@@ -407,60 +476,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             ic.saveas([fqfp '_ones']);
             this.buildVisitor.nifti_4dfp_4([fqfp '_ones']);
             msk = this.zeroSlicesOnBoundaries([fqfp '_ones'], 3);
-        end
-        function fp    = maskFromImage(this, varargin)
-            ip = inputParser;
-            addRequired(ip, 'fp1', @(x) lexist([x '.4dfp.ifh']));
-            addOptional(ip, 'fp',  ['mask_' varargin{1}], @ischar);
-            parse(ip, varargin{:});
-            
-            import mlfourd.* mlfourdfp.*;
-            fqfp1 = [ip.Results.fp1 '_g0_1'];
-            bv = this.buildVisitor;
-            if (~bv.lexist_4dfp(fqfp1))
-                fqfp_ = bv.gauss_4dfp(ip.Results.fp1, 0.1);
-                fqfp1 = strrep(fqfp_, '0.1','0_1');
-                bv.move_4dfp(fqfp_, fqfp1);
-            end
-            if (~bv.lexist_4dfp(ip.Results.fp))
-                ic = ImagingContext([fqfp1 '.4dfp.ifh']);
-                ic = ic.thresh(ic.numericalNiftid.dipmax/8);
-                ic = ic.binarized;
-                ic.saveas([ip.Results.fp '.4dfp.ifh']);
-                fp = ic.fqfileprefix;
-                return
-            end
-            fp = ip.Results.fp;
-        end        
-        function fp    = maskForImages(this, varargin)
-            ip = inputParser;
-            addRequired(ip, 'fp1', @(x) lexist([x '.4dfp.ifh']));
-            addRequired(ip, 'fp2', @(x) lexist([x '.4dfp.ifh']));
-            addOptional(ip, 'fp',  ['mask_' varargin{1} '_' varargin{2}], @ischar);
-            parse(ip, varargin{:});
-            
-            import mlfourd.* mlfourdfp.*;
-            fqfp1 = [ip.Results.fp1 '_g0_1'];
-            fqfp2 = [ip.Results.fp2 '_g0_1'];
-            bv = this.buildVisitor;
-            if (~bv.lexist_4dfp(fqfp1))
-                fqfp_ = bv.gauss_4dfp(ip.Results.fp1, 0.1);
-                fqfp1 = strrep(fqfp_, '0.1','0_1');
-                bv.move_4dfp(fqfp_, fqfp1);
-            end
-            if (~bv.lexist_4dfp(fqfp2))
-                fqfp_ = bv.gauss_4dfp(ip.Results.fp2, 0.1);
-                fqfp2 = strrep(fqfp_, '0.1','0_1');
-                bv.move_4dfp(fqfp_, fqfp2);
-            end
-            ic1 = ImagingContext([fqfp1 '.4dfp.ifh']);
-            ic2 = ImagingContext([fqfp2 '.4dfp.ifh']);
-            ic  = ImagingContext(ic1.numericalNiftid + ic2.numericalNiftid);
-            ic  = ic.thresh(ic.numericalNiftid.dipmax/8);
-            ic  = ic.binarized;
-            ic.saveas([ip.Results.fp '.4dfp.ifh']);
-            fp  = ic.fqfileprefix;
-        end        
+        end           
         function this  = mpr2atl(this)
             sd = this.sessionData;
             this.mprToAtlT4 = [sd.mpr('typ', 'fqfp') '_to_' sd.atlas('typ', 'fp') '_t4'];
@@ -490,7 +506,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         end   
         function pth   = onAtlasPath(this)
             pth = fullfile(this.sessionData.tracerLocation, 'Atlas', '');
-            ensuredir(pth);
+            %ensuredir(pth); % CRUFT?
         end
         function tag   = resolveTagFrame(this, varargin)
             tag = this.sessionData.resolveTagFrame(varargin{:});
@@ -729,8 +745,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             ensuredir(pth);
         end   
         function         teardownLogs(this)
-            if (this.keepForensics); return; end
-            
             ensuredir(this.logPath);
             try
                 movefiles('*.log', this.logPath); 
@@ -826,17 +840,17 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             import mlfourdfp.*;
             ip = inputParser;
             ip.KeepUnmatched = true;
-            addParameter(ip, 'NRevisions',    2,              @isnumeric);
-            addParameter(ip, 'keepForensics', true,           @islogical);
+            addParameter(ip, 'NRevisions',    2,          @isnumeric);
+            addParameter(ip, 'keepForensics', true,       @islogical);
             addParameter(ip, 'resolveTag',    this.sessionData.resolveTag, @ischar);
-            addParameter(ip, 'theImages',     {},             @(x) iscell(x) || ischar(x));
-            addParameter(ip, 'ipResults',     struct([]),     @isstruct);
+            addParameter(ip, 'theImages',     {},         @(x) iscell(x) || ischar(x));
+            addParameter(ip, 'ipResults',     struct([]), @isstruct);
             parse(ip, varargin{:});
             
             this.NRevisions    = ip.Results.NRevisions;
             this.keepForensics = ip.Results.keepForensics; % override mlpipeline.AbstractDataBuilder
             this.resolveTag    = ip.Results.resolveTag;
-            this.theImages     = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
+            this.theImages     = this.ensureSafeFileprefix(ip.Results.theImages);
             this.ipResults_    = ip.Results.ipResults;
             
 %%%            this = this.mpr2atl; % FREEZES Matlab R2016a on william.
