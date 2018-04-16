@@ -674,6 +674,9 @@ classdef FourdfpVisitor
             fn = fullfile(p2, sprintf('%s_to_%s_t4', first, last));
         end
         function  fqfp      = fileprefixBlurred(~, fqfp, blurArg)
+            if (prod(blurArg) < eps)
+                return
+            end
             fqfp = sprintf('%s_b%i', fqfp, round(blurArg*10));
         end
         function  fqfp      = fileprefixGaussed(~, fqfp, gaussArg)
@@ -874,6 +877,8 @@ classdef FourdfpVisitor
                 sprintf('%s %i %s %s', in_, ip.Results.threshold, ip.Results.options, log));
         end
         function      [s,r] = msktgen_b110_4dfp(this, varargin)
+            %% MSKTGEN_B110_4DFP uses 11 mm fwhh blur of a mask of the whole brain.
+            
             ip = inputParser;
             addRequired( ip, 'in',           @ischar);
             addOptional( ip, 'threshold', 0, @isnumeric);
@@ -889,6 +894,8 @@ classdef FourdfpVisitor
                 sprintf('%s %i %s %s', in_, ip.Results.threshold, ip.Results.options, log));
         end
         function      [s,r] = msktgen2_4dfp(this, varargin)
+            %% MSKTGEN2_4DFP masks the entire head for TRIO_Y_NDC.
+            
             ip = inputParser;
             addRequired( ip, 'in',           @ischar);
             addOptional( ip, 'threshold', 0, @isnumeric);
@@ -904,6 +911,8 @@ classdef FourdfpVisitor
                 sprintf('%s %i %s %s', in_, ip.Results.threshold, ip.Results.options, log));
         end
         function      [s,r] = msktgen3_4dfp(this, varargin)
+            %% MSKTGEN3_4DFP masks only the pharynx for TRIO_Y_NDC.
+            
             ip = inputParser;
             addRequired( ip, 'in',             @ischar);
             addOptional( ip, 'threshold', 200, @isnumeric);
@@ -931,8 +940,12 @@ classdef FourdfpVisitor
             this.msktgen_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
         end   
         function      [s,r] = nifti_4dfp_4(this, varargin)
+            %  @param named fileprefix
+            %  @param named minusN is logical; true =: sends -N flag to nifti_4dfp to remove center parameters from
+            %  *.4dfp.ifh.
             ip = inputParser;
             addRequired(ip, 'fileprefix', @ischar);
+            addParameter(ip, 'minusN', true);
             parse(ip, varargin{:}); 
             [pth,fp] = myfileparts(ip.Results.fileprefix);
             fp = fullfile(pth, fp);
@@ -946,8 +959,9 @@ classdef FourdfpVisitor
                 gunzip([fp '.nii.gz']);
             end
             if (lexist([fp '.nii']))
-                if (lstrfind(fp, '111') || lstrfind(fp, '222') || lstrfind(fp, '333') || ...
-                    lstrfind(fp, 'TRIO_Y_NDC') || lstrfind(fp, '711-2'))
+                if (~ip.Results.minusN && ...
+                    (lstrfind(fp, '111') || lstrfind(fp, '222') || lstrfind(fp, '333') || ...
+                     lstrfind(fp, 'TRIO_Y_NDC') || lstrfind(fp, '711-2') || lstrfind(fp, '_atlas')))
                     [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh', fp, fp));
                 else
                     [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh -N', fp, fp));
