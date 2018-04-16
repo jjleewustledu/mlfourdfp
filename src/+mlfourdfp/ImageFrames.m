@@ -95,7 +95,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
         function fqfp  = lazyExtractImage(this, ipr)
             %% LAZYEXTRACTIMAGE uses specifiers in ipr; will not replace any existing frame
             
-            fqfp = this.it4ResolveBuilder_.fileprefixIndexed(ipr.dest, ipr.currentIndex);
+            fqfp = this.it4ResolveBuilder_.fileprefixIndexed(ipr);
             bv = mlfourdfp.FourdfpVisitor;
             if (~bv.lexist_4dfp(fqfp))
                 bv.extract_frame_4dfp(ipr.dest, ipr.currentIndex, ['-o' fqfp]);
