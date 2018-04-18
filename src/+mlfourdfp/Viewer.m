@@ -85,7 +85,8 @@ classdef Viewer
                     interp = targ;
                 otherwise
                     if (isa(targ, 'mlfourd.ImagingContext') || isa(targ, 'mlfourd.INIfTI'))
-                        if (~lexist(targ))
+                        if (~lexist(targ.fqfilename))
+                            targ.filesuffix = '.4dfp.ifh';
                             targ.save;
                         end
                         interp = this.interpretTarget(targ.fqfilename);
