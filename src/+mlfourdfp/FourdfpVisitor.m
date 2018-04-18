@@ -94,36 +94,49 @@ classdef FourdfpVisitor
                 cd(pth);
             end
         end
-        function         ensureLocalFourdfp(toensure)
+        function ensured = ensureLocalFourdfp(toensure)
             %% ENSURELOCALFOURDFP
-            %  @param tostage is a data object to ensure to be in the pwd.
-            %  @return ensure copy of desired data object is in the pwd.
+            %  @param tostage is a data object to ensure to be in the pwd. 
+            %  Supported:  cell, (Handle|)IOInterface, 4dfp, mgz, gz, nii.
+            %  @return ensured is the filename of desired data object in the pwd.
             
             import mlfourdfp.*;
-            this = FourdfpVisitor;
+            this = FourdfpVisitor;            
+            if (iscell(toensure))
+                ensured = cellfun(@(x) this.ensureLocalFourdfp(x), toensure, 'UniformOutput', false);
+                return
+            end
+            
+            [pth,fp,x] = myfileparts(toensure);
+            ensured = [fp x];
             if (~this.isLocalFourdfp(toensure))
                 try
                     if (isa(toensure, 'mlio.HandleIOInterface') || isa(toensure, 'mlio.IOInterface'))
                         toensure = toensure.fqfilename;
                     end
-                    [pth,fp,x] = myfileparts(toensure);
                     if (lexist_4dfp(fullfile(pth, fp)))
                         this.copyfile_4dfp(fullfile(pth, fp));
+                        ensured = [fp '.4dfp.ifh'];
+                        return
                     end
                     if (strcmp(x, '.mgz') || strcmp(x, '.mgh'))
                         fp = ensureSafenameMgz(fp);
                         this.mri_convert(toensure, [fp '.nii']);
                         this.nifti_4dfp_4(fp);
+                        ensured = [fp '.4dfp.ifh'];
                         return
                     end
                     if (lstrfind(x, '.gz'))
                         gunzip(toensure, pwd);
                         this.nifti_4dfp_4(fp)
+                        ensured = [fp '.4dfp.ifh'];
                         return
                     end
                     if (strcmp(x, '.nii'))
                         this.nifti_4dfp_4(fullfile(pth, fp));
                         this.movefile_4dfp(fullfile(pth, fp));
+                        ensured = [fp '.4dfp.ifh'];
+                        return
                     end
                 catch ME
                     dispexcept(ME);
@@ -150,7 +163,7 @@ classdef FourdfpVisitor
                 for u = 1:length(unsafe)
                     if (lstrfind(fn, unsafe{u}))
                         idxs = regexp(fn, unsafe{u});
-                        while (~isempty(idxs))                            
+                        while (~isempty(idxs))
                             fn = FourdfpVisitor.safesprintf(unsafe{u}, fn, idxs);
                             idxs = regexp(fn, unsafe{u});
                         end
