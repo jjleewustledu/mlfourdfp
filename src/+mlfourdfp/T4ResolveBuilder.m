@@ -19,7 +19,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addOptional( ip, 'cctor', []);
             addParameter(ip, 'blurArg', this.sessionData.t4ResolveBuilderBlurArg, @isnumeric);
             addParameter(ip, 'indicesLogical', true, @islogical);
-            addParameter(ip, 'theImages', {}, @(x) iscell(x) || ischar(x));
+            %addParameter(ip, 'theImages', {}, @(x) iscell(x) || ischar(x));
             addParameter(ip, 'indexOfReference', 1, @isnumeric);
             parse(ip, varargin{:});
             ims = ensureCell(ip.Results.theImages);
@@ -31,7 +31,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 import mlfourdfp.*;
                 this.imageComposite_ = ImageFrames(this, ...
                     'indicesLogical', ip.Results.indicesLogical, ...
-                    'theImages', this.ensureSafeFileprefix(ip.Results.theImages), ...
+                    'theImages', this.ensureSafeFileprefix(this.theImages), ...
                     'indexOfReference', ip.Results.indexOfReference);
                 this.blurArg_ = ip.Results.blurArg;
             end
@@ -58,6 +58,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             ipr = ip.Results;
             ipr = this.expandBlurs(ipr);       
             ipr = this.expandMasks(ipr);
+            ipr.source = this.ensureLocalFourdfp(ipr.source);
             if (isempty(ipr.dest)); ipr.dest = ipr.source; end
             ipr.resolved = ipr.source; % initialize this.revise   
             if (~any(this.indicesLogical))
@@ -324,10 +325,6 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             fqfp = ic.fqfileprefix;
         end
         function         buildMaskAdjustedForImage(this, fqfp, blurredImg, sourceMask, sourceSumt)
-            if (lstrfind(sourceMask, 'msktgen'))
-                ab = mlpet.AtlasBuilder2('sessionData', this.sessionData);
-                assert(lexist(ab.tracer_to_atl_t4(sourceSumt, this.sessionData.atlas('typ','fqfp')), 'file')); 
-            end
             bv = this.buildVisitor;
             if (strcmpi(sourceMask, 'msktgen_4dfp'))
                 bv.msktgen_4dfp(sourceSumt, 0);
