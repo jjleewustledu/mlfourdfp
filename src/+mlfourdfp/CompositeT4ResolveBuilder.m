@@ -22,7 +22,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             ip = inputParser;
             ip.KeepUnmatched = true;
             addParameter(ip, 'blurArg', this.sessionData.compositeT4ResolveBuilderBlurArg, @isnumeric);
-            addParameter(ip, 'theImages', {}, @(x) ~isempty(x));
+            %addParameter(ip, 'theImages', {}, @(x) ~isempty(x));
             addParameter(ip, 'indicesLogical', true, @islogical);
             addParameter(ip, 'indexOfReference', 1, @isnumeric);
             addParameter(ip, 'maskForImages', 'none', @(x) ~isempty(x));
@@ -30,8 +30,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             this.imageComposite_ = mlfourdfp.ImageComposite( ...
                 this, ...
-                'theImages', this.ensureSafeFileprefix( ...
-                             this.embedInEuclideanR3(ip.Results.theImages)), ...
+                'theImages', this.embedInEuclideanR3(this.theImages), ...
                 'indicesLogical', ip.Results.indicesLogical, ...
                 'indexOfReference', ip.Results.indexOfReference);
             this.indexOfReference = ip.Results.indexOfReference;
@@ -39,10 +38,26 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.maskForImages_ = ip.Results.maskForImages;
             this = this.updateFinished;
         end
-        function imgs         = embedInEuclideanR3(this, varargin)
-            imgs = ensureCell(varargin);
-        end
         
+        function fqfp         = embedInEuclideanR3(this, varargin)
+            fqfp = this.ensureSafeFileprefix(ensureCell(varargin{:}));
+            for i = 1:length(fqfp)
+                ic = mlfourd.ImagingContext([fqfp{i} '.4dfp.ifh']);
+                nn = ic.numericalNiftid;
+                nn.filesuffix = '.4dfp.ifh';
+                if (4 == length(size(nn)) && size(nn,4) > 1) % short-circuit
+                    if (lexist([nn.fqfileprefix '_sumt.4dfp.ifh']))
+                        nn = mlfourd.NumericalNIfTId.load([nn.fqfileprefix '_sumt.4dfp.ifh']);
+                    else                        
+                        nn = nn.timeSummed;
+                        nn.save;
+                        fprintf('mlfourdfp.CompositeT4ResolveBuilder.embedInEuclideanR3 saved %s\n', ...
+                            nn.fqfilename);
+                    end
+                end
+                fqfp{i} = nn.fqfileprefix;
+            end
+        end
         function this         = resolve(this, varargin)
             import mlfourdfp.*;
             ip = inputParser;
@@ -60,11 +75,12 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
             this.resolveTag = ip.Results.resolveTag;  
-            ipr = ip.Results;            
+            ipr = ip.Results;        
             ipr = this.expandDest(ipr);
             ipr = this.expandBlurs(ipr);            
+            ipr.source = this.ensureLocalFourdfp(ipr.source);
             ipr.resolved = ipr.source; 
-            if (this.isfinished)  
+            if (this.isfinished)
                 this = this.alreadyFinalized(ipr);
                 return
             end
@@ -194,37 +210,25 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'rstring', '', @ischar);
             parse(ip, varargin{:});
             
-            t4 = getT4__(ip.Results.idx, getRstring__(ip.Results));
+            t4 = this.getT4__(ip.Results.idx, this.getRstring__(ip.Results));
             if (lexist(t4))
                 return
             end
             
             % aufbau composite t4 for all r-numbers
             for r = 1:this.NRevisions
-                assert(lexist(this.t4_to_resolveTag(ip.Results.idx, 'rnumber', r)));
+                assert(lexist(this.getT4__(ip.Results.idx, sprintf('r%i', r)))); 
             end
             rstr = 'r1';
             for r = 1:this.NRevisions-1
                 rstr1 = sprintf('%sr%i', rstr, r+1);
                 this.buildVisitor.t4_mul( ...
-                    getT4__(this, ip.Results.idx, rstr), ...
-                    getT4__(this, ip.Restuls.idx, sprintf('r%i', r+1)), ...
-                    getT4__(this, ip.Results.idx, rstr1));
+                    this.getT4__(ip.Results.idx, rstr), ...
+                    this.getT4__(ip.Results.idx, sprintf('r%i', r+1)), ...
+                    this.getT4__(ip.Results.idx, rstr1));
                 rstr = rstr1;
             end
-            t4 = getT4__(this, ip.Results.idx, rstr1);
-            
-            function rstr_ = getRstring__(ipr_)
-                if (isempty(ipr_.rstring))
-                    rstr_ = sprintf('r%i', ipr_.rnumber);
-                else
-                    rstr_ = ipr_.rstring;
-                end
-            end
-            function t4_   = getT4__(this, idx_, rstr_)
-                t4_ = sprintf('%s%s_to_%s_t4', ...
-                    this.imageComposite.theImages{idx_}, rstr_, this.resolveTag);
-            end
+            t4 = this.getT4__(ip.Results.idx, rstr1);
         end
         function this         = alreadyFinalized(this, ipr)
             dest         = cellfun(@(x) this.fileprefixRevision(x, this.NRevisions), ipr.dest, 'UniformOutput', false);
@@ -321,7 +325,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end
             
             assert(iscell(ipr.maskForImages));
-            assert(length(ipr.maskForImages) == length(ipr.source));
+            assertSizeEqual(ipr.maskForImages, ipr.source);
             for ii = 1:length(ipr.source)
                 if (strcmp(ipr.maskForImages{ii}, 'none'))
                     lazyMsk{ii} = 'none';
@@ -369,6 +373,23 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
 
     properties (Access = private)
         maskForImages_
+    end
+    
+    methods (Access = private)
+        function rstr_ = getRstring__(this, ipr_)
+            if (isempty(ipr_.rstring))
+                rstr_ = 'r1';
+                for r_ = 1:this.NRevisions-1
+                    rstr_ = sprintf('%sr%i', rstr_, r_+1);
+                end
+            else
+                rstr_ = ipr_.rstring;
+            end
+        end
+        function t4_   = getT4__(this, idx_, rstr_)
+            t4_ = sprintf('%s%s_to_%s_t4', ...
+                this.imageComposite.theImages{idx_}, rstr_, this.resolveTag);
+        end
     end
         
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
