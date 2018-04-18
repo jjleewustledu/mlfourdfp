@@ -47,6 +47,10 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
                 diary(sprintf('mlfourdfp_AbstractT4ResolveBuilder%s.txt', name)); 
             end
         end
+        function en = ensureLocalFourdfp(en)
+            en = mlfourdfp.FourdfpVisitor.ensureLocalFourdfp(en);
+            en = cellfun(@(x) mybasename(x), en, 'UniformOutput', false);
+        end
         function fn = fourdfpHdr(fp)
             fn = [fp '.4dfp.hdr'];
         end
@@ -843,17 +847,17 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             addParameter(ip, 'NRevisions',    2,          @isnumeric);
             addParameter(ip, 'keepForensics', true,       @islogical);
             addParameter(ip, 'resolveTag',    this.sessionData.resolveTag, @ischar);
-            addParameter(ip, 'theImages',     {},         @(x) iscell(x) || ischar(x));
+            addParameter(ip, 'theImages',     {},         @(x) iscell(x) || ischar(x) && ~isempty(x));
             addParameter(ip, 'ipResults',     struct([]), @isstruct);
             parse(ip, varargin{:});
             
             this.NRevisions    = ip.Results.NRevisions;
             this.keepForensics = ip.Results.keepForensics; % override mlpipeline.AbstractDataBuilder
             this.resolveTag    = ip.Results.resolveTag;
-            this.theImages     = this.ensureSafeFileprefix(ip.Results.theImages);
-            this.ipResults_    = ip.Results.ipResults;
-            
-%%%            this = this.mpr2atl; % FREEZES Matlab R2016a on william.
+            this.theImages     = this.ensureLocalFourdfp( ...
+                this.ensureSafeFileprefix(ip.Results.theImages));
+            this.ipResults_    = ip.Results.ipResults;            
+            %%% this = this.mpr2atl; % FREEZES Matlab R2016a on william.
         end        
  	end 
 
