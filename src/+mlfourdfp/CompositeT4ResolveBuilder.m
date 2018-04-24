@@ -12,20 +12,18 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
 	methods 		  
  		function this = CompositeT4ResolveBuilder(varargin)
  			%% COMPOSITET4RESOLVEBUILDER
-            %  @param blurArg; default := this.sessiondata.compositeT4ResolveBuilderBlurArg.
+            %  TODO:  consider support for cctor;  See also mlfourdfp.T4ResolveBuilder.
             %  @param theImages =: safe fileprefix =: time summed.
+            %  @param blurArg; default := this.sessiondata.compositeT4ResolveBuilderBlurArg.
             %  @param indicesLogical 
             %  @param indexOfReference; default := 1, the first of theImages.
-            %  @param maskForImages is a fileprefix or 'none'.
  			
             this = this@mlfourdfp.AbstractT4ResolveBuilder(varargin{:});            
             ip = inputParser;
             ip.KeepUnmatched = true;
             addParameter(ip, 'blurArg', this.sessionData.compositeT4ResolveBuilderBlurArg, @isnumeric);
-            %addParameter(ip, 'theImages', {}, @(x) ~isempty(x));
             addParameter(ip, 'indicesLogical', true, @islogical);
             addParameter(ip, 'indexOfReference', 1, @isnumeric);
-            addParameter(ip, 'maskForImages', 'none', @(x) ~isempty(x));
             parse(ip, varargin{:});
             
             this.imageComposite_ = mlfourdfp.ImageComposite( ...
@@ -33,15 +31,17 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 'theImages', this.embedInEuclideanR3(this.theImages), ...
                 'indicesLogical', ip.Results.indicesLogical, ...
                 'indexOfReference', ip.Results.indexOfReference);
-            this.indexOfReference = ip.Results.indexOfReference;
             this.blurArg_ = ip.Results.blurArg;  
-            this.maskForImages_ = ip.Results.maskForImages;
             this = this.updateFinished;
         end
         
         function fqfp         = embedInEuclideanR3(this, varargin)
-            fqfp = this.ensureSafeFileprefix(ensureCell(varargin{:}));
+            fqfp = ensureCell( ...
+                   this.ensureSafeFileprefix(varargin{:}));
             for i = 1:length(fqfp)
+                if (isempty(fqfp{i}))
+                    continue
+                end
                 ic = mlfourd.ImagingContext([fqfp{i} '.4dfp.ifh']);
                 nn = ic.numericalNiftid;
                 nn.filesuffix = '.4dfp.ifh';
@@ -105,9 +105,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.rnumber = this.rnumber + 1;
         end  
         function this =         imageReg(this, ipr)
-            stagedImgs   = this.lazyStageImages(ipr);
-            blurredImgs  = this.lazyBlurImages(ipr);
-            maskedImgs     = this.lazyMasksForImages(ipr);
+            stagedImgs  = this.lazyStageImages(ipr);
+            blurredImgs = this.lazyBlurImages(ipr);
+            maskedImgs  = this.lazyMasksForImages(ipr);
             assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
             len = length(stagedImgs);
             t4Failures = zeros(len, len);
@@ -310,35 +310,42 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function fp      = fileprefixOfReference(this, ipr)
             fp = ipr.dest{this.indexOfReference};
         end
-        function lazyMsk = lazyMasksForImages(this, ipr)
+        function fqfps   = lazyMasksForImages(this, ipr)
             %  @param ipr.maskForImages is 'none' or the fileprefix/name of an anatomical image which will be 
             %  thresholded to generate a mask; the anatomical image must have transverse orientation.   
             %  See also:  mlfourdfp.FourdfpVisitor.transverse_t4.
             %  @param this.theImages must be populated with the images to be masked.
-            %  @return mska, a cell-array of binary masks, identically sized to this.theImages.
+            %  @return fqfps, a cell-array of binary masks, identically sized to this.theImages.
             
-            lazyMsk = cell(1, length(ipr.source));
-            
-            if (strcmp(ipr.maskForImages, 'none'))
-                lazyMsk = cellfun(@(x) 'none', lazyMsk, 'UniformOutput', false);
+            fqfps = cell(1, length(ipr.source));            
+            if (~iscell(ipr.maskForImages) && strcmpi(ipr.maskForImages, 'none'))
+                fqfps = cellfun(@(x) 'none', fqfps, 'UniformOutput', false);
                 return
-            end
+            end   
             
+            % build masks for each frame
             assert(iscell(ipr.maskForImages));
             assertSizeEqual(ipr.maskForImages, ipr.source);
-            for ii = 1:length(ipr.source)
-                if (strcmp(ipr.maskForImages{ii}, 'none'))
-                    lazyMsk{ii} = 'none';
+            for ii = 1:length(ipr.source)           
+                if (strcmp(ipr.maskForImages{ii}, 'Msktgen'))
+                    mg    = mlpet.Msktgen('sessionData', this.sessionData);
+                    mskt  = mg.constructMskt( ...
+                        'source', ipr.source, ...
+                        'intermediaryForMask', this.sessionData.T1001, ...
+                        'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'), ...
+                        'blurForMask', 11, 'threshp', 0, ...
+                        'doConstructResolved', true);
+                    fqfps{ii} = mskt.fqfileprefix;
                     continue
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
                     if (~lexist_4dfp( [ipr.maskForImages{ii} '_mskt']))
                         this.buildVisitor.msktgenMprage(ipr.maskForImages{ii});
                     end
-                    lazyMsk{ii} = [ipr.maskForImages{ii} '_mskt'];
+                    fqfps{ii} = [ipr.maskForImages{ii} '_mskt'];
                     continue
                 end
-                lazyMsk{ii} = 'none';
+                fqfps{ii} = 'none';
             end
         end      
         function fqfps   = lazyStageImages(this, ipr)
@@ -370,10 +377,6 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     end
 
     %% PRIVATE
-
-    properties (Access = private)
-        maskForImages_
-    end
     
     methods (Access = private)
         function rstr_ = getRstring__(this, ipr_)

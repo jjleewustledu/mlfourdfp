@@ -94,77 +94,88 @@ classdef FourdfpVisitor
                 cd(pth);
             end
         end
-        function ensured = ensureLocalFourdfp(toensure)
+        function obj   = ensureLocalFourdfp(obj)
             %% ENSURELOCALFOURDFP
-            %  @param tostage is a data object to ensure to be in the pwd. 
-            %  Supported:  cell, (Handle|)IOInterface, 4dfp, mgz, gz, nii.
-            %  @return ensured is the filename of desired data object in the pwd.
+            %  @param obj is a data object to ensure to be in the pwd;
+            %  supported:  cell, (Handle|)IOInterface, 4dfp, mgz, gz, nii.
+            %  @return ensured contains the filename of desired data object in the pwd.
             
-            import mlfourdfp.*;
-            this = FourdfpVisitor;            
-            if (iscell(toensure))
-                ensured = cellfun(@(x) this.ensureLocalFourdfp(x), toensure, 'UniformOutput', false);
+            this = mlfourdfp.FourdfpVisitor;            
+            if (isempty(obj))
+                obj = '';
+                return
+            end            
+            if (iscell(obj))
+                obj = cellfun(@(x) this.ensureLocalFourdfp(x), obj, 'UniformOutput', false);
                 return
             end
-            
-            [pth,fp,x] = myfileparts(toensure);
-            ensured = [fp x];
-            if (~this.isLocalFourdfp(toensure))
-                try
-                    if (isa(toensure, 'mlio.HandleIOInterface') || isa(toensure, 'mlio.IOInterface'))
-                        toensure = toensure.fqfilename;
+            if (isa(obj, 'mlio.HandleIOInterface') || isa(obj, 'mlio.IOInterface'))
+                obj.filepath = pwd;
+                return
+            end
+            if (ischar(obj))
+                obj_ = obj;
+                [pth,fp,x] = myfileparts(obj);
+                obj = [fp x];
+                if (~this.isLocalFourdfp(obj_))
+                    try
+                        if (lexist_4dfp(fullfile(pth, fp)))
+                            this.copyfile_4dfp(fullfile(pth, fp));
+                            obj = [fp '.4dfp.ifh'];
+                            return
+                        end
+                        if (strcmp(x, '.mgz') || strcmp(x, '.mgh'))
+                            fp = ensureSafenameMgz(fp);
+                            this.mri_convert(obj, [fp '.nii']);
+                            this.nifti_4dfp_4(fp);
+                            obj = [fp '.4dfp.ifh'];
+                            return
+                        end
+                        if (lstrfind(x, '.gz'))
+                            gunzip(obj, pwd);
+                            this.nifti_4dfp_4(fp)
+                            obj = [fp '.4dfp.ifh'];
+                            return
+                        end
+                        if (strcmp(x, '.nii'))
+                            this.nifti_4dfp_4(fullfile(pth, fp));
+                            this.movefile_4dfp(fullfile(pth, fp));
+                            obj = [fp '.4dfp.ifh'];
+                            return
+                        end
+                    catch ME
+                        dispexcept(ME);
                     end
-                    if (lexist_4dfp(fullfile(pth, fp)))
-                        this.copyfile_4dfp(fullfile(pth, fp));
-                        ensured = [fp '.4dfp.ifh'];
-                        return
-                    end
-                    if (strcmp(x, '.mgz') || strcmp(x, '.mgh'))
-                        fp = ensureSafenameMgz(fp);
-                        this.mri_convert(toensure, [fp '.nii']);
-                        this.nifti_4dfp_4(fp);
-                        ensured = [fp '.4dfp.ifh'];
-                        return
-                    end
-                    if (lstrfind(x, '.gz'))
-                        gunzip(toensure, pwd);
-                        this.nifti_4dfp_4(fp)
-                        ensured = [fp '.4dfp.ifh'];
-                        return
-                    end
-                    if (strcmp(x, '.nii'))
-                        this.nifti_4dfp_4(fullfile(pth, fp));
-                        this.movefile_4dfp(fullfile(pth, fp));
-                        ensured = [fp '.4dfp.ifh'];
-                        return
-                    end
-                catch ME
-                    dispexcept(ME);
                 end
             end
         end
         function obj   = ensureSafeFileprefix(obj)
-            import mlfourdfp.*;
+            %  @param obj may be empty; returns empty char.
+            %  @param obj may be cell; if empty returns {''};
+            %  @param obj may be mlio*IOInterface or char.
+            
+            this = mlfourdfp.FourdfpVisitor; 
             if (isempty(obj))
+                obj = '';
                 return
             end
             if (iscell(obj))
-                obj = cellfun(@(x) FourdfpVisitor.ensureSafeFileprefix(x), obj,  'UniformOutput', false);
+                obj = cellfun(@(x) this.ensureSafeFileprefix(x), obj, 'UniformOutput', false);
                 return
             end
             if (isa(obj, 'mlio.IOInterface') || isa(obj, 'mlio.HandleIOInterface'))
-                obj.fileprefix = FourdfpVisitor.ensureSafeFileprefix(obj.fileprefix);
+                obj.fileprefix = this.ensureSafeFileprefix(obj.fileprefix);
                 return
             end
             if (ischar(obj))
                 [pth,fp,x] = myfileparts(obj);
                 fn = [fp x];
-                unsafe = FourdfpVisitor.UNSAFE_FILEPREFIXES;
+                unsafe = this.UNSAFE_FILEPREFIXES;
                 for u = 1:length(unsafe)
                     if (lstrfind(fn, unsafe{u}))
                         idxs = regexp(fn, unsafe{u});
                         while (~isempty(idxs))
-                            fn = FourdfpVisitor.safesprintf(unsafe{u}, fn, idxs);
+                            fn = this.safesprintf(unsafe{u}, fn, idxs);
                             idxs = regexp(fn, unsafe{u});
                         end
                     end
@@ -172,11 +183,12 @@ classdef FourdfpVisitor
                 obj0 = obj;
                 obj = fullfile(pth, fn);
                 if (lexist_4dfp(obj0) && ~lexist_4dfp(obj))
-                    lns_4dfp(obj0, obj);
+                    this.copyfile_4dfp(obj0, obj);
                 end
                 return
-            end
-            error('mlfourdfp:unsupportedTypeclass', 'FourdfpVisitor.ensureSafeFileprefix');
+            end            
+            error('mlfourdfp:unsupportedTypeclass', ...
+                'FourdfpVisitor.ensureSafeFileprefix received %s', class(obj));
         end
         function m     = ifhMatrixSize(fqfn)
             if (~lstrfind(fqfn, '.4dfp.ifh'))

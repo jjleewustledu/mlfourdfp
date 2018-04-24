@@ -48,8 +48,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             end
         end
         function en = ensureLocalFourdfp(en)
-            en = mlfourdfp.FourdfpVisitor.ensureLocalFourdfp(en);
-            en = cellfun(@(x) mybasename(x), en, 'UniformOutput', false);
+            en = mybasename( ...
+                mlfourdfp.FourdfpVisitor.ensureLocalFourdfp(en));
         end
         function fn = fourdfpHdr(fp)
             fn = [fp '.4dfp.hdr'];
@@ -129,11 +129,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         function g    = get.petBlur(this)
             g = this.sessionData.petBlur;
         end
-        function rw   = get.referenceWeight(~)
-            rw = [];
+        function g    = get.referenceWeight(~)
+            g = [];
         end
-        function ri   = get.referenceImage(this)
-            ri = this.imageComposite.referenceImage;
+        function g    = get.referenceImage(this)
+            g = this.imageComposite.referenceImage;
         end
         function g    = get.resolveTag(this)
             g = this.sessionData.resolveTag;
@@ -142,13 +142,17 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             assert(ischar(s));
             this.sessionData_.resolveTag = s;
         end
-        function si   = get.sourceImage(this)
-            si = this.imageComposite.sourceImage;
+        function g    = get.sourceImage(this)
+            g = this.imageComposite.sourceImage;
         end
-        function sw   = get.sourceWeight(~)
-            sw = [];
+        function g    = get.sourceWeight(~)
+            g = [];
         end
         function g    = get.theImages(this)
+            if (isempty(this.imageComposite))
+                g = [];
+                return
+            end
             g = this.imageComposite.theImages;
         end
         function this = set.theImages(this, s)
@@ -780,7 +784,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
                 return
             end
             try
-                deleteExisting(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
+                deleteExisting(sprintf('%s.4dfp.*', ipr.maskForImages));
                 if (this.keepForensics); return; end
 
                 this.teardownLogs;
@@ -847,17 +851,18 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             addParameter(ip, 'NRevisions',    2,          @isnumeric);
             addParameter(ip, 'keepForensics', true,       @islogical);
             addParameter(ip, 'resolveTag',    this.sessionData.resolveTag, @ischar);
-            addParameter(ip, 'theImages',     {},         @(x) iscell(x) || ischar(x) && ~isempty(x));
+            addParameter(ip, 'theImages',     '',         @(x) iscell(x) || ischar(x));
+            addParameter(ip, 'maskForImages', 'none',     @(x) ~isempty(x));
             addParameter(ip, 'ipResults',     struct([]), @isstruct);
             parse(ip, varargin{:});
             
-            this.NRevisions    = ip.Results.NRevisions;
-            this.keepForensics = ip.Results.keepForensics; % override mlpipeline.AbstractDataBuilder
-            this.resolveTag    = ip.Results.resolveTag;
-            this.theImages     = this.ensureLocalFourdfp( ...
-                this.ensureSafeFileprefix(ip.Results.theImages));
-            this.ipResults_    = ip.Results.ipResults;            
-            %%% this = this.mpr2atl; % FREEZES Matlab R2016a on william.
+            this.NRevisions     = ip.Results.NRevisions;
+            this.keepForensics  = ip.Results.keepForensics; % override mlpipeline.AbstractDataBuilder
+            this.resolveTag     = ip.Results.resolveTag;
+            this.theImages      = this.ensureLocalFourdfp( ...
+                                  this.ensureSafeFileprefix(ip.Results.theImages));
+            this.maskForImages_ = ip.Results.maskForImages;
+            this.ipResults_     = ip.Results.ipResults;            
         end        
  	end 
 
@@ -866,6 +871,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
     properties (Access = protected)
         blurArg_      
         imageComposite_
+        maskForImages_
         trash_ = {};
         xfm_
     end

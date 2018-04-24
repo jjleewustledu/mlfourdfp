@@ -12,6 +12,10 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
 	methods
  		function this = T4ResolveBuilder(varargin)
  			%% T4RESOLVEBUILDER
+            %  @param theImages =: safe fileprefix =: time summed.
+            %  @param blurArg; default := this.sessiondata.compositeT4ResolveBuilderBlurArg.
+            %  @param indicesLogical 
+            %  @param indexOfReference; default := 1, the first of theImages.
  			
             this = this@mlfourdfp.AbstractT4ResolveBuilder(varargin{:});            
             ip = inputParser;
@@ -19,19 +23,15 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addOptional( ip, 'cctor', []);
             addParameter(ip, 'blurArg', this.sessionData.t4ResolveBuilderBlurArg, @isnumeric);
             addParameter(ip, 'indicesLogical', true, @islogical);
-            %addParameter(ip, 'theImages', {}, @(x) iscell(x) || ischar(x));
             addParameter(ip, 'indexOfReference', 1, @isnumeric);
             parse(ip, varargin{:});
-            ims = ensureCell(ip.Results.theImages);
-            assert(lexist(ims{1}) || this.buildVisitor.lexist_4dfp(ims{1}), ....
-                'mlfourdfp.T4ResolveBuilder.ctor.ip.Results.theImages->%s does not exist', ...
-                cell2str(ims));
             
             if (isempty(ip.Results.cctor))
                 import mlfourdfp.*;
-                this.imageComposite_ = ImageFrames(this, ...
-                    'indicesLogical', ip.Results.indicesLogical, ...
+                this.imageComposite_ = ImageFrames( ...
+                    this, ...
                     'theImages', this.ensureSafeFileprefix(this.theImages), ...
+                    'indicesLogical', ip.Results.indicesLogical, ...
                     'indexOfReference', ip.Results.indexOfReference);
                 this.blurArg_ = ip.Results.blurArg;
             end
@@ -47,7 +47,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'sourceMask',     'none',              @ischar);
             addParameter(ip, 'destBlur',       this.blurArg,        @isnumeric); % fwhh/mm
             addParameter(ip, 'sourceBlur',     this.blurArg,        @isnumeric); % fwhh/mm 
-            addParameter(ip, 'maskForImages',  'maskForImages',     @ischar);
+            addParameter(ip, 'maskForImages',  'Msktgen',           @ischar);
             addParameter(ip, 'indicesLogical', this.indicesLogical, @islogical);
             addParameter(ip, 't40',            this.buildVisitor.transverse_t4, @(x) ischar(x) || iscell(x));
             addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
@@ -95,7 +95,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function this =         imageReg(this, ipr)
             stagedImgs  = this.lazyStageImages(ipr);
             blurredImgs = this.lazyBlurImages(ipr);
-            maskedImgs  = this.lazyMasksForImages__(ipr, blurredImgs);
+            maskedImgs  = this.lazyMasksForImages(ipr, blurredImgs);
             assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
             len = length(stagedImgs);
             t4Failures = zeros(len, len);
@@ -106,7 +106,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         try
                             t4 = this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m});
                             if (~lexist(t4))
-                                %[mskm,mskn] = this.lazyMaskForImages( ...
+                                %[mskm,mskn] = this.lazyMaskForImages_deprecated( ...
                                 %    ipr, stagedImgs{m}, stagedImgs{n}, ...
                                 %    this.imageComposite.fortranImageIndices(m), this.imageComposite.fortranImageIndices(n));
                                 this.buildVisitor.(this.sessionData.frameAlignMethod)( ...
@@ -269,41 +269,33 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             fp = this.fileprefixIndexed(ipr.dest, ip.Results.indexOfRef); % mybasename =: BUG?
         end
-        function [mskm,mskn] = lazyMaskForImages(this, ipr, fpm, fpn, m, n)
-            if (isempty(ipr.maskForImages))
-                mskm = 'none';
-                mskn = 'none';
-                return
-            end
-            
-            maskMN = sprintf('%s_%i_%i.4dfp.img', ipr.maskForImages, m, n);
-            maskNM = sprintf('%s_%i_%i.4dfp.img', ipr.maskForImages, n, m);
-            if (lexist(maskMN, 'file'))
-                mskm = maskMN;
-                mskn = mskm;
-            else
-                if (lexist(maskNM, 'file'))
-                    mskm = maskNM;
-                    mskn = mskm;
-                else
-                    mskm = this.buildMaskForImages(fpm, fpn, maskMN);
-                    mskn = mskm;                    
-                end
-            end
-        end
-        function fqfps = lazyMasksForImages__(this, ipr, blurredImgs)
+        function fqfps = lazyMasksForImages(this, ipr, blurredImgs)
             %  @param ipr.maskForImages is the base fileprefix for masks.
             %  @param ipr.sourceMask is cell-array of fileprefixes for masks or cells of 'none'.
             %  @param ipr.destmask   is cell-array of fileprefixes for masks or cells of 'none'.
             %  @param blurredImgs are f.-q.-fileprefixes images to mask.
             %  @return fqfps is a cell-array of f.-q. mask fileprefixes.
             
+            fqfps = cell(1, length(blurredImgs));            
             if (isempty(ipr.maskForImages) || strcmpi(ipr.maskForImages, 'none'))
-                fqfps = repmat('none', size(blurredImgs));
+                fqfps = cellfun(@(x) 'none', fqfps, 'UniformOutput', false); 
+                return
+            end            
+              
+            if (strcmp(ipr.maskForImages, 'Msktgen'))
+                mg    = mlpet.Msktgen('sessionData', this.sessionData);
+                mskt  = mg.constructMskt( ...
+                    'source', this.sessionData.tracerRevision, ...
+                    'intermediaryForMask', this.sessionData.T1001, ...
+                    'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'), ...
+                    'blurForMask', 22, 'threshp', 0, ...
+                    'doConstructResolved', true);
+                fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
                 return
             end
+            
+            % build masks for each frame
             sourceSumt = this.buildSourceTimeSummed(ipr);
-            fqfps = cell(size(blurredImgs));
             for b = 1:length(blurredImgs)
                 fqfps{b} = sprintf('%s_%i', ipr.maskForImages, b);
                 if (~lexist_4dfp(fqfps{b}))
@@ -318,6 +310,10 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             %  @param ipr.source is a f.-q.-fileprefix.
             %  @return fqfp := [ipr.source '_sumt'] generated on the filesystem.  
             %  See also mlfourd.ImagingContext.timeSummed.            
+            if (lexist_4dfp([ipr.source '_sumt']))
+                fqfp = [ipr.source '_sumt'];
+                return
+            end
             
             ic = mlfourd.ImagingContext(ipr.source);
             ic = ic.timeSummed;
@@ -340,8 +336,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 bv.msktgen2_4dfp(sourceSumt, 0);
                 bv.move_4dfp([sourceSumt '_mskt'], fqfp);
                 return
-            end            
-            this.buildMaskForImage(blurredImg, fqfp);
+            end  
+            this.buildMaskForImage(blurredImg, fqfp); % more efficient than calling buildMasksForImages
         end
     end
     
@@ -367,6 +363,33 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     end
 
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
+    
+    %% HIDDEN @deprecated
+    
+    methods (Hidden)
+        function [mskm,mskn] = lazyMaskForImages_deprecated(this, ipr, fpm, fpn, m, n)
+            if (isempty(ipr.maskForImages))
+                mskm = 'none';
+                mskn = 'none';
+                return
+            end
+            
+            maskMN = sprintf('%s_%i_%i.4dfp.img', ipr.maskForImages, m, n);
+            maskNM = sprintf('%s_%i_%i.4dfp.img', ipr.maskForImages, n, m);
+            if (lexist(maskMN, 'file'))
+                mskm = maskMN;
+                mskn = mskm;
+            else
+                if (lexist(maskNM, 'file'))
+                    mskm = maskNM;
+                    mskn = mskm;
+                else
+                    mskm = this.buildMaskForImages(fpm, fpn, maskMN);
+                    mskn = mskm;                    
+                end
+            end
+        end
+    end
 end
 
  
