@@ -17,7 +17,10 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
         theImages
     end
     
-    methods %% GET, SET
+    methods 
+        
+        %% GET, SET
+        
         function g    = get.fractionalImageFrameThresh(this)
             g = this.sessionData.fractionalImageFrameThresh;
         end
@@ -45,8 +48,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
                 return
             end
             g = this.theImages_;
-        end
-        
+        end        
         function this = set.theImages(this, s)
             assert(iscell(s) || ischar(s));
             this.theImages_ = mlfourdfp.FourdfpVisitor.ensureSafeFileprefix(s);
@@ -59,9 +61,9 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             this.indicesLogical = true;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
         end
-    end
-    
-	methods
+        
+        %%
+        
  		function this  = ImageFrames(varargin)
  			%% IMAGEFRAMES
  			%  Usage:  this = ImageFrames()
@@ -74,8 +76,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             addParameter(ip, 'indicesLogical', this.sessionData.indicesLogical, @islogical);
             parse(ip, varargin{:}); 
             
-            import mlfourdfp.*;
-            this.theImages_ = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
+            this.theImages_ = this.it4ResolveBuilder_.ensureSafeFileprefix(ip.Results.theImages);
             if (isempty(this.theImages))
                 this.length_ = this.readLength;
             else

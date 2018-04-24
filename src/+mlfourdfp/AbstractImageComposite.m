@@ -1,5 +1,7 @@
 classdef AbstractImageComposite < mlfourdfp.IImageComposite
-	%% ABSTRACTIMAGECOMPOSITE  
+	%% ABSTRACTIMAGECOMPOSITE assists implementations of mlfourdfp.IT4ResolveBuilder, providing convenience
+    %  properties for working with framed or composite images.  Support is focussed on indexed access
+    %  to element images, links to source and reference.
 
 	%  $Revision$
  	%  was created 21-Jan-2017 17:40:16
@@ -21,7 +23,7 @@ classdef AbstractImageComposite < mlfourdfp.IImageComposite
         indexMax
         indexOfReference
         indicesLogical 
-        it4ResolveBuilder
+        it4ResolveBuilder % \in mlfourdfp.IT4ResolveBuilder
     end
 
     methods %% GET, SET
@@ -57,12 +59,6 @@ classdef AbstractImageComposite < mlfourdfp.IImageComposite
                 return
             end
             g = logical(this.indicesLogical_);
-            return
-            %% DEBUGGIMG
-            
-            neii = this.nonEmptyImageIndices;
-            assert(~isempty(neii));
-            g = logical(this.indicesLogical_ .* neii);
         end
         function this = set.indicesLogical(this, s)
             assert(islogical(s));

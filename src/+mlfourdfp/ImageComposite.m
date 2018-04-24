@@ -16,7 +16,10 @@ classdef ImageComposite < mlfourdfp.AbstractImageComposite
         theImages
     end
 
-    methods %% GET, SET
+    methods 
+        
+        %% GET, SET
+        
         function g    = get.referenceImage(this)
             g = this.theImages_{this.indexOfReference};
         end
@@ -27,12 +30,11 @@ classdef ImageComposite < mlfourdfp.AbstractImageComposite
             g = this.theImages;
         end 
         function g    = get.theImages(this)
-            assert(~isempty(this.theImages_));
             g = this.theImages_;
         end
-    end
-    
-	methods 		  
+        
+        %%
+        
  		function this = ImageComposite(varargin)
  			%% IMAGECOMPOSITE
  			%  Usage:  this = ImageComposite() 			
@@ -45,8 +47,7 @@ classdef ImageComposite < mlfourdfp.AbstractImageComposite
             addParameter(ip, 'indicesLogical', true, @islogical);
             parse(ip, varargin{:});
             
-            import mlfourdfp.*;
-            this.theImages_ = FourdfpVisitor.ensureSafeFileprefix(ip.Results.theImages);
+            this.theImages_ = this.it4ResolveBuilder_.ensureSafeFileprefix(ip.Results.theImages);
             this.indicesLogical = ip.Results.indicesLogical;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
         end       
