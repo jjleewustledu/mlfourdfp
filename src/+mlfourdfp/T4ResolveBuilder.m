@@ -93,16 +93,15 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.rnumber = this.rnumber + 1;
         end
         function this =         imageReg(this, ipr)
-            stagedImgs  = this.lazyStageImages(ipr);
-            blurredImgs = this.lazyBlurImages(ipr);
-            maskedImgs  = this.lazyMasksForImages(ipr, blurredImgs);
+            stagedImgs  = this.lazyStageImages(ipr);                 % contracted wrt this.indicesLogical
+            blurredImgs = this.lazyBlurImages(ipr);                  % "
+            maskedImgs  = this.lazyMasksForImages(ipr, blurredImgs); % "
             assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
-            len = length(stagedImgs);
+            len = sum(this.indicesLogical);
             t4Failures = zeros(len, len);
             for m = 1:len
                 for n = 1:len
-                    if (m ~= n && ...
-                        this.indicesLogical(m) && this.indicesLogical(n)) 
+                    if (m ~= n) 
                         try
                             t4 = this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m});
                             if (~lexist(t4))
@@ -149,7 +148,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f) && f ~= this.indexOfReference)
                     %                    fileprefix of frame != this.indexOfReference
-                    imgFps = [imgFps ' ' mybasename(this.fileprefixIndexed(ipr.dest, f))]; %#ok<AGROW>
+                    ipr.currentIndex = f;
+                    imgFps = [imgFps ' ' mybasename(this.fileprefixIndexed(ipr))]; %#ok<AGROW>
                 end
             end  
             %% Must use short fileprefixes in calls to t4_resolve to avoid filenaming error by t4_resolve  
@@ -256,18 +256,19 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         end
         function fp    = fileprefixIndexedResolved(this, varargin)
             ip = inputParser;
-            addRequired(ip, 'fp', @ischar);
-            addRequired(ip, 'fr', @isnumeric);
+            addRequired(ip, 'dest', @ischar);
+            addRequired(ip, 'currentIndex', @isnumeric);
             addOptional(ip, 'tag', this.resolveTag, @ischar);
             parse(ip, varargin{:});
-            fp = sprintf('%s_%s', this.fileprefixIndexed(ip.Results.fp, ip.Results.fr), ip.Results.tag);
+            ipr = ip.Results;
+            fp = sprintf('%s_%s', this.fileprefixIndexed(ipr), ip.Results.tag);
         end
         function fp    = fileprefixOfReference(this, ipr, varargin)
             ip = inputParser;
             addOptional(ip, 'indexOfRef', this.indexOfReference, @isnumeric)
-            parse(ip, varargin{:});
-            
-            fp = this.fileprefixIndexed(ipr.dest, ip.Results.indexOfRef); % mybasename =: BUG?
+            parse(ip, varargin{:});            
+            ipr.currentIndex = ip.Results.indexOfRef;            
+            fp = this.fileprefixIndexed(ipr); 
         end
         function fqfps = lazyMasksForImages(this, ipr, blurredImgs)
             %  @param ipr.maskForImages is the base fileprefix for masks.
@@ -288,8 +289,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     'source', this.sessionData.tracerRevision, ...
                     'intermediaryForMask', this.sessionData.T1001, ...
                     'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'), ...
-                    'blurForMask', 22, 'threshp', 0, ...
-                    'doConstructResolved', true);
+                    'blurForMask', 6*this.blurArg, 'threshp', 0);
+                mskt.save;
                 fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
                 return
             end
