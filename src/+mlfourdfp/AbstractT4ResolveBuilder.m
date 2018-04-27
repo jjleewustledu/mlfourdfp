@@ -48,8 +48,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             end
         end
         function en = ensureLocalFourdfp(en)
-            en = mybasename( ...
-                mlfourdfp.FourdfpVisitor.ensureLocalFourdfp(en));
+            en_ = en;
+            en  = mybasename(mlfourdfp.FourdfpVisitor.ensureLocalFourdfp(en));
+            if (iscell(en_))
+                en = ensureCell(en);
+            end
         end
         function fn = fourdfpHdr(fp)
             fn = [fp '.4dfp.hdr'];
@@ -427,7 +430,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             fqfp = fullfile(ip.Results.path, sprintf('tmp_%s', datestr(now, 30)));            
         end    
         function this  = finalize(this, ipr)
-            save([ipr.resolved{this.indexOfReference} '_this_' datestr(now, 30) '.mat'], 'this');
+            if (iscell(ipr.resolved))
+                save([ipr.resolved{this.indexOfReference} '_this_' datestr(now, 30) '.mat'], 'this');
+            else
+                save([ipr.resolved '_this_' datestr(now, 30) '.mat'], 'this');
+            end
             this = this.buildProduct(ipr);            
             this.teardownResolve(ipr);
             this.finished.touchFinishedMarker;  
@@ -767,17 +774,18 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         function         teardownT4s(this)
             if (this.keepForensics); return; end
             
-            try
-                ensuredir(this.t4Path);
-                movefiles('*_t4', this.t4Path);
-                sessd = this.sessionData;
-                movefile( ...
-                    fullfile(this.t4Path, ...
-                        sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
-                    pwd);
-            catch ME
-                handwarning(ME);
-            end
+%% The following will break t4_resolve operations requiring *_t4 files.
+%             try
+%                 ensuredir(this.t4Path);
+%                 movefiles('*_t4', this.t4Path);
+%                 sessd = this.sessionData;
+%                 movefile( ...
+%                     fullfile(this.t4Path, ...
+%                         sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
+%                     pwd);
+%             catch ME
+%                 handwarning(ME);
+%             end
         end
         function         teardownRevision(this, ipr)
             if (iscell(ipr.maskForImages))
@@ -849,7 +857,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             ip = inputParser;
             ip.KeepUnmatched = true;
             addParameter(ip, 'NRevisions',    2,          @isnumeric);
-            addParameter(ip, 'keepForensics', true,       @islogical);
+            addParameter(ip, 'keepForensics', false,      @islogical);
             addParameter(ip, 'resolveTag',    this.sessionData.resolveTag, @ischar);
             addParameter(ip, 'theImages',     '',         @(x) iscell(x) || ischar(x));
             addParameter(ip, 'maskForImages', 'none',     @(x) ~isempty(x));
