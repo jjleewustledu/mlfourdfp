@@ -105,17 +105,15 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.rnumber = this.rnumber + 1;
         end  
         function this =         imageReg(this, ipr)
-            stagedImgs  = this.lazyStageImages(ipr);
-            blurredImgs = this.lazyBlurImages(ipr);
-            maskedImgs  = this.lazyMasksForImages(ipr);
+            stagedImgs  = this.lazyStageImages(ipr);    % contracted wrt this.indicesLogical
+            blurredImgs = this.lazyBlurImages(ipr);     % "
+            maskedImgs  = this.lazyMasksForImages(ipr); % "
             assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
-            len = length(stagedImgs);
+            len = sum(this.indicesLogical);
             t4Failures = zeros(len, len);
             for m = 1:len
                 for n = 1:len
-                    if (m ~= n && ...
-                        this.indicesLogical(m) && this.indicesLogical(n)) 
-                    
+                    if (m ~= n)                    
                         try
                             t4 = this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m});
                             if (~lexist(t4))
@@ -152,12 +150,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.t4_resolve_err = nan(len, len);
             for m = 1:length(stagedImgs)
                 for n = 1:length(stagedImgs)
-                    if (m ~= n && ...
-                        this.indicesLogical(m) && this.indicesLogical(n)) 
-                    
+                    if (m ~= n)                    
                         try               
                             [rmsdeg,rmsmm] = this.t4_resolve_errParser(this.resolvePair( ...
-                                    mybasename(ipr.dest{m}), mybasename(ipr.dest{n})));
+                                    mybasename(stagedImgs{m}), mybasename(stagedImgs{n})));
                             this.t4_resolve_err(m,n) = this.t4_resolve_errAverage(rmsdeg, rmsmm);
                         catch ME
                             dispwarning(ME);
@@ -243,15 +239,19 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     for il = 1:length(this.indicesLogical)
                         fp0 = ipr.dest{il};
                         if (this.indicesLogical(il))
-                            deleteExisting(sprintf('%sr%i.4dfp.*', fp0, r));
+                            deleteExisting(sprintf('%sr%i.4dfp.*',    fp0, r));
                             deleteExisting(sprintf('%sr%i_b*.4dfp.*', fp0, r));
                             deleteExisting(sprintf('%sr%i_C*.4dfp.*', fp0, r));
                             deleteExisting(sprintf('%sr%i_%s.4dfp.*', fp0, r, this.resolveTag));
                             deleteExisting(sprintf('%sr%i_g*.nii.gz', fp0, r));
                         end
                     end
-                end            
-                deleteExisting(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
+                end   
+                if (iscell(ipr.maskForImages))                    
+                    cellfun(@(x) deleteExisting(sprintf('%s_*_*.4dfp.*', x)), ipr.maskForImages);
+                else
+                    deleteExisting(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
+                end
             catch ME
                 handwarning(ME)
             end
@@ -330,11 +330,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 if (strcmp(ipr.maskForImages{ii}, 'Msktgen'))
                     mg    = mlpet.Msktgen('sessionData', this.sessionData);
                     mskt  = mg.constructMskt( ...
-                        'source', ipr.source, ...
+                        'source', ipr.source{ii}, ...
                         'intermediaryForMask', this.sessionData.T1001, ...
                         'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'), ...
-                        'blurForMask', 11, 'threshp', 0, ...
-                        'doConstructResolved', true);
+                        'blurForMask', 2*this.blurArg, 'threshp', 0);
                     fqfps{ii} = mskt.fqfileprefix;
                     continue
                 end
