@@ -25,8 +25,10 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             g = this.sessionData.fractionalImageFrameThresh;
         end
         function g    = get.referenceImage(this)
-            g = this.it4ResolveBuilder_.fileprefixIndexed( ...
-                this.sessionData.tracerRevision('typ', 'fqfp'), this.indexOfReference);
+            ipr = struct( ...
+                'dest', this.sessionData.tracerRevision('typ', 'fqfp'), ...
+                'currentIndex', this.indexOfReference);
+            g = this.it4ResolveBuilder_.fileprefixIndexed(ipr);
         end
         function g    = get.sessionData(this)
             g = this.it4ResolveBuilder_.sessionData;
