@@ -228,7 +228,10 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 upperFirst(this.sessionData.tracer), this.sessionData.vnumber, this.sessionData.rnumber);
         end
         function fp    = umapsOpTracerFrame(this, fr)
-            fp = this.fileprefixIndexed(this.umapsOpTracer, fr);
+            ipr = struct( ...
+                'dest', this.umapsOpTracer, ...
+                'currentIndex', fr);
+            fp = this.fileprefixIndexed(ipr);
         end
         function [s,r] = viewUmaps(this)
             [s,r] = mlbash(sprintf( ...
