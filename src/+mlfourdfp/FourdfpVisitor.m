@@ -1849,7 +1849,7 @@ classdef FourdfpVisitor
             [s,r] = dbbash(sprintf('imgreg_4dfp %s', args));
             if (0 ~= s)
                 error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.imgreg_4dfp__:  s->%i\n    r->%s', s, r);
+                    'FourdfpVisitor.imgreg_4dfp__:\n    s->%i\n    r->%s', s, r);
             end
         end
         function [s,r] = maskimg_4dfp__(~, args)
@@ -2054,7 +2054,7 @@ classdef FourdfpVisitor
             [s,r] = dbbash(sprintf('t4_inv %s', args));
             if (0 ~= s)
                 error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4_inv__:  s->%i\n    r->%s', s, r);
+                    'FourdfpVisitor.t4_inv__:\n    s->%i\n    r->%s', s, r);
             end
         end
         function [s,r] = t4_mul__(~, args)
@@ -2068,7 +2068,7 @@ classdef FourdfpVisitor
             [s,r] = dbbash(sprintf('t4_mul %s', args));
             if (0 ~= s)
                 error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4_mul__:  s->%i\n    r->%s', s, r);
+                    'FourdfpVisitor.t4_mul__:\n    s->%i\n    r->%s', s, r);
             end
         end
         function [s,r] = t4img_4dfp__(~, args)
@@ -2087,7 +2087,7 @@ classdef FourdfpVisitor
             [s,r] = dbbash(sprintf('t4img_4dfp %s', args));
             if (0 ~= s)
                 error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4img_4dfp__:  s->%i\n    r->%s', s, r);
+                    'FourdfpVisitor.t4img_4dfp__:\n    s->%i\n    r->%s', s, r);
             end
         end
         function [s,r] = t4imgs_4dfp__(~, args)
@@ -2112,7 +2112,7 @@ classdef FourdfpVisitor
             [s,r] = dbbash(sprintf('t4imgs_4dfp %s', args));
             if (0 ~= s)
                 error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4imgs_4dfp__:  s->%i\n    r->%s', s, r);
+                    'FourdfpVisitor.t4imgs_4dfp__:\n    s->%i\n    r->%s', s, r);
             end
         end
         function [s,r] = t4_resolve__(~, args)
@@ -2134,7 +2134,7 @@ classdef FourdfpVisitor
             [s,r] = dbbash(sprintf('t4_resolve %s', args));
             if (0 ~= s)
                 error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4_resolve__:  s->%i\n    r->%s', s, r);
+                    'FourdfpVisitor.t4_resolve__:\n    s->%i\n    r->%s', s, r);
             end
         end
         function [s,r] = zero_slice_4dfp__(~, args)
