@@ -523,6 +523,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             pth = fullfile(this.sessionData.tracerLocation, 'Atlas', '');
             %ensuredir(pth); % CRUFT?
         end
+        function r     = resolvePair(this, f1, f2)
+            [~,r] = this.buildVisitor.t4_resolve( ...
+                this.resolveTag, [f1 ' ' f2], ...
+                'options', '-v -m -s');
+        end
         function tag   = resolveTagFrame(this, varargin)
             tag = this.sessionData.resolveTagFrame(varargin{:});
         end    
