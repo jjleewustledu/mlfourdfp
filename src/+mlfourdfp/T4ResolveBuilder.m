@@ -105,9 +105,6 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         try
                             t4 = this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m});
                             if (~lexist(t4))
-                                %[mskm,mskn] = this.lazyMaskForImages_deprecated( ...
-                                %    ipr, stagedImgs{m}, stagedImgs{n}, ...
-                                %    this.imageComposite.fortranImageIndices(m), this.imageComposite.fortranImageIndices(n));
                                 this.buildVisitor.(this.sessionData.frameAlignMethod)( ...
                                     'dest',       blurredImgs{m}, ...
                                     'source',     blurredImgs{n}, ...
@@ -131,9 +128,28 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 end
             end
             t4Failures = sum(t4Failures, 1);
+            fprintf('T4ResolveBuilder.imageReg: t4Failures->%s\n', mat2str(t4Failures));
             this.indicesLogical(this.indicesLogical) = ...
                 ensureRowVector(this.indicesLogical(this.indicesLogical)) & ...
                 ensureRowVector(t4Failures < 0.25*len);
+            fprintf('T4ResolveBuilder.imageReg: this.indicesLogical->%s\n', mat2str(this.indicesLogical)); 
+            
+            this.t4_resolve_err = nan(len, len);
+            for m = 1:length(stagedImgs)
+                for n = 1:length(stagedImgs)
+                    if (m ~= n)
+                        try
+                            [rmsdeg,rmsmm] = this.t4_resolve_errParser(this.resolvePair( ...
+                                    mybasename(stagedImgs{m}), mybasename(stagedImgs{n})));
+                            this.t4_resolve_err(m,n) = this.t4_resolve_errAverage(rmsdeg, rmsmm);
+                        catch ME
+                            dispwarning(ME);
+                        end
+                        
+                    end
+                end
+            end 
+            fprintf('T4ResolveBuilder.imageReg: this.t4_resolve_err->%s\n', mat2str(this.t4_resolve_err));
             
             this.deleteTrash;
         end
@@ -144,7 +160,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             assert(isstruct(ipr));
             
             pwd0   = pushd(fileparts(ipr.dest));
-            imgFps = mybasename(this.fileprefixOfReference(ipr, this.indexOfReference)); % initial on ipr.dest
+            imgFps = mybasename(this.fileprefixOfReference(ipr)); % initial on ipr.dest
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f) && f ~= this.indexOfReference)
                     %                    fileprefix of frame != this.indexOfReference

@@ -113,7 +113,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             t4Failures = zeros(len, len);
             for m = 1:len
                 for n = 1:len
-                    if (m ~= n)                    
+                    if (m ~= n)
                         try
                             t4 = this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m});
                             if (~lexist(t4))
@@ -135,8 +135,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                                 this.buildVisitor.transverse_t4, ...
                                 this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}), 'f');
                             dispwarning(ME);
-                        end
-                        
+                        end                        
                     end
                 end
             end 
@@ -150,8 +149,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.t4_resolve_err = nan(len, len);
             for m = 1:length(stagedImgs)
                 for n = 1:length(stagedImgs)
-                    if (m ~= n)                    
-                        try               
+                    if (m ~= n)
+                        try
                             [rmsdeg,rmsmm] = this.t4_resolve_errParser(this.resolvePair( ...
                                     mybasename(stagedImgs{m}), mybasename(stagedImgs{n})));
                             this.t4_resolve_err(m,n) = this.t4_resolve_errAverage(rmsdeg, rmsmm);
@@ -166,11 +165,6 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             this.deleteTrash;
         end  
-        function r            = resolvePair(this, f1, f2)
-            [~,r] = this.buildVisitor.t4_resolve( ...
-                this.resolveTag, [f1 ' ' f2], ...
-                'options', '-v -m -s');
-        end
         function [ipr,imgFps] = resolveAndPaste(this, ipr)
             %% RESOLVEANDPASTE - preassign ipr.dest, this.resolveTag, this.indexOfReference as needed.
             %  @param ipr is a struct w/ field dest, a cell array of fileprefixes || is a cell
@@ -187,8 +181,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     %                    fileprefix of frame != this.indexOfReference
                     imgFps = [imgFps ' ' mybasename(ipr.dest{f})]; %#ok<AGROW>
                 end
-            end
-                     
+            end            
+            %% Must use short fileprefixes in calls to t4_resolve to avoid filenaming error by t4_resolve  
+            %  t4_resolve: /data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame1_to_/data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame8_t4 read error         
             this.buildVisitor.t4_resolve( ...
                 this.resolveTag, imgFps, ...
                 'options', '-v -m -s', 'log', this.resolveLog);
@@ -310,7 +305,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function fp      = fileprefixOfReference(this, ipr)
             fp = ipr.dest{this.indexOfReference};
         end
-        function fqfps   = lazyMasksForImages(this, ipr)
+        function fqfps   = lazyMasksForImages(this, ipr, varargin)
             %  @param ipr.maskForImages is 'none' or the fileprefix/name of an anatomical image which will be 
             %  thresholded to generate a mask; the anatomical image must have transverse orientation.   
             %  See also:  mlfourdfp.FourdfpVisitor.transverse_t4.
