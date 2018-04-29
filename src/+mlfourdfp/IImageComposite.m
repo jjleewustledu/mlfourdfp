@@ -17,6 +17,7 @@ classdef (Abstract) IImageComposite
         indexOfReference
         indicesLogical
         sessionData
+        theImages
     end
     
 	methods (Abstract)
