@@ -42,9 +42,24 @@ classdef AbstractImageComposite < mlfourdfp.IImageComposite
         end
         function g    = get.indexOfReference(this)
             g = this.indexOfReference_;
-            while (~this.indicesLogical(g))
-                g = g - 1;
-                if (g < 1); break; end
+            if (~this.indicesLogical(g))
+                g_ = g;
+                % search down
+                for g = g_:-1:1
+                    if (this.indicesLogical(g))
+                        return
+                    end
+                end
+                % search up
+                for g = g_+1:length(this.indicesLogical)                    
+                    if (this.indicesLogical(g))
+                        return
+                    end
+                end
+                error('mlfourdfp:invalidPropertyValue', ...
+                    'AbstractImageComposite.get.indexOfReference: %s; this.indicesLogical->%2', ...
+                    'could not find a valid indexOfReference', ...
+                    mat2str(this.indicesLogical));
             end
         end
         function this = set.indexOfReference(this, s)
