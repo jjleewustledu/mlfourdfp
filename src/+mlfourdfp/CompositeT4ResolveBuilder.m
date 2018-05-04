@@ -13,7 +13,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
  		function this = CompositeT4ResolveBuilder(varargin)
  			%% COMPOSITET4RESOLVEBUILDER
             %  TODO:  consider support for cctor;  See also mlfourdfp.T4ResolveBuilder.
-            %  @param theImages =: safe fileprefix =: time summed.
+            %  @param theImages =: safe fileprefix =: time summed.  Always contracted to ${\rm I\!R}^3$ by method
+            %  embedInEuclideanR3.  
             %  @param blurArg; default := this.sessiondata.compositeT4ResolveBuilderBlurArg.
             %  @param indicesLogical 
             %  @param indexOfReference; default := 1, the first of theImages.
@@ -25,10 +26,11 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'indicesLogical', true, @islogical);
             addParameter(ip, 'indexOfReference', 1, @isnumeric);
             parse(ip, varargin{:});
-            
+                                        
             this.imageComposite_ = mlfourdfp.ImageComposite( ...
                 this, ...
-                'theImages', this.embedInEuclideanR3(this.theImages), ...
+                'theImages', this.embedInEuclideanR3( ...
+                             this.ensureLocalFourdfp(this.theImages)), ...
                 'indicesLogical', ip.Results.indicesLogical, ...
                 'indexOfReference', ip.Results.indexOfReference);
             this.blurArg_ = ip.Results.blurArg;  
@@ -36,7 +38,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         end
         
         function fqfp         = embedInEuclideanR3(this, varargin)
-            fqfp = ensureCell( ...
+            fqfp = ensureCell( ...                   
                    this.ensureSafeFileprefix(varargin{:}));
             for i = 1:length(fqfp)
                 if (isempty(fqfp{i}))
@@ -100,7 +102,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 ipr.dest{this.indexOfReference}, 'func', 'CompositeT4ResolveBuilder_t4ResolveAndPaste', 'path', this.logPath);
             
             this = this.imageReg(ipr);
-            ipr = this.resolveAndPaste(ipr); 
+            [ipr,~,this] = this.resolveAndPaste(ipr); 
             this.teardownRevision(ipr);
             this.rnumber = this.rnumber + 1;
         end  
@@ -165,7 +167,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             this.deleteTrash;
         end  
-        function [ipr,imgFps] = resolveAndPaste(this, ipr)
+        function [ipr,imgFps,this] = resolveAndPaste(this, ipr)
             %% RESOLVEANDPASTE - preassign ipr.dest, this.resolveTag, this.indexOfReference as needed.
             %  @param ipr is a struct w/ field dest, a cell array of fileprefixes || is a cell
             
@@ -174,6 +176,15 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 ipr = struct('dest', '');
                 ipr.dest = ipr_cell;
             end
+            if (~any(this.indicesLogical))
+                dest_ = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
+                ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest_, 'UniformOutput', false);
+                cellfun(@(x) this.buildVisitor.copyfile_4dfp(x, ipr.resolved), dest_, 'UniformOutput', false);
+                imgFps = '';
+                this.rnumber = this.NRevisions;
+                return
+            end            
+            
             pwd0   = pushd(fileparts(ipr.dest{1}));
             imgFps = mybasename(this.fileprefixOfReference(ipr)); % initial on ipr.dest
             for f = 1:length(this.indicesLogical)
@@ -323,21 +334,32 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             assertSizeEqual(ipr.maskForImages, ipr.source);
             for ii = 1:length(ipr.source)           
                 if (strcmp(ipr.maskForImages{ii}, 'Msktgen'))
-                    mg    = mlpet.Msktgen('sessionData', this.sessionData);
-                    mskt  = mg.constructMskt( ...
-                        'source', ipr.source{ii}, ...
-                        'intermediaryForMask', this.sessionData.T1001, ...
-                        'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'), ...
-                        'blurForMask', 2*this.blurArg, 'threshp', 0);
-                    fqfps{ii} = mskt.fqfileprefix;
-                    continue
+                    try
+                        mg   = mlpet.Msktgen('sessionData', this.sessionData);
+                        mskt = mg.constructMskt( ...
+                            'source', ipr.source{ii}, ...
+                            'intermediaryForMask', this.sessionData.T1001, ...
+                            'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'), ...
+                            'blurForMask', 2*this.blurArg, 'threshp', 0);
+                        fqfps{ii} = mskt.fqfileprefix;
+                        continue
+                    catch ME
+                        fprintf('lazyMaskForImages:  ipr.maskForImages{%i} <- T1001\n', ii);
+                        fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));                        
+                        ipr.maskForImages{ii} = 'T1001';
+                    end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
-                    if (~lexist_4dfp( [ipr.maskForImages{ii} '_mskt']))
-                        this.buildVisitor.msktgenMprage(ipr.maskForImages{ii});
+                    try
+                        if (~lexist_4dfp( [ipr.maskForImages{ii} '_mskt']))
+                            this.buildVisitor.msktgenMprage(ipr.maskForImages{ii});
+                        end
+                        fqfps{ii} = [ipr.maskForImages{ii} '_mskt'];
+                        continue
+                    catch ME
+                        fprintf('lazyMaskForImages:  fqfps{%i} <- none\n', ii);
+                        fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                     end
-                    fqfps{ii} = [ipr.maskForImages{ii} '_mskt'];
-                    continue
                 end
                 fqfps{ii} = 'none';
             end
