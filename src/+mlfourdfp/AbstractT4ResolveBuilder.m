@@ -329,11 +329,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             assert(isfield( ipr, 'destMask'));
             if (~iscell(ipr.sourceMask))
                 assert(ischar(ipr.sourceMask));
-                ipr.sourceMask = repmat(ipr.sourceMask, size(ipr.indicesLogical));
+                ipr.sourceMask = repmat({ipr.sourceMask}, size(ipr.indicesLogical));
             end
             if (~iscell(ipr.destMask))
                 assert(ischar(ipr.destMask));
-                ipr.destMask = repmat(ipr.destMask, size(ipr.indicesLogical));
+                ipr.destMask = repmat({ipr.destMask}, size(ipr.indicesLogical));
             end
         end
         function fn    = filenameHdr(~, fp)
@@ -430,10 +430,14 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             fqfp = fullfile(ip.Results.path, sprintf('tmp_%s', datestr(now, 30)));            
         end    
         function this  = finalize(this, ipr)
-            if (iscell(ipr.resolved))
-                save([ipr.resolved{this.indexOfReference} '_this_' datestr(now, 30) '.mat'], 'this');
-            else
-                save([ipr.resolved '_this_' datestr(now, 30) '.mat'], 'this');
+            try
+                if (iscell(ipr.resolved))
+                    save([ipr.resolved{this.indexOfReference} '_this_' datestr(now, 30) '.mat'], 'this');
+                else
+                    save([ipr.resolved '_this_' datestr(now, 30) '.mat'], 'this');
+                end
+            catch ME
+                handwarning(ME);
             end
             this = this.buildProduct(ipr);            
             this.teardownResolve(ipr);
@@ -872,8 +876,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             this.NRevisions     = ip.Results.NRevisions;
             this.keepForensics  = ip.Results.keepForensics; % override mlpipeline.AbstractDataBuilder
             this.resolveTag     = ip.Results.resolveTag;
-            this.theImages      = this.ensureLocalFourdfp( ...
-                                  this.ensureSafeFileprefix(ip.Results.theImages));
+            this.theImages      = this.ensureSafeFileprefix(ip.Results.theImages);
             this.maskForImages_ = ip.Results.maskForImages;
             this.ipResults_     = ip.Results.ipResults;            
         end        
@@ -1013,11 +1016,15 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f))
                     destFp = ipr.dest{f};
-                    this.buildVisitor.t4img_4dfp( ...
-                        sprintf('%s_to_%s_t4', destFp, tag), ...
-                        destFp, ...
-                        'out', sprintf('%s_%s', destFp, tag), ...
-                        'options', ['-O' ipr.dest{this.indexOfReference}]);
+                    try
+                        this.buildVisitor.t4img_4dfp( ...
+                            sprintf('%s_to_%s_t4', destFp, tag), ...
+                            destFp, ...
+                            'out', sprintf('%s_%s', destFp, tag), ...
+                            'options', ['-O' ipr.dest{this.indexOfReference}]);
+                    catch ME
+                        handwarning(ME);
+                    end
                 end
             end
         end  
