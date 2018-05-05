@@ -63,6 +63,23 @@ classdef FourdfpVisitor
                 copyfile(fns{:});
             end
         end
+        function         copyfilef_4dfp(varargin)
+            xs = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'};
+            if (lstrfind(varargin{1}, xs))
+                warning('mlfourdfp:usageErr', 'FourdfpVisitor.copyfile_4dfp');
+                return
+            end
+            if (nargin > 1 && isdir(varargin{2}))
+                for ix = 1:length(xs)
+                    copyfile([varargin{1} xs{ix}], varargin{2}, 'f')
+                end
+                return
+            end
+            for ix = 1:length(xs)
+                fns = cellfun(@(x) [x xs{ix}], varargin, 'UniformOutput', false);
+                copyfile(fns{:}, 'f');
+            end
+        end
         function         movefile_4dfp(varargin)
             xs = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'};
             if (lstrfind(varargin{1}, xs))
@@ -78,6 +95,23 @@ classdef FourdfpVisitor
             for ix = 1:length(xs)
                 fns = cellfun(@(x) [x xs{ix}], varargin, 'UniformOutput', false);
                 movefile(fns{:});
+            end
+        end
+        function         movefilef_4dfp(varargin)
+            xs = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'};
+            if (lstrfind(varargin{1}, xs))
+                warning('mlfourdfp:usageErr', 'FourdfpVisitor.movefile_4dfp');
+                return
+            end
+            if (nargin > 1 && isdir(varargin{2}))
+                for ix = 1:length(xs)
+                    movefile([varargin{1} xs{ix}], varargin{2}, 'f')
+                end
+                return
+            end
+            for ix = 1:length(xs)
+                fns = cellfun(@(x) [x xs{ix}], varargin, 'UniformOutput', false);
+                movefile(fns{:}, 'f');
             end
         end
         function pth   = ensureConsistentPwd(fqfp)
