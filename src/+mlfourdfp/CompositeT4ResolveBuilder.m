@@ -330,7 +330,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end   
             
             % build masks for each frame
-            assert(iscell(ipr.maskForImages));
+            if (~iscell(ipr.maskForImages))
+                ipr.maskForImages = repmat(ensureCell(ipr.maskForImages), size(ipr.source));
+            end
             assertSizeEqual(ipr.maskForImages, ipr.source);
             for ii = 1:length(ipr.source)           
                 if (strcmp(ipr.maskForImages{ii}, 'Msktgen'))
