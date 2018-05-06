@@ -278,7 +278,7 @@ classdef FourdfpVisitor
                  lexist(fqfn))
                 [s,r] = mlbash(sprintf('ln -s %s', fqfn));
             end
-            warning('mlfourdfp:symbolicLinksCreated', 'FourdfpVisitor.lns->%s', fqfn);
+            fprintf('mlfourdfp.FourdfpVisitor.lns->%s\n', fqfn);
         end
         function [s,r] = lns_4dfp(varargin)
             ip = inputParser;
@@ -305,7 +305,7 @@ classdef FourdfpVisitor
                     dispwarning(ME);
                 end
             end
-            warning('mlfourdfp:symbolicLinksCreated', 'FourdfpVisitor.lns->%s', fqfpDest);
+            fprintf('mlfourdfp.FourdfpVisitor.lns_4dfp->%s\n', fqfpDest);
         end
         function fn    = mri_convert(varargin)
             fn = mlsurfer.SurferVisitor.mri_convert(varargin{:});
@@ -1002,6 +1002,7 @@ classdef FourdfpVisitor
             %  @param named fileprefix
             %  @param named minusN is logical; true =: sends -N flag to nifti_4dfp to remove center parameters from
             %  *.4dfp.ifh.
+            
             ip = inputParser;
             addRequired(ip, 'fileprefix', @ischar);
             addParameter(ip, 'minusN', true);
@@ -1033,7 +1034,20 @@ classdef FourdfpVisitor
             error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s.nii not found', fp);
         end
         function      [s,r] = nifti_4dfp_n(this, varargin)
-            [s,r] = this.nifti_4dfp_ng(varargin{:});
+            ip = inputParser;
+            addRequired(ip, 'fileprefix',                 @ischar);
+            addOptional(ip, 'fileprefixOut', varargin{1}, @ischar);
+            parse(ip, varargin{:});
+            [pth,fp] = myfileparts(ip.Results.fileprefix);
+            fp = fullfile(pth, fp);
+            [ptho,fpo] = myfileparts(ip.Results.fileprefixOut);
+            fpo = fullfile(ptho, fpo);            
+
+            if (lexist([fp '.4dfp.ifh']))
+                [s,r] = this.nifti_4dfp__(sprintf(' -n %s.4dfp.ifh %s.nii', fp, fpo));
+                return
+            end
+            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_ng:  %s.4dfp.* not found', fp);
         end
         function      [s,r] = nifti_4dfp_ng(this, varargin)
             ip = inputParser;
