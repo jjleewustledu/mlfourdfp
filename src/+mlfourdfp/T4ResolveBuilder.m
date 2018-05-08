@@ -167,20 +167,23 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 return
             end
             
-            pwd0   = pushd(fileparts(ipr.dest));
-            imgFps = mybasename(this.fileprefixOfReference(ipr)); % initial on ipr.dest
+            pwd0    = pushd(fileparts(ipr.dest));
+            imgFpsc = {mybasename(this.fileprefixOfReference(ipr))}; % 1st element is reference
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f) && f ~= this.indexOfReference)
-                    %                    fileprefix of frame != this.indexOfReference
+                    % fileprefix of frame f != this.indexOfReference
                     ipr.currentIndex = f;
-                    imgFps = [imgFps ' ' mybasename(this.fileprefixIndexed(ipr))]; %#ok<AGROW>
+                    imgFpsc = [imgFpsc mybasename(this.fileprefixIndexed(ipr))]; %#ok<AGROW>
                 end
             end  
+            
             %% Must use short fileprefixes in calls to t4_resolve to avoid filenaming error by t4_resolve  
             %  t4_resolve: /data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame1_to_/data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame8_t4 read error          
+            imgFps = cell2str(imgFpsc, 'AsRow', true);
             this.buildVisitor.t4_resolve( ...
                 this.resolveTag, imgFps, ...
                 'options', '-v -m -s', 'log', this.resolveLog);
+            this = this.cacheT4s(imgFpsc);
             this.t4imgAll(ipr, this.resolveTag); % transform ipr.dest on this.resolveTag
             this.reconstituteImages(ipr, this.resolveTag); % reconstitute all frames            
             ipr.resolved = sprintf('%s_%s', ipr.dest, this.resolveTag);
@@ -318,10 +321,10 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         'blurForMask', 6*this.blurArg, 'threshp', 0);
                     mskt.save;
                     fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
+                    return
                 catch ME
-                    handexcept(ME);
+                    dispwarning(ME);
                 end
-                return
             end
             
             % build masks for each frame
@@ -402,6 +405,18 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     %% PROTECTED
     
     methods (Access = protected)
+        function this = cacheT4s(this, imgFpsc)
+            %  @return this.t4s_{1} is the reference; size(this.t4s_) == size(this.indicesLogical).
+            
+            this.t4s_{this.rnumber} = cell(size(imgFpsc));
+            for f = 1:length(imgFpsc)
+                try
+                    this.t4s_{this.rnumber}{f} = sprintf('%s_frame%i_to_%s_t4', imgFpsc{f}, f, this.resolveTag);
+                catch ME
+                    dispwarning(ME);
+                end
+            end
+        end
         function this = t4imgAll(this, ipr, tag)
             if (this.skipT4imgAll) 
                 return

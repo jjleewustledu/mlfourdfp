@@ -186,18 +186,21 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end            
             
             pwd0   = pushd(fileparts(ipr.dest{1}));
-            imgFps = mybasename(this.fileprefixOfReference(ipr)); % initial on ipr.dest
+            imgFpsc = {mybasename(this.fileprefixOfReference(ipr))}; % initial on ipr.dest
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f) && f ~= this.indexOfReference)
-                    %                    fileprefix of frame != this.indexOfReference
-                    imgFps = [imgFps ' ' mybasename(ipr.dest{f})]; %#ok<AGROW>
+                    % fileprefix ipr.dest{f} != this.indexOfReference
+                    imgFpsc = [imgFpsc mybasename(ipr.dest{f})]; %#ok<AGROW>
                 end
-            end            
+            end
+            
             %% Must use short fileprefixes in calls to t4_resolve to avoid filenaming error by t4_resolve  
             %  t4_resolve: /data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame1_to_/data/nil-bluearc/raichle/PPGdata/jjlee2/HYGLY28/V1/FDG_V1-NAC/E8/fdgv1e8r1_frame8_t4 read error         
+            imgFps = cell2str(imgFpsc, 'AsRow', true);
             this.buildVisitor.t4_resolve( ...
                 this.resolveTag, imgFps, ...
                 'options', '-v -m -s', 'log', this.resolveLog);
+            this = this.cacheT4s(imgFpsc);
             this.t4imgAll(ipr, this.resolveTag); % transform ipr.dest on this.resolveTag
             dest_ = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
             ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest_, 'UniformOutput', false); 
@@ -357,6 +360,18 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             this.buildVisitor.msktgenMprage(ipr.maskForImages{ii});
                         end
                         fqfps{ii} = [ipr.maskForImages{ii} '_mskt'];
+                        continue
+                    catch ME
+                        fprintf('lazyMaskForImages:  fqfps{%i} <- none\n', ii);
+                        fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
+                    end
+                end
+                if (strcmp(ipr.maskForImages{ii}, 'msktgen_4dfp'))
+                    try
+                        if (~lexist_4dfp( [ipr.source{ii} '_mskt']))
+                            this.buildVisitor.msktgenMprage(ipr.source{ii}, this.sessionData.studyAtlas('typ','fqfp'));
+                        end
+                        fqfps{ii} = [ipr.source{ii} '_mskt'];
                         continue
                     catch ME
                         fprintf('lazyMaskForImages:  fqfps{%i} <- none\n', ii);

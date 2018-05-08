@@ -37,6 +37,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         resolveTag
         sourceImage
         sourceWeight
+        t4s
         theImages
     end
     
@@ -150,6 +151,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         end
         function g    = get.sourceWeight(~)
             g = [];
+        end
+        function g    = get.t4s(this)
+            g = this.t4s_;
         end
         function g    = get.theImages(this)
             if (isempty(this.imageComposite))
@@ -646,12 +650,34 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             rmsarc = 100*pi*rmsdeg/180; % arc at 100 mm from center of mass
             tf = rmsmm < this.t4_resolve_tol && rmsarc < this.t4_resolve_tol;
         end
-        function this  = t4img_4dfp(this, varargin)
+        function this  = t4img_4dfp(this, t4fn, source, varargin)
+            %% T4IMG_4DFP is a strategy for this.NRevisions == 1 or 2.
+            %  @param t4fn is proposed filename structure of the t4 file, e.g., t4source[r2]_to_t4dest_t4.  
+            %  @param source is the filename of the new source to be affine transformed according to t4fn;
+            %  the present working directory is extracted from source.  
+            %  @param named out is the filename of the affine transformed image; filepath := fileparts(source).
+            %  @param named ref is the filename of the image that specifies voxel metrics.
+            %  @param named options explicitly sends options to mlfourdfp.FourdfpVisitor.t4img_4dfp.  
+            %  @returns this with this.product := mlfourd.ImagingContext(out).
+            %  N.B.:  t4fn and source may both be cell-arrays.
+            
+            % recursive
+            if (iscell(t4fn) && iscell(source))
+                p = cell(size(source));
+                for s = 1:length(source)
+                    that = this.t4img_4dfp(t4fn{s}, source{s}, varargin{:}, 'out', '');
+                    p{s} = that.product_;
+                end
+                this.product_ = p;
+                return
+            end
+            
+            % base-case
             switch (this.NRevisions)
                 case 1
-                    this = this.t4img_4dfpr1(varargin{:});
+                    this = this.t4img_4dfpr1(t4fn, source, varargin{:});
                 case 2
-                    this = this.t4img_4dfpr2(varargin{:});
+                    this = this.t4img_4dfpr2(t4fn, source, varargin{:});
                 otherwise
                     error('mlfourdfp:unsupportedSwitchCase', ...
                           'AbstractT4ResolveBuilder.t4img_4dfp.NRevisions->%i', this.NRevisions);
@@ -693,8 +719,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             end
             
             this.buildVisitor.t4img_4dfp( ...
-                sprintf('%sr1_to_%s_t4', t4source, t4dest), ...
-                sourceFqfp, ...
+                sprintf('%s_to_%s_t4', this.ensureLastRnumber(t4source,1), t4dest), ...
+                this.ensureLastRnumber(sourceFqfp,1), ...
                 'out', outFqfp, ...
                 'options', options); 
             this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.ifh']);
@@ -889,6 +915,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         imageComposite_
         maskForImages_
         trash_ = {};
+        t4s_
         xfm_
     end
     
@@ -897,6 +924,18 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;            
             this.product_ = mlfourd.ImagingContext([ipr.resolved '.4dfp.ifh']);
+        end
+        function this = cacheT4s(this, imgFpsc)
+            %  @return this.t4s_{1} is the reference; size(this.t4s_) == size(this.indicesLogical).
+            
+            this.t4s_{this.rnumber} = cell(size(imgFpsc));
+            for f = 1:length(imgFpsc)
+                try
+                    this.t4s_{this.rnumber}{f} = sprintf('%s_to_%s_t4', imgFpsc{f}, this.resolveTag);
+                catch ME
+                    dispwarning(ME);
+                end
+            end
         end
         function fp   = clipLastRevisionMarking(~, fp)
             pos = regexp(fp, 'r\d$', 'ONCE');
