@@ -62,9 +62,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             if (isempty(ipr.dest)); ipr.dest = ipr.source; end
             ipr.resolved = ipr.source; % initialize this.revise   
             if (~any(this.indicesLogical))
-                ipr.dest = this.fileprefixRevision(ipr.dest, this.NRevisions);            
-                ipr.resolved = sprintf('%s_%s', ipr.dest, this.resolveTag);
-                this.buildVisitor_.copyfile_4dfp(ipr.source, ipr.resolved);
+                this = this.copySourceToResolved(ipr);
                 this = this.finalize(ipr);
                 return
             end

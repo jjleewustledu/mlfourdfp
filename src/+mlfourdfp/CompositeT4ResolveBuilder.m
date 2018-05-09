@@ -82,6 +82,11 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             ipr = this.expandBlurs(ipr);            
             ipr.source = this.ensureLocalFourdfp(ipr.source);
             ipr.resolved = ipr.source; 
+            if (~any(this.indicesLogical))
+                this = this.copySourceToResolved(ipr);
+                this = this.finalize(ipr);
+                return
+            end
             if (this.isfinished)
                 this = this.alreadyFinalized(ipr);
                 return

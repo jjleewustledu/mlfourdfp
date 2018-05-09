@@ -837,6 +837,14 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             end
         end
         function this  = updateFinished(this, varargin)
+            %% UPDATEFINISHED, the protected superclass property which is an mlpipeline.Finished
+            %  @param tag containing information such as this.sessionData.tracerRevision, this.NRevisions.
+            %  this.indexOfReference.
+            %  @param tag2.
+            %  @param neverTouchFinishfile is boolean.
+            %  @param ignoreFinishfile is boolean.
+            %  @return property this.finished instantiated with path, tags, the booleans.
+            
             ip = inputParser;
             addParameter(ip, 'tag', ...
                 sprintf('%s_NRev%i_idxOfRef%i', ...
@@ -942,6 +950,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             if (~isempty(pos))
                 fp = fp(1:pos-1);
             end
+        end
+        function this = copySourceToResolved(this, ipr)
+            ipr.dest = this.fileprefixRevision(ipr.dest, this.NRevisions);            
+            ipr.resolved = sprintf('%s_%s', ipr.dest, this.resolveTag);
+            this.buildVisitor_.copyfile_4dfp(ipr.source, ipr.resolved);
         end
         function this = deleteTrash(this)
             for it = 1:length(this.trash_)
