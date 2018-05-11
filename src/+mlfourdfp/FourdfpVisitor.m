@@ -1449,7 +1449,7 @@ classdef FourdfpVisitor
             if (ip.Results.useCommonModal)
                 madj = 256;
                 if (verbose)
-                    fprintf('mlfourdfp.FourdfpVisitor.align_modes6:  using common modal registration'); end
+                    fprintf('mlfourdfp.FourdfpVisitor.align_modes6:  using common modal methods for early steps'); end
             else
                 madj = 0;
                 if (verbose)
@@ -1478,10 +1478,10 @@ classdef FourdfpVisitor
             [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 3075+madj, log); %#ok<ASGLU>   
             if (~ip.Results.useMetricGradient)
                 [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051+madj, log); %#ok<ASGLU>
-                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051+madj, log); 
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051,      log); 
             else
                 [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243+madj, log); %#ok<ASGLU>
-                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243+madj, log); 
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243,      log); 
             end
             if (ip.Results.t4img_4dfp)
                 if (isempty(ip.Results.out))
