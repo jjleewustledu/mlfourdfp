@@ -158,9 +158,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 for n = 1:length(stagedImgs)
                     if (m ~= n)
                         try
-                            [rmsdeg,rmsmm] = this.t4_resolve_errParser(this.resolvePair( ...
-                                    mybasename(stagedImgs{m}), mybasename(stagedImgs{n})));
-                            this.t4_resolve_err(m,n) = this.t4_resolve_errAverage(rmsdeg, rmsmm);
+                            this.t4_resolve_err(m,n) = ...
+                                this.t4_resolve_errPairParser(mybasename(stagedImgs{m}), mybasename(stagedImgs{n}));
                         catch ME
                             dispwarning(ME);
                         end
@@ -354,7 +353,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fqfps{ii} = mskt.fqfileprefix;
                         continue
                     catch ME
-                        fprintf('lazyMaskForImages:  ipr.maskForImages{%i} <- T1001\n', ii);
+                        fprintf('CT4RB.lazyMaskForImages:  ipr.maskForImages{%i} <- T1001\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));                        
                         ipr.maskForImages{ii} = 'T1001';
                     end
@@ -367,8 +366,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fqfps{ii} = [ipr.maskForImages{ii} '_mskt'];
                         continue
                     catch ME
-                        fprintf('lazyMaskForImages:  fqfps{%i} <- none\n', ii);
+                        fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
+                        ipr.maskForImages{ii} = 'msktgen_4dfp';
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'msktgen_4dfp'))
@@ -379,8 +379,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fqfps{ii} = [ipr.source{ii} '_mskt'];
                         continue
                     catch ME
-                        fprintf('lazyMaskForImages:  fqfps{%i} <- none\n', ii);
+                        fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
+                        ipr.maskForImages{ii} = 'none';
                     end
                 end
                 fqfps{ii} = 'none';
