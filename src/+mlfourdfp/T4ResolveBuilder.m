@@ -137,9 +137,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 for n = 1:length(stagedImgs)
                     if (m ~= n)
                         try
-                            [rmsdeg,rmsmm] = this.t4_resolve_errParser(this.resolvePair( ...
-                                    mybasename(stagedImgs{m}), mybasename(stagedImgs{n})));
-                            this.t4_resolve_err(m,n) = this.t4_resolve_errAverage(rmsdeg, rmsmm);
+                            this.t4_resolve_err(m,n) = ...
+                                this.t4_resolve_errPairParser(mybasename(stagedImgs{m}), mybasename(stagedImgs{n}));
                         catch ME
                             dispwarning(ME);
                         end
@@ -311,34 +310,52 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             if (strcmp(ipr.maskForImages, 'Msktgen'))
                 try
                     mg   = mlpet.Msktgen('sessionData', this.sessionData);
-                    sd   = this.sessionData; sd.epoch = [];
+                    sd   = this.sessionData; sd.epoch = []; sd.rnumber = 1;
                     mskt = mg.constructMskt( ...
-                        'source', sd.tracerRevision, ...
-                        'intermediaryForMask', this.sessionData.T1001, ...
-                        'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'), ...
+                        'source', this.ensureSumtSaved(sd.tracerRevision), ...
+                        'intermediaryForMask', sd.T1001, ...
+                        'sourceOfMask', fullfile(sd.vLocation, 'brainmask.4dfp.ifh'), ...
                         'blurForMask', 6*this.blurArg, 'threshp', 0);
                     mskt.save;
                     fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
                     return
                 catch ME
-                    dispwarning(ME);
+                    fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- wholehead\n');
+                    fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
+                    ipr.maskForImages = 'wholehead';
                 end
             end
-            
-            % build masks for each frame
-            sourceSumt = this.buildSourceTimeSummed(ipr);
-            for b = 1:length(blurredImgs)
+            if (strcmp(ipr.maskForImages, 'wholehead'))
                 try
-                    fqfps{b} = sprintf('%s_%i', ipr.maskForImages, b);
-                    if (~lexist_4dfp(fqfps{b}))
-                        this.buildMaskAdjustedForImage(fqfps{b}, blurredImgs{b}, ipr.sourceMask{b}, sourceSumt);
+                    % build masks for each frame
+                    sourceSumt = this.buildSourceTimeSummed(ipr);
+                    for b = 1:length(blurredImgs)
+                        fqfps{b} = sprintf('%s_%i', ipr.maskForImages, b);
+                        if (~lexist_4dfp(fqfps{b}))
+                            this.buildMaskAdjustedForImage(fqfps{b}, blurredImgs{b}, ipr.sourceMask{b}, sourceSumt);
+                        end
                     end
+                    return
                 catch ME
-                    fprintf('lazyMaskForImages:  fqfps <- {none ... none}\n');
-                    fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));    
-                    fqfps{b} = this.buildMaskForImage(blurredImgs{b});
+                    fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- wholehead2\n');
+                    fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
+                    ipr.maskForImages = 'wholehead2';
                 end
             end
+            if (strcmp(ipr.maskForImages, 'wholehead2'))
+                try
+                    % build masks for each frame
+                    for b = 1:length(blurredImgs)
+                        fqfps{b} = this.buildMaskForImage(blurredImgs{b});
+                    end
+                    return
+                catch ME
+                    fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- none\n');
+                    fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
+                    ipr.maskForImages = 'none';
+                end
+            end
+            fqfps = cellfun(@(x) 'none', fqfps, 'UniformOutput', false);
         end
         function fqfps = lazyStageImages(this, ipr)
             fqfps = this.imageComposite.lazyExtractImages(ipr);
