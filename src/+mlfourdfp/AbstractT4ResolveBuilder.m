@@ -55,6 +55,20 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
                 en = ensureCell(en);
             end
         end
+        function obj = ensureSumtSaved(obj, varargin)
+            %  @param named typ; see also mlfourd.ImagingContext.imagingType.
+            %  @return fqfp of sumt after saving (default).
+            
+            ip = inputParser;
+            addParameter(ip, 'typ', 'fqfp', @ischar);
+            parse(ip, varargin{:});
+            
+            ic = mlfourd.ImagingContext(obj);
+            ic = ic.timeSummed;
+            ffp = ic.fourdfp;
+            ffp.save;
+            obj = ic.imagingType(ip.Results.typ, ic);
+        end
         function fn = fourdfpHdr(fp)
             fn = [fp '.4dfp.hdr'];
         end
@@ -642,6 +656,10 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
                     rmsmm = str2double(toknames.rmsmm);
                 end
             end 
+        end        
+        function err   = t4_resolve_errPairParser(this, obj1, obj2)
+            [rmsdeg,rmsmm] = this.t4_resolve_errParser(this.resolvePair(obj1, obj2));
+            err = mean([rmsdeg rmsmm], 'omitnan');
         end
         function a     = t4_resolve_errAverage(~, rmsdeg, rmsmm)
             a = mean([rmsdeg rmsmm]);
