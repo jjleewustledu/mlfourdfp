@@ -31,6 +31,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         imageComposite
         indicesLogical
         indexOfReference
+        logPath
         petBlur
         referenceImage
         referenceWeight
@@ -144,6 +145,14 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         function this = set.indicesLogical(this, s)
             this.imageComposite.indicesLogical = s;
         end
+        function g    = get.logPath(this)
+            if (~isempty(this.logPath_))
+                g = this.logPath_;
+                return
+            end
+            g = fullfile(this.sessionData.tracerLocation, 'Log', '');
+            ensuredir(g);
+        end
         function g    = get.petBlur(this)
             g = this.sessionData.petBlur;
         end
@@ -186,6 +195,13 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             dest         = this.fileprefixRevision(ipr.dest, this.NRevisions);
             ipr.resolved = sprintf('%s_%s', dest, this.resolveTag);
             this         = this.buildProduct(ipr);
+        end
+        function         appendImageRegLog(this, s)
+            if (~lexist(this.imageRegLog))
+                mlbash(sprintf('touch %s', this.imageRegLog));
+            end
+            mlbash(sprintf('echo \"%s\" >> %s', s, this.imageRegLog));
+            fprintf(s);
         end
         function a     = atlas(this, varargin) 
             a = this.sessionData.atlas(varargin{:});
@@ -497,10 +513,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             end
             assert(length(fqfps) == sum(this.indicesLogical));
         end    
-        function pth   = logPath(this)
-            pth = fullfile(this.sessionData.tracerLocation, 'Log', '');
-            ensuredir(pth);
-        end
         function msk   = maskBoundaries(this, fqfp)
             if (~this.doMaskBoundaries)
                 msk = 'none';
@@ -923,6 +935,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             addParameter(ip, 'theImages',     '',         @(x) iscell(x) || ischar(x));
             addParameter(ip, 'maskForImages', 'none',     @(x) ~isempty(x));
             addParameter(ip, 'ipResults',     struct([]), @isstruct);
+            addParameter(ip, 'logPath',       '',         @ischar);
             parse(ip, varargin{:});
             
             this.NRevisions     = ip.Results.NRevisions;
@@ -931,6 +944,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             this.theImages      = this.ensureSafeFileprefix(ip.Results.theImages);
             this.maskForImages_ = ip.Results.maskForImages;
             this.ipResults_     = ip.Results.ipResults;            
+            this.logPath_       = ip.Results.logPath;
         end        
  	end 
 
@@ -939,6 +953,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
     properties (Access = protected)
         blurArg_      
         imageComposite_
+        logPath_
         maskForImages_
         trash_ = {};
         t4s_
@@ -952,7 +967,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             this.product_ = mlfourd.ImagingContext([ipr.resolved '.4dfp.ifh']);
         end
         function this = cacheT4s(this, imgFpsc)
-            %  @return this.t4s_{1} is the reference; size(this.t4s_) == size(this.indicesLogical).
+            %  @return this.t4s_{r}{1} for r-number r is the reference; size(this.t4s_) == this.NRevisions;
+            %  size(this.t4s_{r}) == size(this.indicesLogical).
             
             this.t4s_{this.rnumber} = cell(size(imgFpsc));
             for f = 1:length(imgFpsc)

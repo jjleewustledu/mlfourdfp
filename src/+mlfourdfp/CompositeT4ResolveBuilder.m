@@ -73,7 +73,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'indicesLogical', this.indicesLogical, @islogical);
             addParameter(ip, 't40',            this.buildVisitor.transverse_t4, @(x) ischar(x) || iscell(x));
             addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
-            addParameter(ip, 'log',            '/dev/null',         @ischar);
+            addParameter(ip, 'logPath',        this.logPath,        @ischar);
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
             this.resolveTag = ip.Results.resolveTag;  
@@ -102,9 +102,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function [ipr,this]   = revise(this, ipr)
             ipr = this.copySourceToDest(ipr); % crop/copy ipr.source to ipr.dest       
             this.imageRegLog = loggerFilename( ...
-                ipr.dest{this.indexOfReference}, 'func', 'CompositeT4ResolveBuilder_imageReg', 'path', this.logPath);
+                ipr.dest{this.indexOfReference}, 'func', 'CompositeT4ResolveBuilder_imageReg', 'path', ipr.logPath);
             this.resolveLog = loggerFilename( ...
-                ipr.dest{this.indexOfReference}, 'func', 'CompositeT4ResolveBuilder_t4ResolveAndPaste', 'path', this.logPath);
+                ipr.dest{this.indexOfReference}, 'func', 'CompositeT4ResolveBuilder_t4ResolveAndPaste', 'path', ipr.logPath);
             
             this = this.imageReg(ipr);
             [ipr,~,this] = this.resolveAndPaste(ipr); 
@@ -147,11 +147,13 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 end
             end 
             t4Failures = sum(t4Failures, 1);
-            fprintf('CompositeT4ResolveBuilder.imageReg: t4Failures->%s\n', mat2str(t4Failures));
+            this.appendImageRegLog( ...
+                sprintf('CompositeT4ResolveBuilder.imageReg: t4Failures->%s\n', mat2str(t4Failures)));
             this.indicesLogical(this.indicesLogical) = ...
                 ensureRowVector(this.indicesLogical(this.indicesLogical)) & ...
                 ensureRowVector(t4Failures < 0.25*len);   
-            fprintf('CompositeT4ResolveBuilder.imageReg: this.indicesLogical->%s\n', mat2str(this.indicesLogical)); 
+            this.appendImageRegLog( ...
+                sprintf('CompositeT4ResolveBuilder.imageReg: this.indicesLogical->%s\n', mat2str(this.indicesLogical))); 
             
             this.t4_resolve_err = nan(len, len);
             for m = 1:length(stagedImgs)
@@ -167,7 +169,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                 end
             end 
-            fprintf('CompositeT4ResolveBuilder.imageReg: this.t4_resolve_err->%s\n', mat2str(this.t4_resolve_err));
+            this.appendImageRegLog( ...
+                sprintf('CompositeT4ResolveBuilder.imageReg: stagedImgs->%s\n', cell2str(stagedImgs, 'AsRow', true)));
+            this.appendImageRegLog( ...
+                sprintf('CompositeT4ResolveBuilder.imageReg: this.t4_resolve_err->%s\n', mat2str(this.t4_resolve_err)));
             
             this.deleteTrash;
         end  
@@ -348,14 +353,13 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         mskt = mg.constructMskt( ...
                             'source', ipr.source{ii}, ...
                             'intermediaryForMask', this.sessionData.T1001, ...
-                            'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'), ...
-                            'blurForMask', 2*this.blurArg, 'threshp', 0);
+                            'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'));
                         fqfps{ii} = mskt.fqfileprefix;
                         continue
                     catch ME
                         fprintf('CT4RB.lazyMaskForImages:  ipr.maskForImages{%i} <- T1001\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));                        
-                        ipr.maskForImages{ii} = 'T1001';
+                        ipr.maskForImages{ii} = 'none';
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
@@ -368,13 +372,13 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     catch ME
                         fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
-                        ipr.maskForImages{ii} = 'msktgen_4dfp';
+                        ipr.maskForImages{ii} = 'none';
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'msktgen_4dfp'))
                     try
                         if (~lexist_4dfp( [ipr.source{ii} '_mskt']))
-                            this.buildVisitor.msktgenMprage(ipr.source{ii}, this.sessionData.studyAtlas('typ','fqfp'));
+                            this.buildVisitor.msktgenMprage(ipr.source{ii}, this.sessionData.atlas('typ','fqfp'));
                         end
                         fqfps{ii} = [ipr.source{ii} '_mskt'];
                         continue

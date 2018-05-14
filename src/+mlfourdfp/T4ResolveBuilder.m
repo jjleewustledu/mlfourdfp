@@ -51,7 +51,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'indicesLogical', this.indicesLogical, @islogical);
             addParameter(ip, 't40',            this.buildVisitor.transverse_t4, @(x) ischar(x) || iscell(x));
             addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
-            addParameter(ip, 'log',            '/dev/null',         @ischar);
+            addParameter(ip, 'logPath',        this.logPath,        @ischar);
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
             this.resolveTag = ip.Results.resolveTag;            
@@ -81,9 +81,9 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function [ipr,this]   = revise(this, ipr)
             this.copySourceToDest(ipr); % crop/copy ipr.source to ipr.dest
             this.imageRegLog = loggerFilename( ...
-                ipr.dest, 'func', 'T4ResolveBuilder_imageReg', 'path', this.logPath);
+                ipr.dest, 'func', 'T4ResolveBuilder_imageReg', 'path', ipr.logPath);
             this.resolveLog = loggerFilename( ...
-                ipr.dest, 'func', 'T4ResolveBuilder_resolveAndPaste', 'path', this.logPath);
+                ipr.dest, 'func', 'T4ResolveBuilder_resolveAndPaste', 'path', ipr.logPath);
             
             this = this.imageReg(ipr);
             [ipr,~,this] = this.resolveAndPaste(ipr); 
@@ -126,11 +126,13 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 end
             end
             t4Failures = sum(t4Failures, 1);
-            fprintf('T4ResolveBuilder.imageReg: t4Failures->%s\n', mat2str(t4Failures));
+            this.appendImageRegLog( ...
+                sprintf('T4ResolveBuilder.imageReg: t4Failures->%s\n', mat2str(t4Failures)));
             this.indicesLogical(this.indicesLogical) = ...
                 ensureRowVector(this.indicesLogical(this.indicesLogical)) & ...
                 ensureRowVector(t4Failures < 0.25*len);
-            fprintf('T4ResolveBuilder.imageReg: this.indicesLogical->%s\n', mat2str(this.indicesLogical)); 
+            this.appendImageRegLog( ...
+                sprintf('T4ResolveBuilder.imageReg: this.indicesLogical->%s\n', mat2str(this.indicesLogical))); 
             
             this.t4_resolve_err = nan(len, len);
             for m = 1:length(stagedImgs)
@@ -146,7 +148,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                 end
             end 
-            fprintf('T4ResolveBuilder.imageReg: this.t4_resolve_err->%s\n', mat2str(this.t4_resolve_err));
+            this.appendImageRegLog( ...
+                sprintf('T4ResolveBuilder.imageReg: this.t4_resolve_err->%s\n', mat2str(this.t4_resolve_err)));
             
             this.deleteTrash;
         end
@@ -314,8 +317,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     mskt = mg.constructMskt( ...
                         'source', this.ensureSumtSaved(sd.tracerRevision), ...
                         'intermediaryForMask', sd.T1001, ...
-                        'sourceOfMask', fullfile(sd.vLocation, 'brainmask.4dfp.ifh'), ...
-                        'blurForMask', 6*this.blurArg, 'threshp', 0);
+                        'sourceOfMask', fullfile(sd.vLocation, 'brainmask.4dfp.ifh'));
                     mskt.save;
                     fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
                     return
