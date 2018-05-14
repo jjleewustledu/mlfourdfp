@@ -465,6 +465,16 @@ classdef FourdfpVisitor
             [t4,fqfp,s,r] = this.align_modes6('useCommonModal', true, varargin{:});
         end
         function [t4,fqfp,s,r] = ...
+                              align_commonModal7(this, varargin)
+            %% ALIGN_COMMONMODAL7 calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] + 256 and writes a log.
+            %  See also mlfourdfp.FourdfpVisitor.align_modes7, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
+            
+            %assert(~lstrfind(varargin, 'useCommonModal'), ...
+            %    'mlfourdfp:ambiguousVargin', ...
+            %    'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
+            [t4,fqfp,s,r] = this.align_modes7('useCommonModal', true, varargin{:});
+        end
+        function [t4,fqfp,s,r] = ...
                               align_crossModal(this, varargin)
             %% ALIGN_CROSSMODAL calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] and writes a log.
             %  See also mlfourdfp.FourdfpVisitor.align_modes6, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
@@ -473,6 +483,16 @@ classdef FourdfpVisitor
             %    'mlfourdfp:ambiguousVargin', ...
             %    'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
             [t4,fqfp,s,r] = this.align_modes6('useCommonModal', false, varargin{:});
+        end
+        function [t4,fqfp,s,r] = ...
+                              align_crossModal7(this, varargin)
+            %% ALIGN_CROSSMODAL7 calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] and writes a log.
+            %  See also mlfourdfp.FourdfpVisitor.align_modes7, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
+            
+            %assert(~lstrfind(varargin, 'useCommonModal'), ...
+            %    'mlfourdfp:ambiguousVargin', ...
+            %    'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
+            [t4,fqfp,s,r] = this.align_modes7('useCommonModal', false, varargin{:});
         end
         function [t4,fqfp,s,r] = ...
                               align_multiSpectral(this, varargin)
@@ -970,7 +990,7 @@ classdef FourdfpVisitor
                 sprintf('%s %i %s %s', in_, ip.Results.threshold, ip.Results.options, log));
         end
         function      [s,r] = msktgen3_4dfp(this, varargin)
-            %% MSKTGEN3_4DFP masks only the pharynx for TRIO_Y_NDC.
+            %% MSKTGEN3_4DFP masks in the pharynx for TRIO_Y_NDC.
             
             ip = inputParser;
             addRequired( ip, 'in',             @ischar);
@@ -1407,6 +1427,92 @@ classdef FourdfpVisitor
             end
         end
         function [t4,fqfp,s,r] = ...
+                       align_modes5(this, varargin)
+            %% ALIGN_MODES5 calls imgreg_4dfp with cross modes := [4099 4099 3075 2051 10243] 
+            %  or common modes := [4099 4099 3075 2051 10243] + 256 and then writes a log.
+            %  @param dest       is a f.q. fileprefix.
+            %  @param source     "
+            %  @param destMask   " ; default := 'none'
+            %  @param sourceMask " ; default := 'none'
+            %  @param destBlur   is the fwhm blur applied by imgblur_4dfp to dest;   default := 0.            
+            %  @param sourceBlur is the fwhm blur applied by imgblur_4dfp to source; default := 0.
+            %  @param t40        is the initial t4-file for the transformation; default := transverse.
+            %  @param t4         is the cumulative t4-file for the transformation.
+            %  @param log        is the f.q. filename of the log file.
+            %  @param useCommonModal:     is logical, default := false; cf. ${TRANSFER}/cross_modal_*.ps.
+            %  @param useMetricGradient:  is logical, default := true;  cf. ${TRANSFER}/imgreg_4dfp.txt.
+            %  @param t4img_4dfp is logical.
+            %  @returns t4       is the t4-file for the transformation.
+            %  @returns fqfp     is the f.q. fileprefix of the co-registered output.
+            
+            ip = inputParser;
+            addParameter(ip, 'dest',       '',     @this.lexist_4dfp);
+            addParameter(ip, 'source',     '',     @this.lexist_4dfp);
+            addParameter(ip, 'destMask',   'none', @ischar);
+            addParameter(ip, 'sourceMask', 'none', @ischar);
+            addParameter(ip, 'destBlur',   0,      @isnumeric);
+            addParameter(ip, 'sourceBlur', 0,      @isnumeric);
+            addParameter(ip, 't40',        this.transverse_t4, @(x) lexist(x, 'file')); 
+            addParameter(ip, 't4',         '',     @ischar);
+            addParameter(ip, 'useCommonModal',     false, @islogical);
+            addParameter(ip, 'useMetricGradient',  true, @islogical);
+            addParameter(ip, 't4img_4dfp',         true, @islogical);
+            addParameter(ip, 'out',        '',     @ischar);
+            addParameter(ip, 'log',        '/dev/null', @ischar);
+            parse(ip, varargin{:});
+            dest       = ip.Results.dest;
+            source     = ip.Results.source;
+            destMask   = ip.Results.destMask;
+            sourceMask = ip.Results.sourceMask;
+            t4         = ip.Results.t4;
+            log        = ip.Results.log;
+            if (ip.Results.useCommonModal)
+                madj = 256;
+                if (verbose)
+                    fprintf('mlfourdfp.FourdfpVisitor.align_modes6:  using common modal methods for early steps'); end
+            else
+                madj = 0;
+                if (verbose)
+                    fprintf('mlfourdfp.FourdfpVisitor.align_modes6:  using cross modal registration'); end
+            end
+            
+            if (strcmp(dest, source))
+                t4 = this.filenameT4(source, dest);
+                copyfile(this.transverse_t4, t4); % identity transformation
+                fqfp = '';
+                return
+            end
+            if (isempty(t4))
+                t4 = this.filenameT4(source, dest); end
+            if (ip.Results.destBlur > 0)
+                dest = this.imgblur_4dfp(dest, ip.Results.destBlur); end
+            if (ip.Results.sourceBlur > 0)
+                source = this.imgblur_4dfp(source, ip.Results.sourceBlur); end
+            
+            if (~strcmp(ip.Results.t40, t4))
+                [s,r] = copyfile(ip.Results.t40, t4, 'f'); %#ok<ASGLU>
+            end
+            [s,r] = dbbash(sprintf('chmod 777 %s', t4)); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, 'none',   source, 'none',     t4, 4099+madj, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, 'none',   source, 'none',     t4, 4099+madj, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 3075+madj, log); %#ok<ASGLU>   
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051+madj, log); %#ok<ASGLU>
+            if (~ip.Results.useMetricGradient)
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051,      log); 
+            else
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243,      log); 
+            end
+            if (ip.Results.t4img_4dfp)
+                if (isempty(ip.Results.out))
+                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
+                else
+                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', 'out', ip.Results.out, ['-O' ip.Results.dest]);
+                end
+            else
+                fqfp = ''; 
+            end
+        end
+        function [t4,fqfp,s,r] = ...
                        align_modes6(this, varargin)
             %% ALIGN_MODES6 calls imgreg_4dfp with cross modes := [4099 4099 3075 2051 2051 10243] 
             %  or common modes := [4099 4099 3075 2051 2051 10243] + 256 and then writes a log.
@@ -1476,6 +1582,95 @@ classdef FourdfpVisitor
             [s,r] = this.imgreg_4dfp(dest, 'none',   source, 'none',     t4, 4099+madj, log); %#ok<ASGLU>
             [s,r] = this.imgreg_4dfp(dest, 'none',   source, 'none',     t4, 4099+madj, log); %#ok<ASGLU>
             [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 3075+madj, log); %#ok<ASGLU>   
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051+madj, log); %#ok<ASGLU>
+            if (~ip.Results.useMetricGradient)
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051,      log); 
+            else
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243+madj, log); %#ok<ASGLU>
+                [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 10243,      log); 
+            end
+            if (ip.Results.t4img_4dfp)
+                if (isempty(ip.Results.out))
+                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
+                else
+                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', 'out', ip.Results.out, ['-O' ip.Results.dest]);
+                end
+            else
+                fqfp = ''; 
+            end
+        end
+        function [t4,fqfp,s,r] = ...
+                       align_modes7(this, varargin)
+            %% ALIGN_MODES7 calls imgreg_4dfp with cross modes := [4099 4099 3075 3075 2051 2051 10243] 
+            %  or common modes := [4099 4099 3075 3075 2051 2051 10243] + 256 and then writes a log.
+            %  @param dest       is a f.q. fileprefix.
+            %  @param source     "
+            %  @param destMask   " ; default := 'none'
+            %  @param sourceMask " ; default := 'none'
+            %  @param destBlur   is the fwhm blur applied by imgblur_4dfp to dest;   default := 0.            
+            %  @param sourceBlur is the fwhm blur applied by imgblur_4dfp to source; default := 0.
+            %  @param t40        is the initial t4-file for the transformation; default := transverse.
+            %  @param t4         is the cumulative t4-file for the transformation.
+            %  @param log        is the f.q. filename of the log file.
+            %  @param useCommonModal:     is logical, default := false; cf. ${TRANSFER}/cross_modal_*.ps.
+            %  @param useMetricGradient:  is logical, default := true;  cf. ${TRANSFER}/imgreg_4dfp.txt.
+            %  @param t4img_4dfp is logical.
+            %  @returns t4       is the t4-file for the transformation.
+            %  @returns fqfp     is the f.q. fileprefix of the co-registered output.
+            
+            ip = inputParser;
+            addParameter(ip, 'dest',       '',     @this.lexist_4dfp);
+            addParameter(ip, 'source',     '',     @this.lexist_4dfp);
+            addParameter(ip, 'destMask',   'none', @ischar);
+            addParameter(ip, 'sourceMask', 'none', @ischar);
+            addParameter(ip, 'destBlur',   0,      @isnumeric);
+            addParameter(ip, 'sourceBlur', 0,      @isnumeric);
+            addParameter(ip, 't40',        this.transverse_t4, @(x) lexist(x, 'file')); 
+            addParameter(ip, 't4',         '',     @ischar);
+            addParameter(ip, 'useCommonModal',     false, @islogical);
+            addParameter(ip, 'useMetricGradient',  true, @islogical);
+            addParameter(ip, 't4img_4dfp',         true, @islogical);
+            addParameter(ip, 'out',        '',     @ischar);
+            addParameter(ip, 'log',        '/dev/null', @ischar);
+            parse(ip, varargin{:});
+            dest       = ip.Results.dest;
+            source     = ip.Results.source;
+            destMask   = ip.Results.destMask;
+            sourceMask = ip.Results.sourceMask;
+            t4         = ip.Results.t4;
+            log        = ip.Results.log;
+            if (ip.Results.useCommonModal)
+                madj = 256;
+                if (verbose)
+                    fprintf('mlfourdfp.FourdfpVisitor.align_modes6:  using common modal methods for early steps'); end
+            else
+                madj = 0;
+                if (verbose)
+                    fprintf('mlfourdfp.FourdfpVisitor.align_modes6:  using cross modal registration'); end
+            end
+            
+            if (strcmp(dest, source))
+                t4 = this.filenameT4(source, dest);
+                copyfile(this.transverse_t4, t4); % identity transformation
+                fqfp = '';
+                return
+            end
+            if (isempty(t4))
+                t4 = this.filenameT4(source, dest); end
+            if (ip.Results.destBlur > 0)
+                dest = this.imgblur_4dfp(dest, ip.Results.destBlur); end
+            if (ip.Results.sourceBlur > 0)
+                source = this.imgblur_4dfp(source, ip.Results.sourceBlur); end
+            
+            if (~strcmp(ip.Results.t40, t4))
+                [s,r] = copyfile(ip.Results.t40, t4, 'f'); %#ok<ASGLU>
+            end
+            [s,r] = dbbash(sprintf('chmod 777 %s', t4)); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, 'none',   source, 'none',     t4, 4099+madj, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, 'none',   source, 'none',     t4, 4099+madj, log); %#ok<ASGLU>
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, 'none',     t4, 3075+madj, log); %#ok<ASGLU>  
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 3075+madj, log); %#ok<ASGLU>   
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051+madj, log); %#ok<ASGLU>
             if (~ip.Results.useMetricGradient)
                 [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051+madj, log); %#ok<ASGLU>
                 [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, 2051,      log); 
@@ -1491,7 +1686,7 @@ classdef FourdfpVisitor
                 end
             else
                 fqfp = ''; 
-            end
+            end            
         end
         function       assertPlatform(this)
             if (lgetenv('DEBUG'))
