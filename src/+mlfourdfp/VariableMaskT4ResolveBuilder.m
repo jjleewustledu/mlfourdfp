@@ -31,25 +31,29 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
                 'func', 'VariableMaskT4ResolveBuilder',...
                 'path', ipr.logPath);
             
+            this.purgeT4s(ipr);
+            
             ipr.cacheLoc = ensuredir( ...
                 fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' datestr(now, 30)]));
             ipr.maskForImages = 'none';
             ipr.useMetricGradient = false;
             this = this.imageReg(ipr);  
+            [ipr,~,this] = this.resolveAndPaste(ipr); 
             
             ipr.cacheLoc = ensuredir( ...
                 fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' datestr(now, 30)]));
             ipr.maskForImages = 'Msktgen';
             ipr.useMetricGradient = true;
             this = this.imageReg(ipr);  
+            [ipr,~,this] = this.resolveAndPaste(ipr); 
             
             ipr.cacheLoc = ensuredir( ...
                 fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' datestr(now, 30)]));
             ipr.maskForImages = 'Msktgen';
             ipr.useMetricGradient = true;
-            this = this.imageReg(ipr); 
-            
+            this = this.imageReg(ipr);            
             [ipr,~,this] = this.resolveAndPaste(ipr); 
+            
             this.teardownRevision(ipr);
             this.rnumber = this.rnumber + 1;
         end  
@@ -99,7 +103,7 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
         
         %%
          
-        function        assessT4Failures(this, t4fails)
+        function         assessT4Failures(this, t4fails)
             t4fails = sum(t4fails, 1);
             this.appendVMRBLog( ...
                 sprintf('VariableMaskT4ResolveBuilder.assessT4Failures: t4Failures->%s\n', ...
@@ -111,7 +115,7 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
                 sprintf('VariableMaskT4ResolveBuilder.assessT4Failures: this.indicesLogical->%s\n', ...
                 mat2str(this.indicesLogical)));            
         end
-        function this = assessT4ResolveErr(this, stagedImgs)
+        function this  = assessT4ResolveErr(this, stagedImgs)
             len = sum(this.indicesLogical);
             this.t4_resolve_err = nan(len, len);
             for m = 1:length(stagedImgs)
@@ -135,7 +139,7 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
                 sprintf('VariableMaskT4ResolveBuilder.assessT4ResolveErr: this.t4_resolve_err->%s\n', ...
                 mat2str(this.t4_resolve_err)));            
         end
-        function        appendVMRBLog(this, s)
+        function         appendVMRBLog(this, s)
             if (~lexist(this.vmRBLog))
                 mlbash(sprintf('touch %s', this.vmRBLog));
             end
@@ -180,7 +184,22 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
                 fqfps{ii} = [ipr.source{ii} '_mskt'];
                 mg.t4img_4dfp(t4, mskt.fqfileprefix, 'out', fqfps{ii}, 'options', ['-O' ipr.source{1}]);
             end
-        end       
+        end        
+        function         purgeT4s(this, ipr)
+            stagedImgs = this.lazyStageImages(ipr);
+            len = length(stagedImgs);
+            for m = 1:len
+                for n = 1:len
+                    if (m ~= n)
+                        try
+                            deleteExisting(this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}));
+                        catch ME
+                            handexcept(ME);
+                        end
+                    end
+                end
+            end
+        end
         
  		function this = VariableMaskT4ResolveBuilder(varargin)
  			%% VARIABLEMASKT4RESOLVEBUILDER
