@@ -22,6 +22,12 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
         sessionDataCache
     end
     
+    methods (Static)
+        function fn = fourdfpImg(fp)
+            fn = [fp '.4dfp.img'];
+        end
+    end
+    
 	methods
         
  		function this  = AbstractUmapResolveBuilder(varargin)

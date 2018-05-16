@@ -51,7 +51,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'indicesLogical', this.indicesLogical, @islogical);
             addParameter(ip, 't40',            this.buildVisitor.transverse_t4, @(x) ischar(x) || iscell(x));
             addParameter(ip, 'resolveTag',     this.resolveTag,     @ischar);
-            addParameter(ip, 'logPath',        this.logPath,        @ischar);
+            addParameter(ip, 'logPath',        this.getLogPath,        @ischar);
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
             this.resolveTag = ip.Results.resolveTag;            
@@ -133,7 +133,14 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 ensureRowVector(t4Failures < 0.25*len);
             this.appendImageRegLog( ...
                 sprintf('T4ResolveBuilder.imageReg: this.indicesLogical->%s\n', mat2str(this.indicesLogical))); 
-            
+
+%% PROPOSED
+%             t4re = mlfourdfp.T4ResolveError( ...
+%                 'sessionData', this.sessionData, ...
+%                 'theImages', stagedImgs, ...
+%                 'indicesLogical', this.indicesLogical); 
+%             [~,this.t4_resolve_err] = t4re.assessT4ResolveErr(stagedImgs);
+%%
             this.t4_resolve_err = nan(len, len);
             for m = 1:length(stagedImgs)
                 for n = 1:length(stagedImgs)

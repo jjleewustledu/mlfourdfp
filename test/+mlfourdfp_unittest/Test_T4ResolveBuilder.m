@@ -39,7 +39,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             this.verifyClass(this.testObj.sessionData, 'mlraichle.SynthSessionData');
         end
         function test_finished(this)
-            touchfile = fullfile(this.testObj.logPath, '.test_mlfourdfp.T4ResolveBuilder_isfinished.touch');
+            touchfile = fullfile(this.testObj.getLogPath, '.test_mlfourdfp.T4ResolveBuilder_isfinished.touch');
             if (lexist(touchfile)); delete(touchfile); end 
             this.verifyEqual(this.testObj.finished.finishedMarkerFilename, touchfile);           
             this.testObj.finished.touchFinishedMarker;

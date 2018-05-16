@@ -10,16 +10,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
  	
 
 	properties
-        doMaskBoundaries = false
-        mprToAtlT4
-        maskForImagesThreshFactor = 0.25
-        msktgenThresh = 0
-        NRevisions 
-        
         imageRegLog
+        maskForImagesThreshFactor = 0.25
+        NRevisions        
         resolveLog
         skipT4imgAll = false
-        t4_resolve_tol = 2 % mm
         t4_resolve_err
     end
     
@@ -31,7 +26,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         imageComposite
         indicesLogical
         indexOfReference
-        logPath
         petBlur
         referenceImage
         referenceWeight
@@ -43,13 +37,13 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
     end
     
     methods (Static)
-        function      diaryv(name)
+        function       diaryv(name)
             assert(ischar(name));
             if (~isempty(getenv('PRINTV')))
                 diary(sprintf('mlfourdfp_AbstractT4ResolveBuilder%s.txt', name)); 
             end
         end
-        function en = ensureLocalFourdfp(en)
+        function en  = ensureLocalFourdfp(en)
             en_ = en;
             en  = mybasename(mlfourdfp.FourdfpVisitor.ensureLocalFourdfp(en));
             if (iscell(en_))
@@ -70,23 +64,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             ffp.save;
             obj = ic.imagingType(ip.Results.typ, ic);
         end
-        function fn = fourdfpHdr(fp)
-            fn = [fp '.4dfp.hdr'];
-        end
-        function fn = fourdfpIfh(fp)
-            fn = [fp '.4dfp.ifh'];
-        end
-        function fn = fourdfpImg(fp)
-            fn = [fp '.4dfp.img'];
-        end
-        function fn = fourdfpImgRec(fp)
-            fn = [fp '.4dfp.img.rec'];
-        end
-        function f  = frameNumber(str, offset)
+        function f   = frameNumber(str, offset)
             names = regexp(str, '\w+(-|_)(F|f)rame(?<f>\d+)', 'names');
             f = str2double(names.f) + offset;
         end
-        function      printv(varargin)
+        function       printv(varargin)
             if (~isempty(getenv('PRINTV')))
                 fprintf('mlfourdfp.AbstractT4ResolveBuilder.');
                 fprintf(varargin{:});
@@ -145,14 +127,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         function this = set.indicesLogical(this, s)
             this.imageComposite.indicesLogical = s;
         end
-        function g    = get.logPath(this)
-            if (~isempty(this.logPath_))
-                g = this.logPath_;
-                return
-            end
-            g = fullfile(this.sessionData.tracerLocation, 'Log', '');
-            ensuredir(g);
-        end
         function g    = get.petBlur(this)
             g = this.sessionData.petBlur;
         end
@@ -203,9 +177,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             mlbash(sprintf('echo \"%s\" >> %s', s, this.imageRegLog));
             fprintf(s);
         end
-        function a     = atlas(this, varargin) 
-            a = this.sessionData.atlas(varargin{:});
-        end
         function fp    = buildMaskForImage(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fp1', @(x) lexist([x '.4dfp.ifh']));
@@ -255,95 +226,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             ic.saveas([ip.Results.fp '.4dfp.ifh']);
             fp  = ic.fqfileprefix;
         end   
-        function [s,r] = ensureNifti(this, varargin)
-            %% ENSURENIFTI
-            %  @param filename is any string descriptor found in an existing file on the filesystem;
-            %  ensureNifti will search for files with extensions .nii, .nii.gz or .4dfp.ifh.
-            %  @returns s, the bash status; r, any bash messages.  ensureNifti ensures files are .nii.gz.
-            
-            ip = inputParser;
-            addRequired(ip, 'filename', @ischar);
-            parse(ip, varargin{:});
-            
-            s = 0; r = '';
-            if (2 == exist(ip.Results.filename, 'file'))
-                if (lstrfind(ip.Results.filename, '.nii'))
-                    return
-                end
-                if (lstrfind(ip.Results.filename, '.mgz'))
-                    fp = myfileprefix(ip.Results.filename);
-                    [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii.gz', fp, fp));
-                    return
-                end
-                [s,r] = this.buildVisitor.nifti_4dfp_ng(myfileprefix(ip.Results.filename));
-                assert(lexist(myfilename(ip.Results.filename), 'file'));
-                return
-            end
-            if (2 == exist([ip.Results.filename '.nii'], 'file'))
-                [s,r] = this.ensureNifti([ip.Results.filename '.nii']);
-                return
-            end
-            if (2 == exist([ip.Results.filename '.nii.gz'], 'file'))
-                return
-            end
-            if (2 == exist([ip.Results.filename '.mgz'], 'file'))
-                [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii.gz', ip.Results.filename, ip.Results.filename));
-                return
-            end    
-            if (2 == exist([ip.Results.filename '.4dfp.ifh'], 'file'))
-                if (2 == exist([ip.Results.filename '.nii'], 'file'))
-                    return
-                end
-                [s,r] = this.ensureNifti([ip.Results.filename '.4dfp.ifh']);
-                return
-            end
-            error('mlfourdfp:fileNotFound', ...
-                  'T4ResolveBuilder.ensureNifti could not find files of form %s', ip.Results.filename);            
-        end
-        function [s,r] = ensure4dfp(this, varargin)
-            %% ENSURE4DFP
-            %  @param filename is any string descriptor found in an existing file on the filesystem;
-            %  ensureNifti will search for files with extensions .4dfp.ifh.
-            %  @returns s, the bash status; r, any bash messages.  ensure4dfp ensures files are .4dfp.ifh.            
-            
-            ip = inputParser;
-            addRequired(ip, 'filename', @ischar);
-            parse(ip, varargin{:});
-            
-            s = 0; r = '';
-            if (2 == exist(ip.Results.filename, 'file'))
-                if (lstrfind(ip.Results.filename, '.4dfp'))
-                    return
-                end
-                if (lstrfind(ip.Results.filename, '.mgz'))
-                    fp = myfileprefix(ip.Results.filename);
-                    [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii', fp, fp)); %#ok<ASGLU>
-                    [s,r] = this.ensure4dfp([fp '.nii']);
-                    return
-                end
-                [s,r] = this.buildVisitor.nifti_4dfp_4(myfileprefix(ip.Results.filename));
-                assert(lexist(myfilename(ip.Results.filename, '.4dfp.ifh'), 'file'));
-                return
-            end
-            if (2 == exist([ip.Results.filename '.4dfp.ifh'], 'file'))
-                return
-            end
-            if (2 == exist([ip.Results.filename '.nii'], 'file'))
-                [s,r] = this.ensure4dfp([ip.Results.filename '.nii']);
-                return
-            end
-            if (2 == exist([ip.Results.filename '.nii.gz'], 'file'))
-                [s,r] = this.ensure4dfp([ip.Results.filename '.nii.gz']);
-                return
-            end      
-            if (2 == exist([ip.Results.filename '.mgz'], 'file'))
-                [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii', ip.Results.filename, ip.Results.filename)); %#ok<ASGLU>
-                [s,r] = this.ensure4dfp([ip.Results.filename '.nii']);
-                return
-            end            
-            error('mlfourdfp:fileNotFound', ...
-                  'T4ResolveBuilder.ensureNifti could not find files of form %s', ip.Results.filename);     
-        end
         function ipr   = expandBlurs(this, ipr)
             %  @return ipr.sourceBlur has size(this.indicesLogical)
             %  @return ipr.destBlur   has size(this.indicesLogical)
@@ -370,18 +252,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
                 ipr.destMask = repmat({ipr.destMask}, size(ipr.indicesLogical));
             end
         end
-        function fn    = filenameHdr(~, fp)
-            fn = [fp '.4dfp.hdr'];
-        end
-        function fn    = filenameIfh(~, fp)
-            fn = [fp '.4dfp.ifh'];
-        end
-        function fn    = filenameImg(~, fp)
-            fn = [fp '.4dfp.img'];
-        end
-        function fn    = filenameImgRec(~, fp)
-            fn = [fp '.4dfp.img.rec'];
-        end  
         function fqfp  = fileprefixBlurred(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fqfp', @ischar);
@@ -401,31 +271,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             assert(isfield(ipr, 'currentIndex'));
             fp = sprintf('%s_frame%i', ipr.dest, ipr.currentIndex);
         end
-        function fqfp  = fileprefixMsk(~, fqfp)
-            fqfp = [fqfp '_msk'];
-        end
-        function fqfp  = fileprefixMskt(~, fqfp)
-            fqfp = [fqfp '_mskt'];
-        end
-        function fqfp  = fileprefixMsktgen(this, fqfp)
-            fqfp = this.fileprefixMskt( ...
-                this.fileprefixGaussed(this.fileprefixSumt(fqfp)));
-        end
         function fp    = fileprefixResolved(this, fp, rnumber)
             fp = sprintf('%s_%s', this.fileprefixRevision(fp, rnumber), this.resolveTag);
         end   
-        function fps   = fileprefixesResolved(this, fps, rnumber)
-            %% FILEPREFIXREVISION strips and replaces r[0-9]; adds this.resolveTag.
-            %  @param fp, e.g., fdgv1r1_resolved
-            %  @param rnumber is numeric
-            %  @returns fp, e.g., fdgv1r2_resolved
-            %  See also:  mlfourdfp.T4ResolveBuilder.fileprefixRevision
-            
-            assert(iscell(fps));
-            for f = 1:length(fps)
-                fps{f} = this.fileprefixResolved(fps{f}, rnumber);
-            end
-        end 
         function fp    = fileprefixRevision(this, fp, rnumber)
             %% FILEPREFIXREVISION strips this.resolveTag and r[0-9] from fp; replaces r[0-9].
             %  @param fp, e.g., fdgv1r1_resolved
@@ -446,29 +294,16 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             end
             fp = sprintf('%sr%i', fp, rnumber);
         end  
-        function fps   = fileprefixesRevision(this, fps, rnumber)
-            assert(iscell(fps));
-            for f = 1:length(fps)
-                fps{f} = this.fileprefixRevision(fps{f}, rnumber);
-            end
-        end
         function fqfp  = fileprefixSumt(this, fqfp)
             assert(ischar(fqfp));
             fqfp = sprintf('%s_sumt%i', fqfp, sum(this.indicesLogical));
         end
-        function fqfp  = fileprefixTmp(this, varargin)
-            ip = inputParser;
-            addParameter(ip, 'path', this.sessionData.sessionPath, @isdir);
-            parse(ip, varargin{:});
-            
-            fqfp = fullfile(ip.Results.path, sprintf('tmp_%s', datestr(now, 30)));            
-        end    
         function this  = finalize(this, ipr)
             try
                 if (iscell(ipr.resolved))
-                    save([ipr.resolved{this.indexOfReference} '_this_' datestr(now, 30) '.mat'], 'this');
+%                    save([ipr.resolved{this.indexOfReference} '_this_' datestr(now, 30) '.mat'], 'this');
                 else
-                    save([ipr.resolved '_this_' datestr(now, 30) '.mat'], 'this');
+%                    save([ipr.resolved '_this_' datestr(now, 30) '.mat'], 'this');
                 end
             catch ME
                 handwarning(ME);
@@ -514,10 +349,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             assert(length(fqfps) == sum(this.indicesLogical));
         end    
         function msk   = maskBoundaries(this, fqfp)
-            if (~this.doMaskBoundaries)
-                msk = 'none';
-                return
-            end
             this.buildVisitor.nifti_4dfp_ng(fqfp);
             ic  = mlfourd.ImagingContext(fqfp);
             ic  = ic.ones;
@@ -671,14 +502,10 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         end        
         function err   = t4_resolve_errPairParser(this, obj1, obj2)
             [rmsdeg,rmsmm] = this.t4_resolve_errParser(this.resolvePair(obj1, obj2));
-            err = mean([rmsdeg rmsmm], 'omitnan');
+            err = mean([this.rmsarc(rmsdeg) rmsmm], 'omitnan');
         end
-        function a     = t4_resolve_errAverage(~, rmsdeg, rmsmm)
-            a = mean([rmsdeg rmsmm]);
-        end
-        function tf    = t4_resolve_errIsSmall(this, rmsdeg, rmsmm)
-            rmsarc = 100*pi*rmsdeg/180; % arc at 100 mm from center of mass
-            tf = rmsmm < this.t4_resolve_tol && rmsarc < this.t4_resolve_tol;
+        function arc   = rmsarc(~, rmsdeg)            
+            arc = 50*pi*rmsdeg/180; % arc at 50 mm from center of mass
         end
         function this  = t4img_4dfp(this, t4fn, source, varargin)
             %% T4IMG_4DFP is a strategy for this.NRevisions == 1 or 2.
@@ -825,13 +652,13 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             ensuredir(pth);
         end   
         function         teardownLogs(this)
-            ensuredir(this.logPath);
+            ensuredir(this.getLogPath);
             try
-                movefiles('*.log', this.logPath); 
-                movefiles('*.txt', this.logPath);   
-                movefiles('*.lst', this.logPath);    
-                movefiles('*.mat0', this.logPath);   
-                movefiles('*.sub', this.logPath); 
+                movefiles('*.log', this.getLogPath); 
+                movefiles('*.txt', this.getLogPath);   
+                movefiles('*.lst', this.getLogPath);    
+                movefiles('*.mat0', this.getLogPath);   
+                movefiles('*.sub', this.getLogPath); 
             catch ME
                 handwarning(ME);
             end
@@ -839,18 +666,18 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         function         teardownT4s(this)
             if (this.keepForensics); return; end
             
-%% The following will break t4_resolve operations requiring *_t4 files.
-%             try
-%                 ensuredir(this.t4Path);
-%                 movefiles('*_t4', this.t4Path);
-%                 sessd = this.sessionData;
-%                 movefile( ...
-%                     fullfile(this.t4Path, ...
-%                         sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
-%                     pwd);
-%             catch ME
-%                 handwarning(ME);
-%             end
+            %% The following will break t4_resolve operations requiring *_t4 files.
+            %     try
+            %         ensuredir(this.t4Path);
+            %         movefiles('*_t4', this.t4Path);
+            %         sessd = this.sessionData;
+            %         movefile( ...
+            %             fullfile(this.t4Path, ...
+            %                 sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
+            %             pwd);
+            %     catch ME
+            %         handwarning(ME);
+            %     end
         end
         function         teardownRevision(this, ipr)
             if (iscell(ipr.maskForImages))
@@ -888,7 +715,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             this.ignoreFinishfile = ip.Results.ignoreFinishfile;
             
             this.finished_ = mlpipeline.Finished(this, ...
-                'path', this.logPath, ...
+                'path', this.getLogPath, ...
                 'tag', sprintf('%s%s', ip.Results.tag, ip.Results.tag2), ...
                 'neverTouchFinishfile', this.neverTouchFinishfile, ...
                 'ignoreFinishfile', this.ignoreFinishfile);
@@ -911,7 +738,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             if (1 == nargin && isa(varargin{1}, 'mlfourdfp.AbstractT4ResolveBuilder'))
                 aCopy = varargin{1};
                 this.blurArg_ = aCopy.blurArg_;
-                this.doMaskBoundaries = aCopy.doMaskBoundaries;
                 this.imageRegLog = aCopy.imageRegLog;
                 this.mprToAtlT4 = aCopy.mprToAtlT4;
                 this.msktgenThresh = aCopy.msktgenThresh;
@@ -929,23 +755,24 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             import mlfourdfp.*;
             ip = inputParser;
             ip.KeepUnmatched = true;
-            addParameter(ip, 'NRevisions',    2,          @isnumeric);
+            addParameter(ip, 'ipResults',     struct([]), @isstruct);
             addParameter(ip, 'keepForensics', false,      @islogical);
+            addParameter(ip, 'maskForImages', 'none',     @(x) ~isempty(x));
+            addParameter(ip, 'NRevisions',    2,          @isnumeric);
             addParameter(ip, 'resolveTag',    this.sessionData.resolveTag, @ischar);
             addParameter(ip, 'theImages',     '',         @(x) iscell(x) || ischar(x));
-            addParameter(ip, 'maskForImages', 'none',     @(x) ~isempty(x));
-            addParameter(ip, 'ipResults',     struct([]), @isstruct);
-            addParameter(ip, 'logPath',       '',         @ischar);
             parse(ip, varargin{:});
             
-            this.NRevisions     = ip.Results.NRevisions;
+            this.ipResults_     = ip.Results.ipResults;
             this.keepForensics  = ip.Results.keepForensics; % override mlpipeline.AbstractDataBuilder
+            this.maskForImages_ = ip.Results.maskForImages;
+            this.NRevisions     = ip.Results.NRevisions;
             this.resolveTag     = ip.Results.resolveTag;
             this.theImages      = this.ensureSafeFileprefix(ip.Results.theImages);
-            this.maskForImages_ = ip.Results.maskForImages;
-            this.ipResults_     = ip.Results.ipResults;            
-            this.logPath_       = ip.Results.logPath;
-        end        
+            
+            this.logger_.filepath = fullfile(this.sessionData.tracerLocation, 'Log', '');
+            ensuredir(this.logger_.filepath);
+        end     
  	end 
 
     %% PROTECTED
@@ -953,8 +780,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
     properties (Access = protected)
         blurArg_      
         imageComposite_
-        logPath_
         maskForImages_
+        mprToAtlT4
+        msktgenThresh = 0
         trash_ = {};
         t4s_
         xfm_
@@ -1194,84 +1022,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             in  = sprintf('%sr1_%s', this.clipLastRevisionMarking(src), this.resolveTag);
             out = sprintf('%sr2_%s', this.clipLastRevisionMarking(src), this.resolveTag);            
             this.buildVisitor.t4img_4dfp(t4, in, 'out', out, 'options', ['-O' ref_ ' ' opts]);
-        end
-        
-        function fqt4 = mapcycle( this, indexMin, indexMax, varargin)
-            switch (this.NRevisions)
-                case 1
-                    fqt4 = this.map1cycle(indexMin, indexMax, varargin{:});
-                case 2
-                    fqt4 = this.map2cycle(indexMin, indexMax, varargin{:});
-                otherwise
-                    error('mlfourdfp:unsupportedSwitchCase', ...
-                          'CompositeT4ResolveBuilder.mapcycle.NRevisions -> %i', ...
-                          this.NRevisions);
-            end
-            assert(lexist(fqt4, 'file'));
-        end
-        function fqt4 = map1cycle(this, indexMin, indexMax, varargin)
-            ip = inputParser;
-            addRequired(ip, 'indexMin', @ischar);
-            addRequired(ip, 'indexMax', @ischar);
-            addOptional(ip, 't4output', sprintf('map1cycle_to_%sr1_t4', indexMax), @ischar);
-            parse(ip, indexMin, indexMax, varargin{:});
-            
-            pwd0 = pushd(this.sessionData.tracerT4Location);
-            b    = this.buildVisitor;
-            fqt4 = this.buildVisitor.t4_mul( ...
-                     this.T(indexMin, 1), ...
-                     b.t4_inv(this.T(indexMax, 1)), basename(ip.Results.t4output));
-            fqt4 = fullfile(this.sessionData.tracerT4Location, fqt4);
-            popd(pwd0);
-        end
-        function fqt4 = map2cycle(this, indexMin, indexMax, varargin)
-            ip = inputParser;
-            addRequired(ip, 'indexMin', @ischar);
-            addRequired(ip, 'indexMax', @ischar);
-            addOptional(ip, 't4output', sprintf('map2cycle_to_%sr2_t4',indexMax), @ischar);
-            parse(ip, indexMin, indexMax, varargin{:});
-            
-            b = this.buildVisitor;
-            
-            % 0 := indexMin, F := indexMax, r := resolved
-            pwd0 = pushd(this.sessionData.tracerT4Location);
-            T_0r_1 = this.T(indexMin, 1);
-            T_0r_2 = this.T(indexMin, 2);
-            T_rF_2 = b.t4_inv(this.T(indexMax, 2));
-            T_rF_1 = b.t4_inv(this.T(indexMax, 1));
-            fqt4   = b.t4_mul(T_0r_1, b.t4_mul(T_0r_2, b.t4_mul(T_rF_2, T_rF_1)), basename(ip.Results.t4output));  
-            fqt4   = fullfile(this.sessionData.tracerT4Location, fqt4);
-            popd(pwd0);
-        end
-        function t4   = T(this, varargin)
-            %% T selects an affine transformation file.
-            %  @param f1 is the originating frame/image (char).
-            %  @param r1 is the originating iteration of t4_resolve (numeric).
-            %  @param f2 is the destination frame/image (char).
-            %  @param r2 is the destination iteration of t4_resolve (numeric).
-            %  @param fq specifies whether to return the transformation file fully-qualified (logical).
-            
-            ip = inputParser;
-            addRequired( ip, 'f1', @ischar);
-            addRequired( ip, 'r1', @isnumeric);
-            addOptional( ip, 'f2', '',    @ischar);
-            addOptional( ip, 'r2', nan,   @isnumeric);
-            addParameter(ip, 'fq', false, @islogical);
-            parse(ip, varargin{:});
-            
-            if (isempty(ip.Results.f2) || isnan(ip.Results.r2))
-                t4__ = sprintf('%sr%i_to_resolved_t4', ...
-                    ip.Results.f1, ip.Results.r1);
-            else
-                t4__ = sprintf('%sr%i_to_%sr%i_t4', ...
-                    ip.Results.f1, ip.Results.r1, ip.Results.f2, ip.Results.r2);
-            end    
-            if (~ip.Results.fq)
-                t4 = t4__;
-            else
-                t4 = fullfile(this.sessionData.tracerT4Location, t4__);                
-            end
-        end                  
+        end             
     end
     
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
