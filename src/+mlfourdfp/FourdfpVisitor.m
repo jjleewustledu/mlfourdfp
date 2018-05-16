@@ -1216,7 +1216,7 @@ classdef FourdfpVisitor
         end
         function [fqfp,s,r] = t4img_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 't4',          @this.lexist);
+            addRequired( ip, 't4',          @lexist);
             addRequired( ip, 'in',          @this.lexist_4dfp);
             addParameter(ip, 'out', this.fileprefixT4img(varargin{1:2}), ...
                                             @ischar);
