@@ -1192,6 +1192,16 @@ classdef FourdfpVisitor
             [s,r] = this.scale_4dfp__( ...
                 sprintf('%s %g %s', ip.Results.in, ip.Results.scale, ip.Results.options));
         end
+        function      [s,r] = sqrt_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'in',          @this.lexist_4dfp);
+            addOptional( ip, 'outroot', '', @ischar);
+            addParameter(ip, 'options', '', @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = this.sqrt_4dfp__( ...
+                sprintf('%s %s %s', ip.Results.in, ip.Results.outroot, ip.Results.options));
+        end
         function      [s,r] = sif_4dfp(this, varargin)
             ip = inputParser;
             addRequired(ip, 'sifstr',      @this.lexist_mhdr);
@@ -1206,7 +1216,7 @@ classdef FourdfpVisitor
         end
         function [fqfp,s,r] = t4img_4dfp(this, varargin)
             ip = inputParser;
-            addRequired( ip, 't4',          @this.lexist_4dfp);
+            addRequired( ip, 't4',          @this.lexist);
             addRequired( ip, 'in',          @this.lexist_4dfp);
             addParameter(ip, 'out', this.fileprefixT4img(varargin{1:2}), ...
                                             @ischar);
@@ -2276,6 +2286,18 @@ classdef FourdfpVisitor
 
             assert(ischar(args));
             [s,r] = dbbash(sprintf('scale_4dfp %s', args));
+        end
+        function [s,r] = sqrt_4dfp__(~, args)
+            %% SQRT_4DFP__
+            % $Id: sqrt_4dfp.c,v 1.7 2008/03/14 02:24:00 avi Exp $
+            % Usage:	sqrt_4dfp <(4dfp) image> [outroot]
+            % e.g.,	sqrt_4dfp vce20_mpr
+            % 	-@<b|l>	output big or little endian (default input endian)
+            % 	-E	output undefined voxels as 1.0e-37 (default 0.0)
+            % N.B.:	default output filename = <image>_sqrt	
+
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('sqrt_4dfp %s', args));
         end
         function [s,r] = sif_4dfp__(~, args)
             %% SIF_4DFP__
