@@ -1192,7 +1192,7 @@ classdef FourdfpVisitor
             [s,r] = this.scale_4dfp__( ...
                 sprintf('%s %g %s', ip.Results.in, ip.Results.scale, ip.Results.options));
         end
-        function      [s,r] = sqrt_4dfp(this, varargin)
+        function [fqfp,s,r] = sqrt_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'in',          @this.lexist_4dfp);
             addOptional( ip, 'outroot', '', @ischar);
@@ -1201,6 +1201,11 @@ classdef FourdfpVisitor
             
             [s,r] = this.sqrt_4dfp__( ...
                 sprintf('%s %s %s', ip.Results.in, ip.Results.outroot, ip.Results.options));
+            if (~isempty(ip.Results.outroot))
+                fqfp = ip.Results.outroot;
+            else
+                fqfp = [ip.Results.in '_sqrt'];
+            end
         end
         function      [s,r] = sif_4dfp(this, varargin)
             ip = inputParser;
