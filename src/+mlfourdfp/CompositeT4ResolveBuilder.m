@@ -117,7 +117,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             maskedImgs  = this.lazyMasksForImages(ipr); % "
             assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
             len = sum(this.indicesLogical);
-            t4Failures = zeros(len, len);
+            t4fails = zeros(len, len);
             for m = 1:len
                 for n = 1:len
                     if (m ~= n)
@@ -137,7 +137,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             % based on the names of image files
                             % e. g., image1_to_image2_t4    
                         catch ME
-                            t4Failures(m,n) = t4Failures(m,n) + 1;
+                            t4fails(m,n) = t4fails(m,n) + 1;
                             copyfile( ...
                                 this.buildVisitor.transverse_t4, ...
                                 this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}), 'f');
@@ -146,33 +146,21 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                 end
             end 
-            t4Failures = sum(t4Failures, 1);
-            this.appendImageRegLog( ...
-                sprintf('CompositeT4ResolveBuilder.imageReg: t4Failures->%s\n', mat2str(t4Failures)));
+            
+            this.t4ResolveError_.logger.add( ...
+                sprintf('CompositeT4ResolveBuilder.imageReg.t4fails->\n%s', mat2str(t4fails)));
+            
             this.indicesLogical(this.indicesLogical) = ...
                 ensureRowVector(this.indicesLogical(this.indicesLogical)) & ...
-                ensureRowVector(t4Failures < 0.25*len);   
-            this.appendImageRegLog( ...
-                sprintf('CompositeT4ResolveBuilder.imageReg: this.indicesLogical->%s\n', mat2str(this.indicesLogical))); 
+                ensureRowVector(sum(t4fails,1) < 0.25*len);   
+            this.t4ResolveError_.logger.add( ...
+                sprintf('CompositeT4ResolveBuilder.imageReg.indicesLogical->\n%s', mat2str(this.indicesLogical)));  
             
-            this.t4_resolve_err = nan(len, len);
-            for m = 1:length(stagedImgs)
-                for n = 1:length(stagedImgs)
-                    if (m ~= n)
-                        try
-                            this.t4_resolve_err(m,n) = ...
-                                this.t4_resolve_errPairParser(mybasename(stagedImgs{m}), mybasename(stagedImgs{n}));
-                        catch ME
-                            dispwarning(ME);
-                        end
-                        
-                    end
-                end
-            end 
-            this.appendImageRegLog( ...
-                sprintf('CompositeT4ResolveBuilder.imageReg: stagedImgs->%s\n', cell2str(stagedImgs, 'AsRow', true)));
-            this.appendImageRegLog( ...
-                sprintf('CompositeT4ResolveBuilder.imageReg: this.t4_resolve_err->%s\n', mat2str(this.t4_resolve_err)));
+            [this.t4ResolveError_,this.t4_resolve_err] = this.t4ResolveError_.estimateErr(stagedImgs, this.indicesLogical);
+            this.t4ResolveError_.logger.add( ...
+                sprintf('CompositeT4ResolveBuilder.imageReg.stagedImgs->\n%s', cell2str(stagedImgs)));
+            this.t4ResolveError_.logger.add( ...
+                sprintf('T4ResolveError_.estimateErr->\n%s', mat2str(this.t4_resolve_err)));
             
             this.deleteTrash;
         end  
@@ -209,7 +197,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.buildVisitor.t4_resolve( ...
                 this.resolveTag, imgFps, ...
                 'options', '-v -m -s', 'log', this.resolveLog);
-            this = this.cacheT4s(imgFpsc);
+            this = this.cacheT4s(imgFpsc); % for each rnumber
             this.t4imgAll(ipr, this.resolveTag); % transform ipr.dest on this.resolveTag
             dest_ = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
             ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest_, 'UniformOutput', false); 
@@ -328,6 +316,34 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function fp      = fileprefixOfReference(this, ipr)
             fp = ipr.dest{this.indexOfReference};
         end
+        function fp      = fileprefixRevision(this, fp, rnumber)
+            %% FILEPREFIXREVISION strips this.resolveTag and r[0-9] from fp; replaces r[0-9].
+            %  @param fp, e.g., fdgv1r1_resolved
+            %  @param rnumber is numeric
+            %  @returns fp, e.g., fdgv1r2
+            
+            assert(ischar(fp));
+            assert(isnumeric(rnumber));
+            
+            % KLUDGE for CompositeT4ResolveBuilder which needs ['T1001_' this.resolveTag] kept intact.
+            if (length(fp) > 4 && strcmp(fp(1:5), 'T1001'))
+                return
+            end
+            
+            % truncate this.resolveTag
+            idx = regexp(fp, sprintf('_%s$', this.resolveTag));
+            if (~isempty(idx))
+                fp = fp(1:idx-1);
+            end
+            
+            % update r-number
+            if (length(fp) > 2)
+                if (~isempty(regexp(fp(end-2:end), 'r[0-9]', 'match')))
+                    fp = fp(1:end-2);
+                end
+            end
+            fp = sprintf('%sr%i', fp, rnumber);
+        end  
         function fqfps   = lazyMasksForImages(this, ipr, varargin)
             %  @param ipr.maskForImages is 'none' or the fileprefix/name of an anatomical image which will be 
             %  thresholded to generate a mask; the anatomical image must have transverse orientation.   
@@ -360,6 +376,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fprintf('CT4RB.lazyMaskForImages:  ipr.maskForImages{%i} <- T1001\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));                        
                         ipr.maskForImages{ii} = 'none';
+                        cd(this.sessionData.tracerLocation);
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
@@ -373,6 +390,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         ipr.maskForImages{ii} = 'none';
+                        cd(this.sessionData.tracerLocation);
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'msktgen_4dfp'))
@@ -386,6 +404,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         ipr.maskForImages{ii} = 'none';
+                        cd(this.sessionData.tracerLocation);
                     end
                 end
                 fqfps{ii} = 'none';
