@@ -36,7 +36,7 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
             ipr.cacheLoc = ensuredir( ...
                 fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' datestr(now, 30)]));
             ipr.maskForImages = 'none';
-            ipr.useMetricGradient = false;
+            ipr.useMetricGradient = true;
             this = this.imageReg(ipr);  
             [ipr,~,this] = this.resolveAndPaste(ipr); 
             
@@ -97,7 +97,7 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
                 end
             end 
             this.assessT4Failures(t4Failures);
-            this = this.assessT4ResolveErr(stagedImgs);
+            this = this.estimateErr(stagedImgs);
             this.deleteTrash;
         end
         
@@ -115,7 +115,7 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
                 sprintf('VariableMaskT4ResolveBuilder.assessT4Failures: this.indicesLogical->%s\n', ...
                 mat2str(this.indicesLogical)));            
         end
-        function this  = assessT4ResolveErr(this, stagedImgs)
+        function this  = estimateErr(this, stagedImgs)
             len = sum(this.indicesLogical);
             this.t4_resolve_err = nan(len, len);
             for m = 1:length(stagedImgs)
@@ -133,10 +133,10 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
             end 
             this.appendVMRBLog([datestr(now) '\n']);
             this.appendVMRBLog( ...
-                sprintf('VariableMaskT4ResolveBuilder.assessT4ResolveErr: stagedImgs->%s\n', ...
+                sprintf('VariableMaskT4ResolveBuilder.estimateErr: stagedImgs->%s\n', ...
                 cell2str(stagedImgs, 'AsRow', true)));
             this.appendVMRBLog( ...
-                sprintf('VariableMaskT4ResolveBuilder.assessT4ResolveErr: this.t4_resolve_err->%s\n', ...
+                sprintf('VariableMaskT4ResolveBuilder.estimateErr: this.t4_resolve_err->%s\n', ...
                 mat2str(this.t4_resolve_err)));            
         end
         function         appendVMRBLog(this, s)
@@ -146,7 +146,8 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
             mlbash(sprintf('echo \"%s\" >> %s', s, this.vmRBLog));
             fprintf(s);
         end     
-        function fqfps = lazyMasksForImages(this, ipr, stagedImgs, varargin)
+        function fqfps = lazyMasksForImages__(this, ipr, stagedImgs, varargin)
+            %% LAZYMASKSFORIMAGES__ has not worked.  Results archived in $PPG/jjlee2/HYGLY25/Vall_2018ma16_*.
             %  @param ipr.maskForImages is 'none' or the fileprefix/name of an anatomical image which will be 
             %  thresholded to generate a mask; the anatomical image must have transverse orientation.   
             %  See also:  mlfourdfp.FourdfpVisitor.transverse_t4.
