@@ -33,23 +33,33 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
         
         %%
         
+        function [m,s] = meanAndStd(this)
+            sy = this.summarize;
+            m  = cell2mat(cellfun(@(x) mean(x, 'omitnan'), sy, 'UniformOutput', false));
+            s  = cell2mat(cellfun(@(x) std( x, 'omitnan'), sy, 'UniformOutput', false));            
+        end
         function s     = summarize(this)
-            sd = this.sessionData;
-            for e = 1:sd.supEpoch
-                sd.epoch = e;
-                pwd0 = pushd(sd.tracerLocation);
+            for e = 1:this.sessionData.supEpoch
+                this.sessionData.epoch = e;
+                pwd0 = pushd(this.sessionData.tracerLocation);
                 if (isempty(dir('*_t4'))); break; end
-                [simgs,this] = this.stagedImgs(sd);
-                [~,s{e}] = this.assessT4ResolveErr(simgs); %#ok<AGROW>
+                [simgs,this] = this.stagedImgs(this.sessionData);
+                [~,s{e}] = this.estimateErr(simgs); %#ok<AGROW>
                 popd(pwd0);
             end
         end
-        function [this,em] = assessT4ResolveErr(this, simgs)
+        function [this,em] = estimateErr(this, simgs, varargin)
             %  @param simgs must be already screened by this.assessValidFrames.
+            %  @param indicesLogical is optional.
             %  @return em, the norm-2 error of displacements & rotations.
             
+            ip = inputParser;
+            addOptional(ip, 'indicesLogical', this.indicesLogical, @islogical);
+            parse(ip, varargin{:});
+            this.indicesLogical = ip.Results.indicesLogical;
+            
             this = this.updateLogger;
-            this.logger.add('assessT4ResolveErr: working in %s', pwd);
+            this.logger.add('estimateErr: working in %s', pwd);
             len = length(simgs);
             this.errMat_ = nan(len, len);
             for m = 1:length(simgs)
@@ -65,9 +75,9 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
                 end
             end 
             em = this.errMat;
-            this.logger.add('T4ResolveError.assessT4ResolveErr: stagedImgs->%s\n', ...
+            this.logger.add('T4ResolveError.estimateErr: stagedImgs->%s\n', ...
                 cell2str(simgs, 'AsRow', true));
-            this.logger.add('T4ResolveError.assessT4ResolveErr: this.errMat->%s\n', ...
+            this.logger.add('T4ResolveError.estimateErr: this.errMat->%s\n', ...
                 mat2str(this.errMat));  
             this.logger.add('saving em to %s.mat\n', this.logger.fqfileprefix);
             save([this.logger.fqfileprefix '.mat'], 'em');
@@ -291,7 +301,7 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
                 Logger.loggerFileprefix( ...
                     this.representativeImg, ...
                     'func', 'T4ResolveErr',...
-                    'path', fullfile(pwd, 'Log', '')));
+                    'path', this.getLogPath));
         end
     end
 

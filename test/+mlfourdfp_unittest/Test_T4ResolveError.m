@@ -27,9 +27,12 @@ classdef Test_T4ResolveError < matlab.unittest.TestCase
         function test_summarize(this)
             s = this.testObj.summarize;
             disp(s)
-            %this.verifyTrue(lstrfind(s, ''));
+            this.verifyEqual(size(s{1}, [22 22]));
+            for m = 1:22
+                this.verifyTrue(isnan(s{1}(m,m)));
+            end
             
-            sd = this.sessionData;
+            sd = this.sessd;
             sd.epoch = 1;
             this.viewer.view(sd.tracerResolvedFinal)            
         end
