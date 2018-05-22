@@ -180,7 +180,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         function fp    = buildMaskForImage(this, varargin)
             ip = inputParser;
             addRequired(ip, 'fp1', @(x) lexist([x '.4dfp.ifh']));
-            addOptional(ip, 'fp',  ['mask_' varargin{1} '_' varargin{2}], @ischar);
+            addOptional(ip, 'fp',  ['mask_' varargin{1}], @ischar);
             parse(ip, varargin{:});
             
             import mlfourd.* mlfourdfp.*;
@@ -299,15 +299,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             fqfp = sprintf('%s_sumt%i', fqfp, sum(this.indicesLogical));
         end
         function this  = finalize(this, ipr)
-            try
-                if (iscell(ipr.resolved))
-%                    save([ipr.resolved{this.indexOfReference} '_this_' datestr(now, 30) '.mat'], 'this');
-                else
-%                    save([ipr.resolved '_this_' datestr(now, 30) '.mat'], 'this');
-                end
-            catch ME
-                handwarning(ME);
-            end
+            this.t4ResolveError_.logger.save;
             this = this.buildProduct(ipr);            
             this.teardownResolve(ipr);
             this.finished.touchFinishedMarker;  
@@ -702,23 +694,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             %  @param ignoreFinishfile is boolean.
             %  @return property this.finished instantiated with path, tags, the booleans.
             
-            ip = inputParser;
-            addParameter(ip, 'tag', ...
-                sprintf('%s_NRev%i_idxOfRef%i', ...
-                    lower(this.sessionData.tracerRevision('typ','fp')), this.NRevisions, this.indexOfReference), ...
-                @ischar);
-            addParameter(ip, 'tag2', '', @ischar);
-            addParameter(ip, 'neverTouchFinishfile', this.neverTouchFinishfile, @islogical);
-            addParameter(ip, 'ignoreFinishfile', this.ignoreFinishfile, @islogical);
-            parse(ip, varargin{:});
-            this.neverTouchFinishfile = ip.Results.neverTouchFinishfile;
-            this.ignoreFinishfile = ip.Results.ignoreFinishfile;
-            
-            this.finished_ = mlpipeline.Finished(this, ...
-                'path', this.getLogPath, ...
-                'tag', sprintf('%s%s', ip.Results.tag, ip.Results.tag2), ...
-                'neverTouchFinishfile', this.neverTouchFinishfile, ...
-                'ignoreFinishfile', this.ignoreFinishfile);
+            this = updateFinished@mlpipeline.AbstractDataBuilder(this, varargin{:});
+            this.finished_.tag = sprintf('%s_NRev%i_idxOfRef%i', ...
+                this.finished_.tag, this.NRevisions, this.indexOfReference);
         end
         
 		function this = AbstractT4ResolveBuilder(varargin)
@@ -757,12 +735,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             ip.KeepUnmatched = true;
             addParameter(ip, 'ipResults',     struct([]), @isstruct);
             addParameter(ip, 'keepForensics', false,      @islogical);
-            addParameter(ip, 'maskForImages', 'none',     @(x) ~isempty(x));
+            addParameter(ip, 'maskForImages', 'Msktgen',  @(x) ~isempty(x));
             addParameter(ip, 'NRevisions',    2,          @isnumeric);
             addParameter(ip, 'resolveTag',    this.sessionData.resolveTag, @ischar);
             addParameter(ip, 'theImages',     '',         @(x) iscell(x) || ischar(x));
-            parse(ip, varargin{:});
-            
+            parse(ip, varargin{:});            
             this.ipResults_     = ip.Results.ipResults;
             this.keepForensics  = ip.Results.keepForensics; % override mlpipeline.AbstractDataBuilder
             this.maskForImages_ = ip.Results.maskForImages;
@@ -770,8 +747,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             this.resolveTag     = ip.Results.resolveTag;
             this.theImages      = this.ensureSafeFileprefix(ip.Results.theImages);
             
-            this.logger_.filepath = fullfile(this.sessionData.tracerLocation, 'Log', '');
-            ensuredir(this.logger_.filepath);
+            %this.logger_.filepath = fullfile(this.sessionData.tracerLocation, 'Log', '');
+            %ensuredir(this.logger_.filepath);
+            
+            this.t4ResolveError_ = T4ResolveError( ...
+                'sessionData', this.sessionData, 'logPath', this.getLogPath);
         end     
  	end 
 
@@ -784,6 +764,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         mprToAtlT4
         msktgenThresh = 0
         trash_ = {};
+        t4ResolveError_
         t4s_
         xfm_
     end
