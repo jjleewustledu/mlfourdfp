@@ -302,7 +302,9 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
               
             if (strcmp(ipr.maskForImages, 'Msktgen'))
                 try
-                    mg   = mlpet.Msktgen('sessionData', this.sessionData);
+                    mg   = mlpet.Msktgen( ...
+                        'sessionData', this.sessionData, ...
+                        'logPath', fullfile(pwd, 'Log', ''));
                     sd   = this.sessionData; sd.epoch = []; sd.rnumber = 1;
                     mskt = mg.constructMskt( ...
                         'source', this.ensureSumtSaved(sd.tracerRevision), ...
@@ -330,6 +332,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                     ipr.maskForImages = 'none';
                     cd(this.sessionData.tracerLocation);
+                    rethrow(ME);
                 end
             end
             if (strcmp(ipr.maskForImages, 'wholehead'))
@@ -348,6 +351,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                     ipr.maskForImages = 'wholehead2';
                     cd(this.sessionData.tracerLocation);
+                    rethrow(ME);
                 end
             end
             fqfps = cellfun(@(x) 'none', fqfps, 'UniformOutput', false);
