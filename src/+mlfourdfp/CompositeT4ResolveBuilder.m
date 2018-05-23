@@ -148,19 +148,13 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end 
             
             this.t4ResolveError_.logger.add( ...
-                sprintf('CompositeT4ResolveBuilder.imageReg.t4fails->\n%s', mat2str(t4fails)));
-            
+                sprintf('CompositeT4ResolveBuilder.imageReg.t4fails->\n%s', mat2str(t4fails)));            
             this.indicesLogical(this.indicesLogical) = ...
                 ensureRowVector(this.indicesLogical(this.indicesLogical)) & ...
                 ensureRowVector(sum(t4fails,1) < 0.25*len);   
             this.t4ResolveError_.logger.add( ...
-                sprintf('CompositeT4ResolveBuilder.imageReg.indicesLogical->\n%s', mat2str(this.indicesLogical)));  
-            
+                sprintf('CompositeT4ResolveBuilder.imageReg.indicesLogical->\n%s', mat2str(this.indicesLogical)));
             [this.t4ResolveError_,this.t4_resolve_err] = this.t4ResolveError_.estimateErr(stagedImgs, this.indicesLogical);
-            this.t4ResolveError_.logger.add( ...
-                sprintf('CompositeT4ResolveBuilder.imageReg.stagedImgs->\n%s', cell2str(stagedImgs)));
-            this.t4ResolveError_.logger.add( ...
-                sprintf('T4ResolveError_.estimateErr->\n%s', mat2str(this.t4_resolve_err)));
             
             this.deleteTrash;
         end  
