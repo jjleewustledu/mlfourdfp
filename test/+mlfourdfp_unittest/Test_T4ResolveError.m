@@ -24,17 +24,25 @@ classdef Test_T4ResolveError < matlab.unittest.TestCase
  			this.verifyEqual(1,1);
  			this.assertEqual(1,1);
         end
-        function test_summarize(this)
-            s = this.testObj.summarize;
+        function test_meanAndStd(this)
+            [m,s] = this.testObj.meanAndStd( ...
+                this.testObj.summarizeFrames);
+            this.verifyEqual(m, [nan nan nan]);
+            this.verifyEqual(s, [nan nan nan]);
+        end
+        function test_summarizeFrames(this)
+            s = this.testObj.summarizeFrames;
             disp(s)
-            this.verifyEqual(size(s{1}, [22 22]));
+            this.verifyEqual(s{1}(1,1:4), [NaN 0.248218796113143 0.238125411362277 0.485229715534257], 'RelTol', 1e-10);
+            this.verifyEqual(size(s{1}), [22 22]);
             for m = 1:22
                 this.verifyTrue(isnan(s{1}(m,m)));
             end
+            pcolor(s{1});
             
             sd = this.sessd;
-            sd.epoch = 1;
-            this.viewer.view(sd.tracerResolvedFinal)            
+            sd.epoch = [];
+            this.viewer.view(sd.tracerResolvedFinal)
         end
 	end
 
@@ -42,8 +50,8 @@ classdef Test_T4ResolveError < matlab.unittest.TestCase
 		function setupT4ResolveError(this)         
  			import mlraichle.*;
             this.sessd = SessionData( ...
-                'studyData', StudyData, 'sessionFolder', this.sessf, 'tracer', 'FDG', 'ac', true); % referenceTracer
- 			this.testObj_ = mlfourdfp.T4ResolveError('sessionData', this.sessd);
+                'studyData', StudyData, 'sessionFolder', this.sessf, 'tracer', 'FDG', 'ac', true, 'rnumber', 2); % referenceTracer
+ 			this.testObj_ = mlfourdfp.T4ResolveError('sessionData', this.sessd, 'logPath', this.sessd.tracerLocation);
             this.viewer = mlfourdfp.Viewer;
  		end
 	end

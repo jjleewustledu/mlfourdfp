@@ -17,6 +17,15 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
         theImages
     end
 
+    
+    methods (Static)
+        function [m,s] = meanAndStd(~, summy)
+            assert(isnumeric(summy));
+            m  = cell2mat(cellfun(@(x) mean(mean(x,[],'omitnan'),[],'omitnan'), summy, 'UniformOutput', false));
+            s  = cell2mat(cellfun(@(x) std( std( x,[],'omitnan'),[],'omitnan'), summy, 'UniformOutput', false));            
+        end
+    end
+    
 	methods
         
         %% GET
@@ -33,12 +42,7 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
         
         %%
         
-        function [m,s] = meanAndStd(this)
-            sy = this.summarize;
-            m  = cell2mat(cellfun(@(x) mean(x, 'omitnan'), sy, 'UniformOutput', false));
-            s  = cell2mat(cellfun(@(x) std( x, 'omitnan'), sy, 'UniformOutput', false));            
-        end
-        function s     = summarize(this)
+        function s     = summarizeFrames(this)
             for e = 1:this.sessionData.supEpoch
                 this.sessionData.epoch = e;
                 pwd0 = pushd(this.sessionData.tracerLocation);
@@ -47,6 +51,12 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
                 [~,s{e}] = this.estimateErr(simgs); %#ok<AGROW>
                 popd(pwd0);
             end
+        end
+        function s     = summarizeComposite(this)
+            pwd0 = pushd(this.sessionData.tracerLocation);
+            [simgs,this] = this.stagedImgs(this.sessionData);
+            [~,s] = this.estimateErr(simgs);
+            popd(pwd0);
         end
         function [this,em] = estimateErr(this, simgs, varargin)
             %  @param simgs must be already screened by this.assessValidFrames.
@@ -58,7 +68,7 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
             
-            this = this.updateLogger;
+            this = this.updateLogging;
             this.logger.add('estimateErr: working in %s', pwd);
             len = length(simgs);
             this.errMat_ = nan(len, len);
@@ -187,7 +197,7 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
             %  @return verbose info from t4_resolve.
             
             [~,r] = this.buildVisitor.t4_resolve( ...
-                this.resolveTag, [f1 ' ' f2], 'options', '-v -m -s');
+                this.resolveTag, [f1 ' ' f2], 'options', '-v');
         end
         function arc   = rmsarc(~, rmsdeg)
             arc = 50*pi*rmsdeg/180; % arc at 50 mm from center of mass, per Avi Snyder
@@ -288,18 +298,25 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
                 this.buildVisitor_.extract_frame_4dfp(ipr.dest, ipr.currentIndex, ['-o' fqfp]);
             end
         end
-        function anImg = representativeImg(this)
+        function anImg = representativeImgs(this)
             if (iscell(this.theImages_))
-                anImg = this.theImages_{1};
+                anImg = '';
+                for i = 1:length(this.theImages_)
+                    anImg = [anImg this.theImages_{i} '_']; %#ok<AGROW>
+                    if (i > 10); break; end
+                end
+                anImg = anImg(1:end-1);
             else
                 anImg = this.theImages_;
             end
         end
-        function this  = updateLogger(this)
+        function this  = updateLogging(this)
             import mlpipeline.*;
+            this = this.setLogPath(fullfile(pwd, 'Log', '')); % See also meanAndStd, summarize*
+            ensuredir(this.getLogPath);
             this.logger_ = Logger( ...
                 Logger.loggerFileprefix( ...
-                    this.representativeImg, ...
+                    this.representativeImgs, ...
                     'func', 'T4ResolveErr',...
                     'path', this.getLogPath));
         end
