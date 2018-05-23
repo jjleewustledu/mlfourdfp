@@ -206,6 +206,12 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             popd(pwd0);
         end
         function t4           = t4_to_resolveTag(this, varargin)
+            %% T4_TO_RESOLVETAG provides the t4 filename to the target of t4_resolve, generating the t4 file as needed.
+            %  @param required idx is numeric.
+            %  @param named rnumber is numeric.
+            %  @param named rstring is char.
+            %  @return t4 filename is char.
+            
             ip = inputParser;
             addRequired( ip, 'idx', @isnumeric);
             addParameter(ip, 'rnumber', this.NRevisions, @isnumeric);
@@ -219,9 +225,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             % aufbau composite t4 for all r-numbers
             for r = 1:this.NRevisions
-                assert(lexist(this.getT4__(ip.Results.idx, sprintf('r%i', r)))); 
+                assert(lexist(this.getT4__(ip.Results.idx, ip.Results.rstring))); 
             end
             rstr = 'r1';
+            rstr1 = ip.Results.rstring;
             for r = 1:this.NRevisions-1
                 rstr1 = sprintf('%sr%i', rstr, r+1);
                 this.buildVisitor.t4_mul( ...
@@ -365,7 +372,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             for ii = 1:length(ipr.source)           
                 if (strcmp(ipr.maskForImages{ii}, 'Msktgen'))
                     try
-                        mg   = mlpet.Msktgen('sessionData', this.sessionData);
+                        mg   = mlpet.Msktgen( ...
+                            'sessionData', this.sessionData, ...
+                            'logPath', fullfile(pwd, 'Log', ''));
                         mskt = mg.constructMskt( ...
                             'source', ipr.source{ii}, ...
                             'intermediaryForMask', this.sessionData.T1001, ...
@@ -377,6 +386,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));                        
                         ipr.maskForImages{ii} = 'none';
                         cd(this.sessionData.tracerLocation);
+                        rethrow(ME);
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
@@ -391,6 +401,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         ipr.maskForImages{ii} = 'none';
                         cd(this.sessionData.tracerLocation);
+                        rethrow(ME);
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'msktgen_4dfp'))
@@ -405,6 +416,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         ipr.maskForImages{ii} = 'none';
                         cd(this.sessionData.tracerLocation);
+                        rethrow(ME);
                     end
                 end
                 fqfps{ii} = 'none';
