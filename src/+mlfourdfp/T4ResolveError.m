@@ -19,10 +19,14 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
 
     
     methods (Static)
-        function [m,s] = meanAndStd(~, summy)
-            assert(isnumeric(summy));
-            m  = cell2mat(cellfun(@(x) mean(mean(x,[],'omitnan'),[],'omitnan'), summy, 'UniformOutput', false));
-            s  = cell2mat(cellfun(@(x) std( std( x,[],'omitnan'),[],'omitnan'), summy, 'UniformOutput', false));            
+        function [m,s] = meanAndStd(~, em)
+            assert(isnumeric(em));
+            m  = cell2mat(cellfun(@(x) mean(mean(x,[],'omitnan'),[],'omitnan'), em, 'UniformOutput', false));
+            s  = cell2mat(cellfun(@(x) std( std( x,[],'omitnan'),[],'omitnan'), em, 'UniformOutput', false));            
+        end
+        function em    = errorMat(varargin)            
+            this = mlfourdfp.T4ResolveError(varargin{:});
+            [~,em] = this.estimateErr(this.theImages);
         end
     end
     
@@ -65,8 +69,11 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
             
             ip = inputParser;
             addOptional(ip, 'indicesLogical', this.indicesLogical, @islogical);
+            addParameter(ip, 'rnumber', this.sessionData.rnumber, @isnumeric);
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
+            this.sessionData_.rnumber = ip.Results.rnumber;            
+            % simgs = this.ensureRNumberOfImgs(simgs); % SUSPECTED BUG
             
             this = this.updateLogging;
             this.logger.add('estimateErr: working in %s', pwd);
@@ -92,6 +99,25 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
             this.logger.add('saving em to %s.mat\n', this.logger.fqfileprefix);
             save([this.logger.fqfileprefix '.mat'], 'em');
             this.logger.save;
+        end
+        function imgs  = ensureRNumberOfImgs(this, imgs)
+            %% imgs should end with r[0-9] to be compliant with mlfourdfp.AbstractT4ResolveBuilder,
+            %  mlraichle.SubjectImages and other contexts.  
+            %  @param imgs is char or cell.
+            %  @return imgs is char or cell.
+            
+            % flat recursion for cell-arrays
+            if (iscell(imgs))
+                imgs = cellfun(@(x) this.ensureRNumberOfImgs(x), imgs, 'UniformOutput', false);
+                return
+            end
+            
+            % base case
+            assert(this.sessionData.rnumber < 10);
+            rstr = sprintf('r%i', this.sessionData.rnumber);
+            if (~strcmp(imgs(end-1:end), rstr))
+                imgs = [imgs rstr];
+            end
         end
         function err   = pairedErrParser(this, obj1, obj2)
             [rmsdeg,rmsmm] = this.errParser(this.t4_resolvePair(obj1, obj2));
