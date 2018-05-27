@@ -1275,7 +1275,7 @@ classdef FourdfpVisitor
             parse(ip, varargin{:});
             t4 = ip.Results.A2C;
             
-            [s,r] = this.t4_mul__(sprintf('%s %s %s', ip.Results.A2B, ip.Results.B2C, ip.Results.A2C));
+            [s,r] = this.t4_mul__(sprintf('%s %s %s', ip.Results.A2B, ip.Results.B2C, t4));
         end
         function      [s,r] = t4_resolve(this, varargin)
             ip = inputParser;
