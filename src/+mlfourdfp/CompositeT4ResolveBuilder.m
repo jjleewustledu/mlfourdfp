@@ -106,16 +106,20 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.resolveLog = loggerFilename( ...
                 ipr.dest{this.indexOfReference}, 'func', 'CompositeT4ResolveBuilder_t4ResolveAndPaste', 'path', ipr.logPath);
             
-            this = this.imageReg(ipr);
+            stagedImgs  = this.lazyStageImages(ipr);    % contracted wrt this.indicesLogical
+            if (length(stagedImgs) < 2)                 % degenerate case; proceed to finalize operations
+                this.rnumber = this.NRevisions + 1;
+                return
+            end
+            blurredImgs = this.lazyBlurImages(ipr);     % "
+            maskedImgs  = this.lazyMasksForImages(ipr); % "
+            assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
+            this = this.imageReg(stagedImgs, blurredImgs, maskedImgs);
             [ipr,~,this] = this.resolveAndPaste(ipr); 
             this.teardownRevision(ipr);
             this.rnumber = this.rnumber + 1;
         end  
-        function this =         imageReg(this, ipr)
-            stagedImgs  = this.lazyStageImages(ipr);    % contracted wrt this.indicesLogical
-            blurredImgs = this.lazyBlurImages(ipr);     % "
-            maskedImgs  = this.lazyMasksForImages(ipr); % "
-            assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
+        function this =         imageReg(this, stagedImgs, blurredImgs, maskedImgs)
             len = sum(this.indicesLogical);
             t4fails = zeros(len, len);
             for m = 1:len

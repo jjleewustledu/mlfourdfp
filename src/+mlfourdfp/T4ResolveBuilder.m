@@ -85,16 +85,20 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.resolveLog = loggerFilename( ...
                 ipr.dest, 'func', 'T4ResolveBuilder_resolveAndPaste', 'path', ipr.logPath);
             
-            this = this.imageReg(ipr);
-            [ipr,~,this] = this.resolveAndPaste(ipr); 
-            this.teardownRevision(ipr);
-            this.rnumber = this.rnumber + 1;
-        end
-        function this =         imageReg(this, ipr)
             stagedImgs  = this.lazyStageImages(ipr);                 % contracted wrt this.indicesLogical
+            if (length(stagedImgs) < 2)                              % degenerate case; proceed to finalize operations
+                this.rnumber = this.NRevisions + 1;
+                return
+            end
             blurredImgs = this.lazyBlurImages(ipr);                  % "
             maskedImgs  = this.lazyMasksForImages(ipr, blurredImgs); % "
             assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
+            this = this.imageReg(ipr);
+            [ipr,~,this] = this.resolveAndPaste(stagedImgs, blurredImgs, maskedImgs); 
+            this.teardownRevision(ipr);
+            this.rnumber = this.rnumber + 1;
+        end
+        function this =         imageReg(this, stagedImgs, blurredImgs, maskedImgs)
             len = sum(this.indicesLogical);
             t4fails = zeros(len, len);
             for m = 1:len
@@ -134,7 +138,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.t4ResolveError_.logger.add( ...
                 sprintf('T4ResolveBuilder.imageReg.indicesLogical->\n%s', mat2str(this.indicesLogical)));  
             
-            [this.t4ResolveError_,this.t4_resolve_err] = this.t4ResolveError_.estimateErr(stagedImgs, this.indicesLogical);
+            [this.t4ResolveError_,this.t4_resolve_err] = ...
+                this.t4ResolveError_.estimateErr(stagedImgs, this.indicesLogical, 'rnumber', this.rnumber);
             
             this.deleteTrash;
         end
