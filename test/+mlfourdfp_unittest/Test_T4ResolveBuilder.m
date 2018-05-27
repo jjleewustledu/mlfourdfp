@@ -14,16 +14,17 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
  	
 
 	properties
-        fvisitor
-        hyglyNN = 'HYGLY09'
+        fourdfpv
+        sessf = 'HYGLY09'
         ipr
         pwd0
  		studyd
-        resolveTag = 'Test_T4ResolveBuilder'
         sessd
  		testObj
+        tracer = 'FDG'
         
         view = false
+        viewer
         quick = false
     end
     
@@ -47,11 +48,14 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             this.verifyTrue(this.testObj.finished.isfinished);
             delete(touchfile); 
         end
+        function test_reconstituteFramesAC2(this)
+            mlbash('freeview E1/fdgv1e1r2_op_fdgv1e1to4r1_frame4.4dfp.img E2/fdgv1e2r2_op_fdgv1e1to4r1_frame4.4dfp.img E3/fdgv1e3r2_op_fdgv1e1to4r1_frame4.4dfp.img E4/fdgv1e4r1.4dfp.img E1to4/fdgv1e1to4r2_op_fdgv1e1to4r1_frame4_sumt.4dfp.img');
+        end
         function test_resolve(this)
             tic
             this.testObj.NRevisions = 2;
             this.testObj = this.testObj.resolve('dest', 'testv1r1', 'source', 'testNativeCropped');
-            [e,c] = this.fvisitor.etaAndCurves('testv1r2_frame3_Test_T4ResolveBuilder', 'testv1r2_frame5_Test_T4ResolveBuilder');
+            [e,c] = this.fourdfpv.etaAndCurves('testv1r2_frame3_Test_T4ResolveBuilder', 'testv1r2_frame5_Test_T4ResolveBuilder');
             this.verifyEqual(e, 0.1631, 'RelTol', 0.05);
             %this.verifyEqual(c, [130 133 21 89 161 66], 'RelTol', 0.1);
             this.verifyEqual(this.testObj.product.niftid.entropy, 3.4182, 'RelTol', 0.05);
@@ -80,7 +84,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             in3 = 'testv1r1_frame3';
             in5 = 'testv1r1_frame5';
             out = sprintf('%s_on_%s', in5, in3);
-            this.fvisitor.t4_mul([in3 '_to_' in5 '_t4'], [ in5 '_to_' in3 '_t4']);
+            this.fourdfpv.t4_mul([in3 '_to_' in5 '_t4'], [ in5 '_to_' in3 '_t4']);
             movefile([in3 '_to_' in3 '_t4'], [in3 '_to_' in3 '_t4.txt']);
             t4 = readtable([in3 '_to_' in3 '_t4'], ...
                 'ReadVariableNames', 0, 'Delimiter', ' ', 'MultipleDelimsAsOne', 1, 'HeaderLines', 4, 'Format', '%f %f %f %f');
@@ -89,7 +93,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             this.verifyEqual(t4{1,3}, 0, 'AbsTol', 9e-3)
             this.verifyEqual(t4{1,4}, 0, 'AbsTol', 0.6)
             
-            this.fvisitor.t4img_4dfp(this.fvisitor.filenameT4(in5, in3), in5, 'out', out, 'options', ['-O' in3]);
+            this.fourdfpv.t4img_4dfp(this.fourdfpv.filenameT4(in5, in3), in5, 'out', out, 'options', ['-O' in3]);
             if (this.view)
                 mlbash(sprintf('fslview %s.4dfp.img %s.4dfp.img', in3, out));
             end
@@ -121,7 +125,18 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
         end
         function test_resolveTag(this)
         end
-        function test_product(this)
+        function test_productOnFilesystem(this)
+            pwd1 = pushd(fullfile(this.sessd.tracerLocation));
+            
+            fp = 'fdgv1r2_op_fdgv1e1to4r1_frame4';
+            this.fourdfpv.imgblur_4dfp(fp, 11); % overwrite previous testing
+            fdg = mlfourd.NumericalNIfTId.load([fp '.4dfp.ifh']);
+            fdg = fdg.timeSummed;
+            fdg.filesuffix = '.4dfp.ifh';
+            fdg.save; % overwrite previous testing
+            this.viewer.view({[fp '_b110.4dfp.ifh'] fdg.filename});
+            
+            popd(pwd1);
         end
         
         %% UTILITY
@@ -191,7 +206,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             end
             fprintf('test_lazyMaskForImages:  ');
             toc
-        end
+        end        
         function test_frames(this)
             this.verifyEqual(sum(this.testObj.indicesLogical), 2);
         end
@@ -200,16 +215,17 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
  	methods (TestClassSetup)
 		function setupT4ResolveBuilder(this)
             import mlraichle.*;
-            this.studyd = SynthStudyData;
+            this.studyd = StudyData;
             this.sessd = SynthSessionData( ...
                 'studyData', this.studyd, ...
-                'sessionPath', fullfile(this.studyd.subjectsDir, this.hyglyNN, ''), ...
-                'tracer', 'TEST');    
-            this.pwd0 = pushd(this.sessd.tracerLocation);        
+                'sessionFolder', this.sessf, ...
+                'tracer', this.tracer);    
+            
+            this.pwd0 = pushd(this.sessd.tracerLocation);
+            
             this.testObj_ = mlfourdfp.T4ResolveBuilder( ... 
                 'sessionData', this.sessd, ...  
                 'NRevisions', 1, ...
-                'resolveTag', this.resolveTag, ...   
                 'indicesLogical', this.indicesLogical, ... 
                 'indexOfReference', 3);
             this.ipr = struct( ...
@@ -221,8 +237,9 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
                 'keepForensics', true);
             this.ipr.sourceBlur = this.blurArray;
             this.ipr.destBlur = this.blurArray;
-            this.fvisitor = mlfourdfp.FourdfpVisitor;
-            this.ensureImages;
+            this.ensureTestImages;
+            this.fourdfpv = mlfourdfp.FourdfpVisitor;
+            this.viewer = mlfouredfp.Viewer;
             setenv('DEBUG', ''); % cf. dbbash
  			this.addTeardown(@this.teardownClass);
  		end
@@ -247,12 +264,12 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             b(3) = 5.5;
             b(5) = 5.5;
         end
-        function ensureImages(this)
-            if (~this.fvisitor.lexist_4dfp('testNativeCropped'))
-                this.fvisitor.copy_4dfp('TEST_V1-LM-00-OP', 'testNativeCropped');
+        function ensureTestImages(this)
+            if (~this.fourdfpv.lexist_4dfp('testNativeCropped'))
+                this.fourdfpv.copy_4dfp('TEST_V1-LM-00-OP', 'testNativeCropped');
             end
-            if (~this.fvisitor.lexist_4dfp('testv1r1'))
-                this.fvisitor.copy_4dfp('testNativeCropped', 'testv1r1');
+            if (~this.fourdfpv.lexist_4dfp('testv1r1'))
+                this.fourdfpv.copy_4dfp('testNativeCropped', 'testv1r1');
             end
         end
         function f = indicesLogical(~)
@@ -275,7 +292,8 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             end
             delete('*.mat0');
             delete('*.sub');
-            cd(this.pwd0);
+            
+            popd(this.pwd0);
  		end
 	end
 
