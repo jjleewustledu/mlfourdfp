@@ -101,7 +101,8 @@ classdef T4ResolveError < mlpipeline.AbstractSessionBuilder
             this.logger.save;
         end
         function imgs  = ensureRNumberOfImgs(this, imgs)
-            %% imgs should end with r[0-9] to be compliant with mlfourdfp.AbstractT4ResolveBuilder,
+            %% imgs should end with r[0-9] to be compliant with mlfourdfp.CompositeT4ResolveBuilder,
+            %  but T4ResolveBuilder has tags _framenn and no r[0-9] should follow these tags.  
             %  mlraichle.SubjectImages and other contexts.  
             %  @param imgs is char or cell.
             %  @return imgs is char or cell.
