@@ -745,13 +745,10 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             this.maskForImages_ = ip.Results.maskForImages;
             this.NRevisions     = ip.Results.NRevisions;
             this.resolveTag     = ip.Results.resolveTag;
-            this.theImages      = this.ensureSafeFileprefix(ip.Results.theImages);
+            this.theImages      = this.ensureSafeFileprefix(ip.Results.theImages);            
             
-            %this.logger_.filepath = fullfile(this.sessionData.tracerLocation, 'Log', '');
-            %ensuredir(this.logger_.filepath);
-            
-            this.t4ResolveError_ = T4ResolveError( ...
-                'sessionData', this.sessionData, 'logPath', this.getLogPath);
+            this = this.prepareT4ResolveError; 
+            this = this.prepareCacheT4s;
         end     
  	end 
 
@@ -854,6 +851,14 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
                 pos = pos(end);
                 fp(pos:pos+1) = 'r0';
             end
+        end
+        function this = prepareT4ResolveError(this)
+            this.t4ResolveError_ = mlfourdfp.T4ResolveError( ...
+                'sessionData', this.sessionData, 'theImages', this.theImages, 'logPath', this.getLogPath);
+        end
+        function this = prepareCacheT4s(this)
+            this.t4s_ = cell(1, length(this.NRevisions));
+            this.t4s_ = cellfun(@(x) {this.buildVisitor_.transverse_t4}, this.t4s_, 'UniformOutput', false);
         end
         function this = pushTrash(this, t)
             this.trash_ = [this.trash_ t];
