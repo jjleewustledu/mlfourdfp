@@ -1047,7 +1047,7 @@ classdef FourdfpVisitor
                     [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh -N', fp, fp));
                 end
                 deleteExisting([fp '.4dfp.img_to_atlas_t4']);
-                gzipExisting(  [fp '.nii']);
+                %gzipExisting(  [fp '.nii']);
                 deleteExisting([fp '.nii']);
                 return
             end
@@ -1249,6 +1249,13 @@ classdef FourdfpVisitor
                 myfileprefix(ip.Results.in), ...
                 myfileprefix(ip.Results.out)));
             fqfp = myfileprefix(ip.Results.out);
+        end
+        function      [s,r] = t4_ident(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 't4file', @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = this.t4_ident__(ip.Results.t4file);
         end
         function   [t4,s,r] = t4_inv(this, varargin)
             ip = inputParser;
@@ -2311,6 +2318,19 @@ classdef FourdfpVisitor
 
             assert(ischar(args));
             [s,r] = dbbash(sprintf('sif_4dfp1 %s', args));
+        end
+        function [s,r] = t4_ident__(~, args)
+            %% T4_IDENT__
+            % $Id: t4_ident.c,v 1.1 2007/05/01 02:00:12 avi Exp $ 
+            % Usage:  t4_ident <t4file> 
+            % e.g.,   t4_ident vm11b_mpr1_to_711-2B_t4
+            
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('t4_ident %s', args));
+            if (0 ~= s)
+                error('mlfourdfp:abnormalExit', ...
+                    'FourdfpVisitor.t4_ident__:\n    s->%i\n    r->%s', s, r);
+            end
         end
         function [s,r] = t4_inv__(~, args)
             %% T4_INV__
