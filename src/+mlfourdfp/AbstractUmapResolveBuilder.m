@@ -60,13 +60,13 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             if (this.buildVisitor.lexist_4dfp(dest))
                 return
             end
-            if (~this.buildVisitor.lexist_4dfp(lm))
+            %if (~this.buildVisitor.lexist_4dfp(lm))
                 fprintf('mlfourdfp.AbstractUmapResolveBuilder.buildTracerNAC.buildVisitor.sif_4dfp is building %s\n', lm);
                 pwd0 = pwd;
                 cd(fileparts(lm));
                 this.buildVisitor.sif_4dfp(lm);
                 cd(pwd0);
-            end
+            %end
             if (~isdir(destLoc))
                 mkdir(destLoc);
             end

@@ -223,14 +223,14 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             trLM = this.sessionData.tracerListmodeSif('typ', 'fp');
             trRev = this.sessionData.tracerRevision('typ', 'fp');
             bv = this.buildVisitor;
-            if (~lexist(fullfile(pthAC, [trRev '.4dfp.ifh']), 'file'))
+            %if (~lexist(fullfile(pthAC, [trRev '.4dfp.ifh']), 'file'))
                 pwd0 = pushd(this.sessionData.tracerListmodeLocation); 
                 bv.sif_4dfp(trLM);
                 bv.cropfrac_4dfp(0.5, trLM, trRev);
                 bv.move_4dfp(trRev, fullfile(pthAC, trRev));
                 delete('*.4dfp.*')
                 popd(pwd0);
-            end
+            %end
 
             pwd1 = pushd(pthAC);
             Ncache = length(this.sessionDataCache);
