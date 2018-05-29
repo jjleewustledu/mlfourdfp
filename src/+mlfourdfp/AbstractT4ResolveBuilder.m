@@ -21,7 +21,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
     properties (Dependent)
         blurArg
         epoch
-        epochLabel      
+        epochTag      
         gaussArg
         imageComposite
         indicesLogical
@@ -101,8 +101,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             assert(isnumeric(s));
             this.sessionData_.epoch = s;
         end
-        function g    = get.epochLabel(this)
-            g = this.sessionData_.epochLabel;
+        function g    = get.epochTag(this)
+            g = this.sessionData_.epochTag;
         end
         function g    = get.gaussArg(this)
             %g = 1.1;
