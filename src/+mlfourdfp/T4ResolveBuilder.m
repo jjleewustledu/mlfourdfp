@@ -93,8 +93,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             blurredImgs = this.lazyBlurImages(ipr);                  % "
             maskedImgs  = this.lazyMasksForImages(ipr, blurredImgs); % "
             assertSizeEqual(stagedImgs, blurredImgs, maskedImgs);
-            this = this.imageReg(ipr);
-            [ipr,~,this] = this.resolveAndPaste(stagedImgs, blurredImgs, maskedImgs); 
+            this = this.imageReg(stagedImgs, blurredImgs, maskedImgs);
+            [ipr,~,this] = this.resolveAndPaste(ipr); 
             this.teardownRevision(ipr);
             this.rnumber = this.rnumber + 1;
         end
@@ -310,7 +310,6 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         'source', this.ensureSumtSaved(sd.tracerRevision), ...
                         'intermediaryForMask', sd.T1001, ...
                         'sourceOfMask', fullfile(sd.vLocation, 'brainmask.4dfp.ifh'));
-                    mskt.save;
                     fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
                     return
                 catch ME
