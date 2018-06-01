@@ -12,16 +12,22 @@ classdef Viewer
 
     methods (Static)
         function [s,r] = view(varargin)
+            % VIEW has this.app := 'freeview'.
+            
             this = mlfourdfp.Viewer;
+            [s,r] = this.aview(varargin{:});
+        end
+    end
+    
+	methods 
+        
+        function [s,r] = aview(this, varargin)
             targs = cell(size(varargin));
             for v = 1:length(varargin)
                 targs{v} = this.interpretTarget(varargin{v});
             end
             [s,r] = mlbash(sprintf('%s %s', this.app, cell2str(targs, 'AsRow', true)));
         end
-    end
-    
-	methods 
 		  
  		function this = Viewer(varargin)
             ip = inputParser;
@@ -30,6 +36,8 @@ classdef Viewer
             this.app = ip.Results.app;
  		end
     end 
+    
+    %% PRIVATE
     
     methods (Access = private)
         function interp = interpretTarget(this, targ)
