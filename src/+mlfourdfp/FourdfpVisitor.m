@@ -34,13 +34,13 @@ classdef FourdfpVisitor
             ip = inputParser;
             addRequired( ip, 'fqfp', @FourdfpVisitor.lexist_4dfp);
             addOptional( ip, 'n', 1, @isnumeric);
-            addParameter(ip, 'suffix', '_backup', @ischar);
+            addParameter(ip, 'tag', '_backup', @ischar);
             parse(ip, varargin{:});
             
-            dt = mlsystem.DirTool([ip.Results.fqfp ip.Results.suffix '*.4dfp.img']);
+            dt = mlsystem.DirTool([ip.Results.fqfp ip.Results.tag '*.4dfp.img']);
             if (length(dt.fqfns) < ip.Results.n)
                 this = FourdfpVisitor;
-                fqfp = sprintf('%s%sD%s', ip.Results.fqfp, ip.Results.suffix, datestr(now, 30));
+                fqfp = sprintf('%s%sD%s', ip.Results.fqfp, ip.Results.tag, datestr(now, 30));
                 this.copy_4dfp(ip.Results.fqfp, fqfp);
                 return
             end
@@ -1019,7 +1019,7 @@ classdef FourdfpVisitor
             this.msktgen_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
         end   
         function      [s,r] = nifti_4dfp_4(this, varargin)
-            %  @param named fileprefix
+            %  @param fileprefix is char.
             %  @param named minusN is logical; true =: sends -N flag to nifti_4dfp to remove center parameters from
             %  *.4dfp.ifh.
             

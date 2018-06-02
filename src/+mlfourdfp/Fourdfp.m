@@ -13,16 +13,6 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
         FOURDFP_EXT = '.4dfp.ifh';
     end
     
-	properties (Dependent)
-        niftid 		
- 	end
-
-    methods %% Get
-        function g = get.niftid(this)
-            g = this.component;
-        end
-    end
-    
     methods (Static)
         function this  = load(varargin)
             %% LOAD
@@ -38,8 +28,8 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
             obj = mlfourdfp.Fourdfp(this.component.clone);
         end
         function       save(this)
-            this.component.filesuffix = this.FOURDFP_EXT;
             this.component.save;
+            this.fvisitor_.nifti_4dfp_4(this.fqfp)
         end
         function obj = saveas(this, fqfn)
             obj = this.clone;
@@ -67,8 +57,8 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
                 return
             end
             this = this.append_descrip('decorated by mlfourdfp.Fourdfp');
-            this.fvisitor_ = mlfourdfp.FourdfpVisitor;
             this.filesuffix = this.FOURDFP_EXT;
+            this.fvisitor_ = mlfourdfp.FourdfpVisitor;
  		end
     end 
     
