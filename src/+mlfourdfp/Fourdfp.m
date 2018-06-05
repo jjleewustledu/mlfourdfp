@@ -29,7 +29,6 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
         end
         function       save(this)
             this.component.save;
-            this.fvisitor_.nifti_4dfp_4(this.fqfp)
         end
         function obj = saveas(this, fqfn)
             obj = this.clone;
@@ -57,7 +56,7 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
                 return
             end
             this = this.append_descrip('decorated by mlfourdfp.Fourdfp');
-            this.filesuffix = this.FOURDFP_EXT;
+            this.component.filesuffix = this.FOURDFP_EXT;
             this.fvisitor_ = mlfourdfp.FourdfpVisitor;
  		end
     end 

@@ -8,41 +8,26 @@ classdef FourdfpdState < mlfourdfp.ImagingState
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.0.0.341360 (R2016a) for MACI64.
  	
-	properties (Dependent)
-        cellComposite
-        mgh
-        niftic
-        niftid
-        numericalNiftid
- 	end 
-
-	methods %% GET
-        function g = get.cellComposite(this)
-            this.contexth_.changeState( ...
-                mlfourd.CellCompositeState(this.concreteObj_, this.contexth_));
-            g = this.contexth_.cellComposite;
-        end
-        function g = get.mgh(this)
+	methods 
+        
+        %% state changes
+        
+        function g = mgh(this)
             this.contexth_.changeState( ...
                 mlfourd.MGHState(this.concreteObj_, this.contexth_));
             g = this.contexth_.mgh;
         end
-        function g = get.niftic(this)
-            this.contexth_.changeState( ...
-                mlfourd.NIfTIcState(this.concreteObj_, this.contexth_));
-            g = this.contexth_.niftic;
-        end   
-        function g = get.niftid(this)
+        function g = niftid(this)
             g = this.concreteObj_;
         end   
-        function g = get.numericalNiftid(this)
+        function g = numericalNiftid(this)
             this.contexth_.changeState( ...
                 mlfourd.NumericalNIfTIdState(this.concreteObj_, this.contexth_));
             g = this.contexth_.numericalNiftid;
         end
-    end
-
-    methods
+        
+        %%
+        
         function        addLog(this, varargin)
             this.concreteObj_.addLog(varargin{:});
         end

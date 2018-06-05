@@ -86,7 +86,13 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             end
         end
         function anImg = representativeImgs(this)
-            assert(~iscell(this.theImages_))
+            if (iscell(this.theImages_))
+                anImg = cell2str(this.theImages_, 'AsRow', true);
+                if (length(anImg) > 79)
+                    anImg = [anImg(1:79) '_'];
+                end
+                return
+            end
             anImg = this.theImages_;
         end
         function this  = updateLogging(this)
