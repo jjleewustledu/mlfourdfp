@@ -1382,8 +1382,8 @@ classdef FourdfpVisitor
             [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, ip.Results.mode, log);
             if (ip.Results.t4img_4dfp)
                 [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
-            else
-                fqfp = ''; 
+            else                
+                [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'out', ip.Results.out, 'options', ['-O' ip.Results.dest]);
             end
         end
         function [t4,fqfp,s,r] = ...
@@ -1445,7 +1445,7 @@ classdef FourdfpVisitor
             if (ip.Results.t4img_4dfp)
                 [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
             else
-                fqfp = ''; 
+                [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'out', ip.Results.out, 'options', ['-O' ip.Results.dest]);
             end
         end
         function [t4,fqfp,s,r] = ...
@@ -1528,7 +1528,7 @@ classdef FourdfpVisitor
                 if (isempty(ip.Results.out))
                     [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
                 else
-                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', 'out', ip.Results.out, ['-O' ip.Results.dest]);
+                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'out', ip.Results.out, 'options', ['-O' ip.Results.dest]);
                 end
             else
                 fqfp = ''; 
@@ -1615,7 +1615,7 @@ classdef FourdfpVisitor
                 if (isempty(ip.Results.out))
                     [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
                 else
-                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', 'out', ip.Results.out, ['-O' ip.Results.dest]);
+                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'out', ip.Results.out, 'options', ['-O' ip.Results.dest]);
                 end
             else
                 fqfp = ''; 
@@ -1704,7 +1704,7 @@ classdef FourdfpVisitor
                 if (isempty(ip.Results.out))
                     [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
                 else
-                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', 'out', ip.Results.out, ['-O' ip.Results.dest]);
+                    [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'out', ip.Results.out, 'options', ['-O' ip.Results.dest]);
                 end
             else
                 fqfp = ''; 
