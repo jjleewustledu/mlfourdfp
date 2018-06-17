@@ -87,7 +87,7 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
         end
         function anImg = representativeImgs(this)
             if (iscell(this.theImages_))
-                anImg = cell2str(this.theImages_, 'AsRow', true);
+                anImg = strrep(cell2str(mybasename(this.theImages_), 'AsRow', true), ' ', '__');
                 if (length(anImg) > 79)
                     anImg = [anImg(1:79) '_'];
                 end
