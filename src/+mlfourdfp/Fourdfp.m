@@ -35,14 +35,14 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
             [pth,fp,x] = myfileparts(fqfn);
             if (isempty(x))
                 fqfp = fullfile(pth, fp);
-                obj.component = this.component.saveas([fqfp this.FILETYPE_EXT]);            
+                obj.component_ = this.component.saveas([fqfp this.FILETYPE_EXT]);            
                 obj.fvisitor_.nifti_4dfp_4(fqfp);
                 obj.filesuffix = this.FOURDFP_EXT;
                 deleteExisting([fqfp '.nii']);
                 deleteExisting([fqfp '.nii.gz']);
                 return
             end
-            obj.component = this.component.saveas(fqfn);
+            obj.component_ = this.component.saveas(fqfn);
         end
 		  
  		function this = Fourdfp(cmp, varargin)

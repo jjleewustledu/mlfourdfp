@@ -749,6 +749,14 @@ classdef FourdfpVisitor
             
             [~, f1] = myfileparts(fn1);
             [p2,f2] = myfileparts(fn2);
+            if (strcmp(f1, 'T_t4'))
+                fn = fullfile(p2, f2);
+                return
+            end
+            if (strcmp(f2, 'T_t4'))
+                fn = fullfile(p2, f1);
+                return
+            end
             [first,last] = this.parseFirstToLastBasenames(f1, f2);
             fn = fullfile(p2, sprintf('%s_to_%s_t4', first, last));
         end
