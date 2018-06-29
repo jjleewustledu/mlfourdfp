@@ -7,13 +7,6 @@ classdef IFourdfp
  	%  last modified $LastChangedDate$
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.0.0.341360 (R2016a) for MACI64.
- 	
-    
-    properties (Constant) 
-        FILETYPE     = '4DFP'
-        FILETYPE_EXT = '.4dfp.img'
-        SUPPORTED_EXT = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp'}
-    end
     
 	properties (Abstract)
 %         img

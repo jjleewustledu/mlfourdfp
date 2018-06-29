@@ -9,8 +9,12 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64.
  	
+    
     properties (Constant) 
-        FOURDFP_EXT = '.4dfp.ifh';
+        FILETYPE      = '4DFP'
+        FILETYPE_EXT  = '.4dfp.ifh'
+        FOURDFP_EXT   = '.4dfp.ifh';
+        SUPPORTED_EXT = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp'};
     end
     
     methods (Static)
@@ -35,7 +39,7 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
             [pth,fp,x] = myfileparts(fqfn);
             if (isempty(x))
                 fqfp = fullfile(pth, fp);
-                obj.component_ = this.component.saveas([fqfp this.FILETYPE_EXT]);            
+                obj.component_ = this.component.saveas([fqfp this.FOURDFP_EXT]);            
                 obj.fvisitor_.nifti_4dfp_4(fqfp);
                 obj.filesuffix = this.FOURDFP_EXT;
                 deleteExisting([fqfp '.nii']);
