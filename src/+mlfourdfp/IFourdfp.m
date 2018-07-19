@@ -35,7 +35,7 @@ classdef IFourdfp
         %[tf,msg] = isequaln(this, n)
         %this = makeSimilar(this)
         
-        %% for AbstractNIfTId and other abstract imaging classes
+        %% for AbstractNIfTIComponent and other abstract imaging classes
         
 %         char(this)
 %         append_descrip(this, s)

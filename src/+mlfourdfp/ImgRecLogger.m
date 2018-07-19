@@ -10,8 +10,7 @@ classdef ImgRecLogger < mlpipeline.AbstractLogger
     
 
     properties (Constant)
-        FILETYPE     = 'mlfourdfp.ImgRecLogger'
-        FILETYPE_EXT = '.4dfp.img.rec'
+        REC_EXT = '.4dfp.img.rec'
     end
     
     properties 

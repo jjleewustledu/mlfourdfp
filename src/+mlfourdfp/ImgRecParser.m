@@ -10,11 +10,15 @@ classdef ImgRecParser < mlio.AbstractParser
  	%  developed on Matlab 8.5.0.197613 (R2015a) 
  	%  $Id$   
     
+    properties (Constant)
+        REC_EXT = {'.rec' };
+    end
+    
 	methods (Static)
         function this = load(fn)
             assert(lexist(fn, 'file'));
-            [pth, fp, fext] = fileparts(fn); 
-            if (lstrfind(fext, mlfourdfp.ImgRecParser.FILETYPE_EXT) || ...
+            [pth, fp, fext] = myfileparts(fn); 
+            if (lstrfind(fext, mlfourdfp.ImgRecParser.REC_EXT) || ...
                 isempty(fext))
                 this = mlfourdfp.ImgRecParser.loadText(fn); 
                 this.filepath_   = pth;
@@ -22,7 +26,8 @@ classdef ImgRecParser < mlio.AbstractParser
                 this.filesuffix_ = fext;
                 return 
             end
-            error('mlio:unsupportedParam', 'ImgRecParser.load does not support file-extension .%s', fext);
+            error('mlio:unsupportedParam', ...
+                'ImgRecParser.load does not support file-extension .%s; consider using loadx', fext);
         end
         function this = loadx(fn, ext)
             if (~lstrfind(fn, ext))
