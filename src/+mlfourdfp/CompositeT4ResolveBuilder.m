@@ -322,34 +322,6 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function fp      = fileprefixOfReference(this, ipr)
             fp = ipr.dest{this.indexOfReference};
         end
-%         function fp      = fileprefixRevision(this, fp, rnumber)
-%             %% FILEPREFIXREVISION strips this.resolveTag and r[0-9] from fp; replaces r[0-9].
-%             %  @param fp, e.g., fdgv1r1_resolved
-%             %  @param rnumber is numeric
-%             %  @returns fp, e.g., fdgv1r2
-%             
-%             assert(ischar(fp));
-%             assert(isnumeric(rnumber));
-%             
-%             % KLUDGE for CompositeT4ResolveBuilder which needs ['T1001_' this.resolveTag] kept intact.
-%             if (length(fp) > 4 && strcmp(fp(1:5), 'T1001'))
-%                 return
-%             end
-%             
-%             % truncate this.resolveTag
-%             idx = regexp(fp, sprintf('_%s$', this.resolveTag));
-%             if (~isempty(idx))
-%                 fp = fp(1:idx-1);
-%             end
-%             
-%             % update r-number
-%             if (length(fp) > 2)
-%                 if (~isempty(regexp(fp(end-2:end), 'r[0-9]', 'match')))
-%                     fp = fp(1:end-2);
-%                 end
-%             end
-%             fp = sprintf('%sr%i', fp, rnumber);
-%         end  
         function fqfps   = lazyMasksForImages(this, ipr, varargin)
             %  @param ipr.maskForImages is 'none' or the fileprefix/name of an anatomical image which will be 
             %  thresholded to generate a mask; the anatomical image must have transverse orientation.   
@@ -384,8 +356,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fprintf('CT4RB.lazyMaskForImages:  ipr.maskForImages{%i} <- T1001\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));                        
                         ipr.maskForImages{ii} = 'none';
-                        cd(fileparts(ipr.source{ii}));
-                        %rethrow(ME);
+                        this.cd(fileparts(ipr.source{ii}));
+                        rethrow(ME);
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
@@ -399,8 +371,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         ipr.maskForImages{ii} = 'none';
-                        cd(fileparts(ipr.source{ii}));
-                        %rethrow(ME);
+                        this.cd(fileparts(ipr.source{ii}));
+                        rethrow(ME);
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'msktgen_4dfp'))
@@ -414,8 +386,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         ipr.maskForImages{ii} = 'none';
-                        cd(fileparts(ipr.source{ii}));
-                        %rethrow(ME);
+                        this.cd(fileparts(ipr.source{ii}));
+                        rethrow(ME);
                     end
                 end
                 fqfps{ii} = 'none';

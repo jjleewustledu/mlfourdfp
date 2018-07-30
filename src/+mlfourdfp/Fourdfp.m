@@ -8,13 +8,12 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
  	%  last modified $LastChangedDate$
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64.
- 	
-    
+ 	    
     properties (Constant) 
         FILETYPE      = '4DFP'
-        FILETYPE_EXT  = '.4dfp.ifh'
-        FOURDFP_EXT   = '.4dfp.ifh';
-        SUPPORTED_EXT = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp'};
+        FILETYPE_EXT  = '.4dfp.hdr'
+        FOURDFP_EXT   = '.4dfp.hdr';
+        SUPPORTED_EXT = {'.4dfp.hdr' '.4dfp.ifh'};
     end
     
     methods (Static)
@@ -35,13 +34,14 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
             this.component.save;
         end
         function obj = saveas(this, fqfn)
+            import mlfourdfp.*;
             obj = this.clone;
             [pth,fp,x] = myfileparts(fqfn);
             if (isempty(x))
                 fqfp = fullfile(pth, fp);
-                obj.component_ = this.component.saveas([fqfp this.FOURDFP_EXT]);            
+                obj.component_ = this.component.saveas([fqfp FourdfpInfo.FOURDFP_EXT]);            
                 obj.fvisitor_.nifti_4dfp_4(fqfp);
-                obj.filesuffix = this.FOURDFP_EXT;
+                obj.filesuffix = FourdfpInfo.FOURDFP_EXT;
                 deleteExisting([fqfp '.nii']);
                 deleteExisting([fqfp '.nii.gz']);
                 return
@@ -60,7 +60,7 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
                 return
             end
             this = this.append_descrip('decorated by mlfourdfp.Fourdfp');
-            this.component_.filesuffix = this.FOURDFP_EXT;
+            this.component_.filesuffix = FourdfpInfo.FOURDFP_EXT;
             this.fvisitor_ = mlfourdfp.FourdfpVisitor;
  		end
     end 

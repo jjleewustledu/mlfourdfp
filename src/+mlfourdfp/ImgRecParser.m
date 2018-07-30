@@ -11,14 +11,14 @@ classdef ImgRecParser < mlio.AbstractParser
  	%  $Id$   
     
     properties (Constant)
-        REC_EXT = {'.rec' };
+        IMGREC_EXT = {'.4dfp.img.rec' };
     end
     
 	methods (Static)
         function this = load(fn)
             assert(lexist(fn, 'file'));
             [pth, fp, fext] = myfileparts(fn); 
-            if (lstrfind(fext, mlfourdfp.ImgRecParser.REC_EXT) || ...
+            if (lstrfind(fext, mlfourdfp.ImgRecParser.IMGREC_EXT) || ...
                 isempty(fext))
                 this = mlfourdfp.ImgRecParser.loadText(fn); 
                 this.filepath_   = pth;
@@ -46,6 +46,18 @@ classdef ImgRecParser < mlio.AbstractParser
     end
     
 	methods
+        function srow = commonSform(this)
+            [~,line] = this.findFirstCell('common sform[0]:');
+            if (isempty(line))
+                srow = [];
+                return
+            end
+            posColon = strfind(this.cellContents_{line}, ':');
+            content  = this.cellContents_(line:line+2);
+            content  = cellfun(@(x) x(posColon+1:end), content, 'UniformOutput', false);
+            srow     = [str2num(content{1}); str2num(content{2}); str2num(content{3})]; %#ok<ST2NM>
+            srow(1,:) = -srow(1,:);
+        end
         function cntnt = extractLinesByRegexp(this, re)
             idxs = regexp(this.cellContents_, re);
             cntnt = {};

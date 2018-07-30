@@ -11,8 +11,12 @@ classdef IfhParser < mlio.AbstractParser
  	%  $Id$   
     
     properties (Constant)
-        IFH_EXT = {'.ifh' };
+        IFH_EXT = {'.4dfp.ifh' };
         MIN_VERSION = 3.3
+        SUPPORTED_KEYS = { ...
+            'version_of_keys' 'number_format' 'conversion_program' 'name_of_data_file' ...
+            'number_of_bytes_per_pixel' 'imagedata_byte_order' 'orientation' ...
+            'number_of_dimensions' 'matrix_size' 'scaling_factor' 'mmppix' 'center'}
     end
     
 	methods (Static)
@@ -104,6 +108,47 @@ classdef IfhParser < mlio.AbstractParser
         end
         function s = nameOfDataFile(this)
             [~,s] = myfileparts(this.rightSideChar('name of data file'));
+        end
+        function     save(this)
+            fid = fopen(this.fqfilename, 'w'); % overwrite
+            fprintf(fid, 'INTERFILE\t:=\n');
+            keys = this.SUPPORTED_KEYS;
+            str = this.asstruct;
+            for ik = 1:length(keys)
+                if (ischar(str.(keys{ik})))
+                    fprintf(fid, '%s\t:= %s\n', strrep(keys{ik}, '_',' '), str.(keys{ik}));
+                    continue
+                end
+                if (isnumeric(str.(keys{ik})) && length(str.(keys{ik})) == 1)
+                    fprintf(fid, '%s\t:= %g\n', strrep(keys{ik}, '_',' '), str.(keys{ik}));
+                    continue
+                end
+                if (strcmp(keys{ik}, 'scaling_factor'))
+                    this.fprintfMulti_f(fid, [strrep(keys{ik}, '_',' ') ' (mm/pixel)'], str.(keys{ik}));
+                    continue
+                end
+                if (strcmp(keys{ik}, 'mmppix'))
+                    if (~isempty(this.mmppix))
+                        m = str.mmppix;
+                        fprintf(fid, 'mmppix\t:=\t%9.6f %9.6f %9.6f\n', m(1), m(2), m(3));
+                    end
+                    continue
+                end
+                if (strcmp(keys{ik}, 'center')) 
+                    if(~isempty(this.center))
+                        c = str.center;
+                        fprintf(fid, 'center\t:=\t%9.4f %9.4f %9.4f\n', c(1), c(2), c(3));
+                    end
+                    continue
+                end
+                if (isnumeric(str.(keys{ik})) && length(str.(keys{ik})) > 1)
+                    this.fprintfMulti_g(fid, strrep(keys{ik}, '_',' '), str.(keys{ik}));
+                    continue
+                end
+                error('mlfourdfp:guardingIfsFailed', 'IfhParser.save');
+            end
+            fprintf('\n');
+            fclose(fid);
         end
         function n = scalingFactor(this)
             idx = 1;
@@ -210,6 +255,18 @@ classdef IfhParser < mlio.AbstractParser
     %% PROTECTED
     
     methods (Static, Access = 'protected')
+        function        fprintfMulti_f(fid, key, val)
+            assert(isnumeric(val));
+            for iv = 1:length(val)
+                fprintf(fid, '%s [%i]\t:= %8.6f\n', key, iv, val(iv));
+            end
+        end
+        function        fprintfMulti_g(fid, key, val)
+            assert(isnumeric(val));
+            for iv = 1:length(val)
+                fprintf(fid, '%s [%i]\t:= %g\n', key, iv, val(iv));
+            end
+        end
         function this = loadText(fn)
             import mlfourdfp.*;
             this = IfhParser;

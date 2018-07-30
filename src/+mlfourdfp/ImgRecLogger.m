@@ -6,11 +6,12 @@ classdef ImgRecLogger < mlpipeline.AbstractLogger
  	%  by jjlee,
  	%  last modified $LastChangedDate$
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
- 	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64. 	
-    
+ 	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64. 
 
     properties (Constant)
-        REC_EXT = '.4dfp.img.rec'
+        FILETYPE     = 'mlfourdfp.ImgRecLogger'
+        FILETYPE_EXT = '.4dfp.img.rec'
+        IMGREC_EXT   = mlfourdfp.ImgRecParser.IMGREC_EXT
     end
     
     properties 
@@ -26,8 +27,11 @@ classdef ImgRecLogger < mlpipeline.AbstractLogger
                 ipr = mlfourdfp.ImgRecParser.loadx(this.fqfileprefix, this.filesuffix);
                 this.cons(ipr.cellContents);
             end
-        end
+        end        
         
+        function add(this, varargin) 
+            this.cons(sprintf(varargin{:}));
+        end
         function c = clone(this)
             %% CLONE
             %  @return c is a deep copy of a handle class
@@ -78,7 +82,8 @@ classdef ImgRecLogger < mlpipeline.AbstractLogger
             fn = fullfile(this.filepath, ['ImgRecLogger_' datestr(now,30)]);
         end
         function txt  = header(this)
-            txt = sprintf('rec %s.4dfp.img %s %s', this.fqfileprefix, this.creationDate, this.id);
+            txt = sprintf('rec %s.4dfp.img %s %s@%s %s', ...
+                this.fileprefix, this.creationDate, this.id, this.hostname, this.uname);
         end
         function txt  = footer(this)
             txt = sprintf('endrec %s %s', this.creationDate, this.id);

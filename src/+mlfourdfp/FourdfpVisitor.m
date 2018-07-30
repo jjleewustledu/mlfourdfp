@@ -14,6 +14,7 @@ classdef FourdfpVisitor
  		FOURDFP_HOSTS = ...
             {'william' 'acom' 'mahler' 'maulinux1' 'pascal' 'linux5' 'bruckner' 'wagner' 'cluster'}
         UNSAFE_FILEPREFIXES = {'_on_' '+' '.a2009s'} % '_op_' removed 2018feb8
+        SUPPORTED_EXT = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'}
     end
     
     properties 
@@ -47,70 +48,62 @@ classdef FourdfpVisitor
             error('mlfourdfp:backupRejected', 'FourdfpVisitor.backupn.ip.Results.n -> %i', ip.Results.n);
         end
         function         copyfile_4dfp(varargin)
-            xs = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'};
-            if (lstrfind(varargin{1}, xs))
-                warning('mlfourdfp:usageErr', 'FourdfpVisitor.copyfile_4dfp');
-                return
-            end
-            if (nargin > 1 && isdir(varargin{2}))
+            v = varargin;
+            xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
+            v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
+            if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
-                    copyfile([varargin{1} xs{ix}], varargin{2})
+                    copyfile([v{1} xs{ix}], v{2})
                 end
                 return
             end
             for ix = 1:length(xs)
-                fns = cellfun(@(x) [x xs{ix}], varargin, 'UniformOutput', false);
+                fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
                 copyfile(fns{:});
             end
         end
         function         copyfilef_4dfp(varargin)
-            xs = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'};
-            if (lstrfind(varargin{1}, xs))
-                warning('mlfourdfp:usageErr', 'FourdfpVisitor.copyfile_4dfp');
-                return
-            end
-            if (nargin > 1 && isdir(varargin{2}))
+            v = varargin;
+            xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
+            v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
+            if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
-                    copyfile([varargin{1} xs{ix}], varargin{2}, 'f')
+                    copyfile([v{1} xs{ix}], v{2}, 'f')
                 end
                 return
             end
             for ix = 1:length(xs)
-                fns = cellfun(@(x) [x xs{ix}], varargin, 'UniformOutput', false);
+                fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
                 copyfile(fns{:}, 'f');
             end
         end
         function         movefile_4dfp(varargin)
-            xs = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'};
-            if (lstrfind(varargin{1}, xs))
-                warning('mlfourdfp:usageErr', 'FourdfpVisitor.movefile_4dfp');
-                return
-            end
-            if (nargin > 1 && isdir(varargin{2}))
+            v = varargin;
+            xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
+            v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
+            if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
-                    movefile([varargin{1} xs{ix}], varargin{2})
+                    movefile([v{1} xs{ix}], v{2})
                 end
                 return
             end
             for ix = 1:length(xs)
-                fns = cellfun(@(x) [x xs{ix}], varargin, 'UniformOutput', false);
+                fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
                 movefile(fns{:});
             end
         end
         function         movefilef_4dfp(varargin)
-            xs = {'.4dfp.ifh' '.4dfp.hdr' '.4dfp.img' '.4dfp.img.rec'};
-            if (lstrfind(varargin{1}, xs))
-                warning('mlfourdfp:usageErr', 'FourdfpVisitor.movefile_4dfp');
-                return
-            end
-            if (nargin > 1 && isdir(varargin{2}))
+            v = varargin;
+            xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
+            v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
+            if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
-                    movefile([varargin{1} xs{ix}], varargin{2}, 'f')
+                    movefile([v{1} xs{ix}], v{2}, 'f')
                 end
                 return
             end
             for ix = 1:length(xs)
-                fns = cellfun(@(x) [x xs{ix}], varargin, 'UniformOutput', false);
+                fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
                 movefile(fns{:}, 'f');
             end
         end
@@ -1027,41 +1020,55 @@ classdef FourdfpVisitor
             this.msktgen_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
         end   
         function      [s,r] = nifti_4dfp_4(this, varargin)
+            %% NIFTI_4DFP_4 converts .nii[.gz] to .4dfp.*, deleting the .nii[.gz] afterwards.
             %  @param fileprefix is char.
+            %  @param fileprefixOut is char.
             %  @param named minusN is logical; true =: sends -N flag to nifti_4dfp to remove center parameters from
             %  *.4dfp.ifh.
             
             ip = inputParser;
             addRequired(ip, 'fileprefix', @ischar);
+            addOptional(ip, 'fileprefixOut', varargin{1}, @ischar);
             addParameter(ip, 'minusN', true);
             parse(ip, varargin{:}); 
             [pth,fp] = myfileparts(ip.Results.fileprefix);
             fp = fullfile(pth, fp);
+            [ptho,fpo] = myfileparts(ip.Results.fileprefixOut);
+            fpo = fullfile(ptho, fpo);
             
-            if (lexist([fp '.nii.gz'], 'file') && ...
-                lexist([fp '.nii'],    'file'))
-                delete([fp '.nii']);
-            end
+            % manage .nii.gz
             if (lexist([fp '.nii.gz'], 'file') && ...
                ~lexist([fp '.nii'],    'file'))
                 gunzip([fp '.nii.gz']);
             end
+            if (lexist([fp '.nii.gz'], 'file') && ...
+                lexist([fp '.nii'],    'file'))
+                delete([fp '.nii.gz']);
+            end
+            
             if (lexist([fp '.nii']))
                 if (~ip.Results.minusN && ...
                     (lstrfind(fp, '111') || lstrfind(fp, '222') || lstrfind(fp, '333') || ...
-                     lstrfind(fp, 'TRIO_Y_NDC') || lstrfind(fp, '711-2') || lstrfind(fp, '_atlas')))
-                    [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh', fp, fp));
-                else
-                    [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh -N', fp, fp));
+                     lstrfind(fp, 'TRIO_Y_NDC') || ...
+                     lstrfind(fp, '711-2') || ...
+                     lstrfind(fp, '_atlas')))
+                    [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh', fp, fpo));
+                    deleteExisting([fp '.nii']);
+                    return
                 end
-                deleteExisting([fp '.4dfp.img_to_atlas_t4']);
-                %gzipExisting(  [fp '.nii']);
+                [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh -N', fp, fpo));
                 deleteExisting([fp '.nii']);
                 return
+                
+                %deleteExisting([fp '.4dfp.img_to_atlas_t4']); % incipient BUG
             end
             error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s.nii not found', fp);
         end
         function      [s,r] = nifti_4dfp_n(this, varargin)
+            %% NIFTI_4DFP_4 converts .4dfp.* to .nii[.gz], keeping all .4dfp.* afterwards.
+            %  @param fileprefix is char.
+            %  @param fileprefixOut is char.
+            
             ip = inputParser;
             addRequired(ip, 'fileprefix',                 @ischar);
             addOptional(ip, 'fileprefixOut', varargin{1}, @ischar);
@@ -1075,7 +1082,7 @@ classdef FourdfpVisitor
                 [s,r] = this.nifti_4dfp__(sprintf(' -n %s.4dfp.ifh %s.nii', fp, fpo));
                 return
             end
-            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_ng:  %s.4dfp.* not found', fp);
+            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_n:  %s.4dfp.* not found', fp);
         end
         function      [s,r] = nifti_4dfp_ng(this, varargin)
             ip = inputParser;
