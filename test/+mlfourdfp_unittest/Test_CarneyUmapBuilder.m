@@ -29,14 +29,14 @@ classdef Test_CarneyUmapBuilder < matlab.unittest.TestCase
  		end
 		function test_buildUmap(this)
             [~,umap] = this.testObj_.buildUmap;
-            umap = mlfourd.NIfTId.load([umap '.4dfp.ifh']);
+            umap = mlfourd.NIfTId.load([umap '.4dfp.hdr']);
             umap.fslview;
             this.verifyTrue(this.testObj_.isfinished);
         end
         function test_testGroundTruth(this)
             pwd1 = pushd(fileparts(this.groundTruth));
             umap = this.testObj.testGroundTruth(this.groundTruth);
-            umap = mlfourdfp.NIfTId.load([umap '.4dfp.ifh']);
+            umap = mlfourdfp.NIfTId.load([umap '.4dfp.hdr']);
             umap.fslview;
             popd(pwd1);
         end

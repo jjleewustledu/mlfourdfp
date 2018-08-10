@@ -84,7 +84,7 @@ classdef FourdfpcState < mlfourdfp.ImagingState
                 if (~lexist(niid.fqfilename))
                     niid.save;
                 end
-                fns = [fns niid.fqfileprefix '.4dfp.ifh'];
+                fns = [fns niid.fqfileprefix '.4dfp.hdr'];
             end
             viewArgin = this.segregateForView(fns, varargin{:});
             niid1.view(viewArgin{:});

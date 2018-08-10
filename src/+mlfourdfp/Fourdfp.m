@@ -53,7 +53,7 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
  			%% FOURDFP
  			%  Usage:  this = Fourdfp(NIfTIdecorator_object[, option-name, option-value, ...])
  			
-            import mlfourd.*; 
+            import mlfourdfp.*; 
             this = this@mlfourd.NIfTIdecoratorProperties(cmp, varargin{:});
             if (nargin == 1 && isa(cmp, 'mlfourdfp.Fourdfp'))
                 this = this.component;
@@ -61,7 +61,7 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
             end
             this = this.append_descrip('decorated by mlfourdfp.Fourdfp');
             this.component_.filesuffix = FourdfpInfo.FOURDFP_EXT;
-            this.fvisitor_ = mlfourdfp.FourdfpVisitor;
+            this.fvisitor_ = FourdfpVisitor;
  		end
     end 
     

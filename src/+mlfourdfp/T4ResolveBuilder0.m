@@ -182,15 +182,15 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
         function fp     = coulombPotential(fp, varargin)
             import mlfourdfp.*;
             ip = inputParser;
-            addRequired( ip, 'fp', @(x) lexist([fp '.4dfp.ifh']));
+            addRequired( ip, 'fp', @(x) lexist([fp '.4dfp.hdr']));
             addParameter(ip, 'precision', T4ResolveBuilder0.coulombPrecision, @isnumeric);
             parse(ip, fp, varargin{:});
             
-            ic  = mlfourd.ImagingContext([fp '.4dfp.ifh']);
+            ic  = mlfourd.ImagingContext([fp '.4dfp.hdr']);
             ic  = ic.coulombPotential('precision', ip.Results.precision);
             fp  = ic.fileprefix;
             icc = ic.clone;
-            icc.saveas([fp '.4dfp.ifh']);
+            icc.saveas([fp '.4dfp.hdr']);
         end
         function pr     = coulombPrecision(varargin)
             ip = inputParser;
@@ -574,7 +574,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
             %% COPYRESOLVEDTONEWREVISION opportunistically reuses existing frame files from the last iteration
             
             dt = mlsystem.DirTool( ...
-                sprintf('%s_frame*_%s.4dfp.ifh', this.sessionData.tracerRevision('typ','fp'), this.resolveTag));
+                sprintf('%s_frame*_%s.4dfp.hdr', this.sessionData.tracerRevision('typ','fp'), this.resolveTag));
             for f = 1:length(dt.fns)
                 resolvedFrame = mybasename(dt.fns{f});
                 idx_   = regexp(resolvedFrame, '_frame\d+');
@@ -590,7 +590,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
         function [s,r]     = ensureNifti(this, varargin)
             %% ENSURENIFTI
             %  @param filename is any string descriptor found in an existing file on the filesystem;
-            %  ensureNifti will search for files with extensions .nii, .nii.gz or .4dfp.ifh.
+            %  ensureNifti will search for files with extensions .nii, .nii.gz or .4dfp.hdr.
             %  @returns s, the bash status; r, any bash messages.  ensureNifti ensures files are .nii.gz.
             
             ip = inputParser;
@@ -607,7 +607,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
                     [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii.gz', fp, fp));
                     return
                 end
-                [s,r] = this.buildVisitor.nifti_4dfp_ng(myfileprefix(ip.Results.filename));
+                [s,r] = this.buildVisitor.nifti_4dfp_n(myfileprefix(ip.Results.filename));
                 assert(lexist(myfilename(ip.Results.filename), 'file'));
                 return
             end
@@ -622,11 +622,11 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
                 [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii.gz', ip.Results.filename, ip.Results.filename));
                 return
             end    
-            if (2 == exist([ip.Results.filename '.4dfp.ifh'], 'file'))
+            if (2 == exist([ip.Results.filename '.4dfp.hdr'], 'file'))
                 if (2 == exist([ip.Results.filename '.nii'], 'file'))
                     return
                 end
-                [s,r] = this.ensureNifti([ip.Results.filename '.4dfp.ifh']);
+                [s,r] = this.ensureNifti([ip.Results.filename '.4dfp.hdr']);
                 return
             end
             error('mlfourdfp:fileNotFound', ...
@@ -635,8 +635,8 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
         function [s,r]     = ensure4dfp(this, varargin)
             %% ENSURE4DFP
             %  @param filename is any string descriptor found in an existing file on the filesystem;
-            %  ensureNifti will search for files with extensions .4dfp.ifh.
-            %  @returns s, the bash status; r, any bash messages.  ensure4dfp ensures files are .4dfp.ifh.            
+            %  ensureNifti will search for files with extensions .4dfp.hdr.
+            %  @returns s, the bash status; r, any bash messages.  ensure4dfp ensures files are .4dfp.hdr.            
             
             ip = inputParser;
             addRequired(ip, 'filename', @ischar);
@@ -654,10 +654,10 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
                     return
                 end
                 [s,r] = this.buildVisitor.nifti_4dfp_4(myfileprefix(ip.Results.filename));
-                assert(lexist(myfilename(ip.Results.filename, '.4dfp.ifh'), 'file'));
+                assert(lexist(myfilename(ip.Results.filename, '.4dfp.hdr'), 'file'));
                 return
             end
-            if (2 == exist([ip.Results.filename '.4dfp.ifh'], 'file'))
+            if (2 == exist([ip.Results.filename '.4dfp.hdr'], 'file'))
                 return
             end
             if (2 == exist([ip.Results.filename '.nii'], 'file'))
@@ -1059,7 +1059,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
                 msk = 'none';
                 return
             end
-            this.buildVisitor.nifti_4dfp_ng(fqfp);
+            this.buildVisitor.nifti_4dfp_n(fqfp);
             ic  = mlfourd.ImagingContext(fqfp);
             ic  = ic.ones;
             ic.noclobber = false;
@@ -1084,12 +1084,12 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
             if (~bv.lexist_4dfp(fqfp2))
                 fqfp2 = bv.gauss_4dfp(ip.Results.fp2, 0.1);
             end
-            ic1 = ImagingContext([fqfp1 '.4dfp.ifh']);
-            ic2 = ImagingContext([fqfp2 '.4dfp.ifh']);
+            ic1 = ImagingContext([fqfp1 '.4dfp.hdr']);
+            ic2 = ImagingContext([fqfp2 '.4dfp.hdr']);
             ic  = ImagingContext(ic1.numericalNiftid + ic2.numericalNiftid);
             ic  = ic.thresh(ic.numericalNiftid.dipmax/8);
             ic  = ic.binarized;
-            ic.saveas([ip.Results.fp '.4dfp.ifh']);
+            ic.saveas([ip.Results.fp '.4dfp.hdr']);
             fp  = ic.fqfileprefix;
             
             %this = this.pushTrash([fqfp1 '*.4dfp.*']);
@@ -1197,7 +1197,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
                 end
                 for f = ip.Results.frame0:ip.Results.frameF
                     frameFp = sprintf('%s_frame%i', ip.Results.dest, f);
-                    if (~lexist([frameFp '.4dfp.ifh'], 'file'))
+                    if (~lexist([frameFp '.4dfp.hdr'], 'file'))
                         s = sprintf('Missing 4dfp files:  %s\n', frameFp);
                             fprintf(s);
                         log.add(s);
@@ -1418,7 +1418,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
                 return
             end
             
-            nii = mlfourd.NIfTId([ip.Results.fqfpDyn '.4dfp.ifh']);
+            nii = mlfourd.NIfTId([ip.Results.fqfpDyn '.4dfp.hdr']);
             size = nii.size;
             assert(size(4) == length(this.frames));
             img = zeros(size(1:3));
@@ -1429,7 +1429,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
             end
             nii.img = img;
             
-            nii.saveas([fqfp '.4dfp.ifh']);
+            nii.saveas([fqfp '.4dfp.hdr']);
         end
     end
     
@@ -1491,7 +1491,7 @@ classdef T4ResolveBuilder0 < mlfourdfp.IT4ResolveBuilder
             umap = myfileprefix(umap);
             ct_  = sprintf('%s_%s', ct, datestr(now, 30));            
             this.buildVisitor.copy_4dfp(ct, ct_);
-            %copyfile([ct '.4dfp.ifh'], [ct_ '.4dfp.ifh'], 'f');
+            %copyfile([ct '.4dfp.hdr'], [ct_ '.4dfp.hdr'], 'f');
             
             this.buildVisitor.scale_4dfp(ct_,  1.0,        'options', '-b-1024');
             this.buildVisitor.scale_4dfp(ct_, -1.0,        'options',         '-ainv');

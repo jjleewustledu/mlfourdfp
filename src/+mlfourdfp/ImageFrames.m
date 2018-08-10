@@ -129,7 +129,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             %  @returns this
             
             ip = inputParser;
-            addOptional(ip, 'fqfn', [this.sourceImage '.4dfp.ifh'], @(x) lexist(x, 'file'));
+            addOptional(ip, 'fqfn', [this.sourceImage '.4dfp.hdr'], @(x) lexist(x, 'file'));
             addParameter(ip, 'fracThresh', this.fractionalImageFrameThresh, @isnumeric);
             parse(ip, varargin{:});
             

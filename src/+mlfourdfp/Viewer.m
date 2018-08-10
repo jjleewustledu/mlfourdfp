@@ -80,7 +80,7 @@ classdef Viewer < mlfourd.Viewer
                 otherwise
                     if (isa(targ, 'mlfourd.ImagingContext'))
                         if (~lexist(targ.fqfilename))
-                            targ.filesuffix = '.4dfp.ifh';
+                            targ.filesuffix = '.4dfp.hdr';
                             targ.save;
                         end
                         [interp,todel] = this.interpretTarget(targ.fqfilename);

@@ -47,13 +47,13 @@ classdef Test_UmapResolveBuilder < matlab.unittest.TestCase
         end
         function test_buildCarneyUmap(this)
             umap = this.testObj.buildCarneyUmap(this.sessd.ctRescaled('typ', 'fqfp'));
-            this.verifyTrue(lexist([umap '.4dfp.ifh'], 'file'));
+            this.verifyTrue(lexist([umap '.4dfp.hdr'], 'file'));
             this.checkImg(umap, this.sessd.ctRescaled('typ', 'fqfp'));
         end
         function test_alignUmapToNACFrames(this)  
             umap = this.sessd.umapSynthFDG('typ', 'fqfp');
             [~,umaps] = this.testObj.alignUmapToNACFrames(umap);            
-            this.verifyTrue(lexist([umap '.4dfp.ifh'], 'file'));
+            this.verifyTrue(lexist([umap '.4dfp.hdr'], 'file'));
             this.checkImg(umaps{end}, 'ct_on_fdgv1r1_resolved_sumt.4dfp.img');
         end        
         
@@ -86,12 +86,12 @@ classdef Test_UmapResolveBuilder < matlab.unittest.TestCase
         end        
         function test_mprOnPetSumt(this)
             fp = this.testObj.mprOnPetSumt(this.sessd.mpr('typ', 'fqfp'), 'fdgv1r1_resolved_sumt');
-            this.verifyTrue(lexist([fp '.4dfp.ifh'], 'file'));
+            this.verifyTrue(lexist([fp '.4dfp.hdr'], 'file'));
             this.checkImg(fp, 'fdgv1r1_resolved_sumt');
         end
         function test_ctOnPetSumt(this)
             fp = this.testObj.ctOnPetSumt(this.sessd.ctMasked('typ', 'fqfp'), 'fdgv1r1_resolved_sumt');
-            this.verifyTrue(lexist([fp '.4dfp.ifh'], 'file'));
+            this.verifyTrue(lexist([fp '.4dfp.hdr'], 'file'));
             this.checkImg(fp, 'fdgv1r1_resolved_sumt');
         end
         
@@ -131,14 +131,14 @@ classdef Test_UmapResolveBuilder < matlab.unittest.TestCase
             source = myfileprefix(source);
             dest   = myfileprefix(dest);
             fp     = this.fourdfpVisitor.t4img_4dfp(t4, source, 'options', ['-O' dest]);
-            ic     = mlfourd.ImagingContext([fp '.4dfp.ifh']);
+            ic     = mlfourd.ImagingContext([fp '.4dfp.hdr']);
             if (this.view)
                 ic.view([dest '.4dfp.img']); 
             end
         end
         function checkImg(this, source, varargin)
             source = myfileprefix(source);
-            ic     = mlfourd.ImagingContext([source '.4dfp.ifh']);
+            ic     = mlfourd.ImagingContext([source '.4dfp.hdr']);
             if (this.view)
                 if (isempty(varargin))
                     ic.view;

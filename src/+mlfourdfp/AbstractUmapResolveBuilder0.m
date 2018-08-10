@@ -138,10 +138,10 @@ classdef (Abstract) AbstractUmapResolveBuilder0 < mlfourdfp.MMRResolveBuilder0
             umap = ip.Results.umap;
             
             flipped = this.buildVisitor.flip_4dfp('z', umap);
-            ic = mlfourd.ImagingContext([flipped '.4dfp.ifh']);
+            ic = mlfourd.ImagingContext([flipped '.4dfp.hdr']);
             ic = ic.zoomed(this.zoomForInverseCrop);
             ic.noclobber = false;
-            ic.saveas([flipped '.4dfp.ifh']);
+            ic.saveas([flipped '.4dfp.hdr']);
             movefile( ...
                 sprintf('%s.4dfp.img', flipped), ...
                 sprintf('%s.v',        umap), 'f');
@@ -282,7 +282,7 @@ classdef (Abstract) AbstractUmapResolveBuilder0 < mlfourdfp.MMRResolveBuilder0
             
             fqfn = fullfile( ...
                 this.resolveSequenceLocation, ...
-                sprintf('%sr%i_resolved.4dfp.ifh', this.resolveSequenceTag, this.resolveSequenceNRevisions));
+                sprintf('%sr%i_resolved.4dfp.hdr', this.resolveSequenceTag, this.resolveSequenceNRevisions));
             obj  = this.sessionData.fqfileprefixObject(fqfn, varargin{:});
         end
         function fp    = resolveSequenceTag(this)

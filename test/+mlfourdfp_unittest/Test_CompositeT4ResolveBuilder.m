@@ -52,7 +52,7 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
                 nn.fileprefix = fp;
                 nn.save;
             end
-            h = this.sessdHO.fqfilenameObject(fullfile(this.pwd0, [fp '.4dfp.ifh']));
+            h = this.sessdHO.fqfilenameObject(fullfile(this.pwd0, [fp '.4dfp.hdr']));
         end
     end
 

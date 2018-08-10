@@ -47,35 +47,58 @@ classdef FourdfpVisitor
             end
             error('mlfourdfp:backupRejected', 'FourdfpVisitor.backupn.ip.Results.n -> %i', ip.Results.n);
         end
+        function clearIfhMmppixCenter(fqfp, N)
+            return
+            
+            import mlfourdfp.*;
+            ifh = IfhParser.load([fqfp '.4dfp.ifh'], 'N', N);
+            deleteExisting([fqfp '.4dfp.ifh']);
+            deleteExisting([fqfp '.4dfp.hdr']);
+            ifh.save;
+            pwd0 = myfileparts(fqfp);
+            mlbash(['ifh2hdr ' fqfp]);
+            popd(pwd0);
+        end
         function         copyfile_4dfp(varargin)
             v = varargin;
             xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
             v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
+            assert(nargin < 3, 'mlfourdfp:unsupportedParams', 'FourdfpVisitor.copyfile_4dfp');
             if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
                     copyfile([v{1} xs{ix}], v{2})
                 end
                 return
             end
+            if (nargin > 1)
+                for ix = 1:length(xs)
+                    copyfile([v{1} xs{ix}], [v{2} xs{ix}])
+                end
+                return
+            end
             for ix = 1:length(xs)
-                fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
-                copyfile(fns{:});
+                copyfile([v{1} xs{ix}]);
             end
         end
         function         copyfilef_4dfp(varargin)
             v = varargin;
             xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
             v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
+            assert(nargin < 3, 'mlfourdfp:unsupportedParams', 'FourdfpVisitor.copyfile_4dfp');
             if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
                     copyfile([v{1} xs{ix}], v{2}, 'f')
                 end
                 return
             end
-            for ix = 1:length(xs)
-                fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
-                copyfile(fns{:}, 'f');
+            if (nargin > 1)                
+                for ix = 1:length(xs)
+                    copyfile([v{1} xs{ix}], [v{2} xs{ix}], 'f')
+                end
+                return
             end
+            error('mlfourdfp:unsupportedParamUsage', ...
+                'copyfilef_4dfp must specify both source and target to keep consistent syntax with Matlab''s copyfile');
         end
         function         movefile_4dfp(varargin)
             v = varargin;
@@ -148,26 +171,26 @@ classdef FourdfpVisitor
                     try
                         if (lexist_4dfp(fullfile(pth, fp)))
                             this.copyfile_4dfp(fullfile(pth, fp));
-                            obj = [fp '.4dfp.ifh'];
+                            obj = [fp '.4dfp.hdr'];
                             return
                         end
                         if (strcmp(x, '.mgz') || strcmp(x, '.mgh'))
                             fp = ensureSafenameMgz(fp);
                             this.mri_convert(obj, [fp '.nii']);
                             this.nifti_4dfp_4(fp);
-                            obj = [fp '.4dfp.ifh'];
+                            obj = [fp '.4dfp.hdr'];
                             return
                         end
                         if (lstrfind(x, '.gz'))
                             gunzip(obj, pwd);
                             this.nifti_4dfp_4(fp)
-                            obj = [fp '.4dfp.ifh'];
+                            obj = [fp '.4dfp.hdr'];
                             return
                         end
                         if (strcmp(x, '.nii'))
                             this.nifti_4dfp_4(fullfile(pth, fp));
                             this.movefile_4dfp(fullfile(pth, fp));
-                            obj = [fp '.4dfp.ifh'];
+                            obj = [fp '.4dfp.hdr'];
                             return
                         end
                     catch ME
@@ -588,7 +611,7 @@ classdef FourdfpVisitor
             [~,fp] = myfileparts(ipr.fqfn);
             locfp  = fullfile(pwd, fp);
             nii    = [locfp '.nii'];
-            ifh    = [locfp '.4dfp.ifh'];
+            ifh    = [locfp '.4dfp.hdr'];
             if (~lexist_4dfp(ifh))
                 mlsurfer.SurferVisitor.mri_convert(ipr.fqfn, nii);
                 this.nifti_4dfp_4(locfp);
@@ -603,8 +626,8 @@ classdef FourdfpVisitor
             locfp   = fullfile(pwd, fp);
             locfp1  = fullfile(pwd, fp1);
             nii     = [locfp '.nii'];
-            ifh     = [locfp '.4dfp.ifh'];
-            ifh1    = [locfp1 '.4dfp.ifh'];
+            ifh     = [locfp '.4dfp.hdr'];
+            ifh1    = [locfp1 '.4dfp.hdr'];
             if (~lexist_4dfp(ifh1))
                 mlsurfer.SurferVisitor.mri_convert(ipr.fqfn, nii);
                 this.nifti_4dfp_4(locfp);
@@ -616,10 +639,14 @@ classdef FourdfpVisitor
             ip = inputParser;
             addRequired(ip, 'in',  @ischar);
             addRequired(ip, 'out', @ischar);
+            addParameter(ip, 'N', true, @islogical);
             parse(ip, varargin{:});
             
             [s,r] = this.copy_4dfp__( ...
                 sprintf(' %s %s', ip.Results.in, ip.Results.out));
+            if (ip.Results.N)
+                this.clearIfhMmppixCenter(ip.Results.out, ip.Results.N);
+            end
         end
         function      [s,r] = cropfrac_4dfp(this, varargin)
             ip = inputParser;
@@ -837,7 +864,7 @@ classdef FourdfpVisitor
         function      [s,r] = imgblur_all_4dfp(this, varargin)
             %% IMGBLUR_ALL_4DFP applies imgblur_4dfp to all 4dfp sets in the current working directory      
 
-            eSet = mlsystem.DirTool('*.4dfp.ifh');
+            eSet = mlsystem.DirTool('*.4dfp.hdr');
             for iSet = 1:length(eSet.fns)                                
                 [s,r] = this.imgblur_4dfp(eSet.fns{iSet}, varargin{:});
             end
@@ -1024,7 +1051,7 @@ classdef FourdfpVisitor
             %  @param fileprefix is char.
             %  @param fileprefixOut is char.
             %  @param named minusN is logical; true =: sends -N flag to nifti_4dfp to remove center parameters from
-            %  *.4dfp.ifh.
+            %  *.4dfp.hdr.
             
             ip = inputParser;
             addRequired(ip, 'fileprefix', @ischar);
@@ -1036,33 +1063,23 @@ classdef FourdfpVisitor
             [ptho,fpo] = myfileparts(ip.Results.fileprefixOut);
             fpo = fullfile(ptho, fpo);
             
-            % manage .nii.gz
-            if (lexist([fp '.nii.gz'], 'file') && ...
-               ~lexist([fp '.nii'],    'file'))
-                gunzip([fp '.nii.gz']);
-            end
-            if (lexist([fp '.nii.gz'], 'file') && ...
-                lexist([fp '.nii'],    'file'))
-                delete([fp '.nii.gz']);
-            end
-            
-            if (lexist([fp '.nii']))
+            if (lexist([fp '.nii']) || lexist([fp '.nii.gz']))
                 if (~ip.Results.minusN && ...
                     (lstrfind(fp, '111') || lstrfind(fp, '222') || lstrfind(fp, '333') || ...
                      lstrfind(fp, 'TRIO_Y_NDC') || ...
                      lstrfind(fp, '711-2') || ...
                      lstrfind(fp, '_atlas')))
-                    [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh', fp, fpo));
-                    deleteExisting([fp '.nii']);
+                    [s,r] = this.nifti_4dfp__(sprintf(' -4 %s %s', fp, fpo));
+                    deleteExisting([fp '.nii*']);
                     return
                 end
-                [s,r] = this.nifti_4dfp__(sprintf(' -4 %s.nii %s.4dfp.ifh -N', fp, fpo));
-                deleteExisting([fp '.nii']);
+                [s,r] = this.nifti_4dfp__(sprintf(' -4 %s % -N', fp, fpo));
+                deleteExisting([fp '.nii*']);
                 return
                 
                 %deleteExisting([fp '.4dfp.img_to_atlas_t4']); % incipient BUG
             end
-            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s.nii not found', fp);
+            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s.nii* not found', fp);
         end
         function      [s,r] = nifti_4dfp_n(this, varargin)
             %% NIFTI_4DFP_4 converts .4dfp.* to .nii[.gz], keeping all .4dfp.* afterwards.
@@ -1078,35 +1095,17 @@ classdef FourdfpVisitor
             [ptho,fpo] = myfileparts(ip.Results.fileprefixOut);
             fpo = fullfile(ptho, fpo);            
 
-            if (lexist([fp '.4dfp.ifh']))
-                [s,r] = this.nifti_4dfp__(sprintf(' -n %s.4dfp.ifh %s.nii', fp, fpo));
+            if (lexist_4dfp(fp))
+                [s,r] = this.nifti_4dfp__(sprintf(' -n %s %s', fp, fpo));
                 return
             end
             error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_n:  %s.4dfp.* not found', fp);
-        end
-        function      [s,r] = nifti_4dfp_ng(this, varargin)
-            ip = inputParser;
-            addRequired(ip, 'fileprefix',                 @ischar);
-            addOptional(ip, 'fileprefixOut', varargin{1}, @ischar);
-            parse(ip, varargin{:});
-            [pth,fp] = myfileparts(ip.Results.fileprefix);
-            fp = fullfile(pth, fp);
-            [ptho,fpo] = myfileparts(ip.Results.fileprefixOut);
-            fpo = fullfile(ptho, fpo);            
-
-            if (lexist([fp '.4dfp.ifh']))
-                [s,r] = this.nifti_4dfp__(sprintf(' -n %s.4dfp.ifh %s.nii', fp, fpo));
-                gzipExisting(  [fpo '.nii']);
-                deleteExisting([fpo '.nii']);
-                return
-            end
-            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_ng:  %s.4dfp.* not found', fp);
-        end        
+        end      
         function              normalizeFrames(this, fqfp)
             tmp = tmpFileprefix('func', 'normalizeFrames');
             this.move_4dfp(fqfp, tmp);            
             
-            this.nifti_4dfp_ng(tmp);
+            this.nifti_4dfp_n(tmp);
             ic = mlfourd.ImagingContext(tmp);
             nii = ic.niftid;
             nii.img = this.normalizeFramesBySums(nii.img);            
@@ -2264,15 +2263,15 @@ classdef FourdfpVisitor
             % 	-N	suppress saving of mmppix and center fields in output ifh
             % 	-@<val>	specify endianness for output, b or B for big, l or L for little
             % N.B.:	exactly one of -4 or -n must be specified
-            % N.B.:	".4dfp.ifh" or ".nii" are appended to filenames specified without extension
+            % N.B.:	".4dfp.hdr" or ".nii" are appended to filenames specified without extension
             % N.B.:	option -N has effect only on converting nii->4dfp
             % N.B.:	option -T has effect only on converting 4dfp->nii
             assert(ischar(args));
             if (lstrcmp(computer, 'MACI64'))
-                [s,r] = dbbash(sprintf('%s/Local/bin/nifti_4dfp %s', getenv('HOME'), args));
+                [s,r] = dbbash(sprintf('%s/Local/bin/niftigz_4dfp %s', getenv('HOME'), args));
                 return
             end
-            [s,r] = dbbash(sprintf('nifti_4dfp %s', args));
+            [s,r] = dbbash(sprintf('niftigz_4dfp %s', args));
         end
         function [s,r] = paste_4dfp__(~, args)
             %% PASTE_4DFP__

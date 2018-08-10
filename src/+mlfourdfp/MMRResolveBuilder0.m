@@ -365,7 +365,7 @@ classdef MMRResolveBuilder0 < mlfourdfp.T4ResolveBuilder0
                 return
             end
             
-            ic = mlfourd.ImagingContext([ip.Results.ctMasked '.4dfp.ifh']);
+            ic = mlfourd.ImagingContext([ip.Results.ctMasked '.4dfp.hdr']);
             ic = ic.numericalNiftid;
             ic = ic * this.ct_rescaleSlope + this.ct_rescaleIntercept;
             

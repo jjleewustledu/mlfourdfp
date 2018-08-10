@@ -223,7 +223,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             trLM = this.sessionData.tracerListmodeSif('typ', 'fp');
             trRev = this.sessionData.tracerRevision('typ', 'fp');
             bv = this.buildVisitor;
-            %if (~lexist(fullfile(pthAC, [trRev '.4dfp.ifh']), 'file'))
+            %if (~lexist(fullfile(pthAC, [trRev '.4dfp.hdr']), 'file'))
                 pwd0 = pushd(this.sessionData.tracerListmodeLocation); 
                 bv.sif_4dfp(trLM);
                 bv.cropfrac_4dfp(0.5, trLM, trRev);
@@ -341,7 +341,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
         end
         function fqfp = framedImaging(~, fqfp0, indicesLogical)
             assert(isnumeric(indicesLogical) && 1 == max(indicesLogical));
-            ic0     = mlfourd.ImagingContext([fqfp0 '.4dfp.ifh']);
+            ic0     = mlfourd.ImagingContext([fqfp0 '.4dfp.hdr']);
             nii0    = ic0.niftid;
             nii     = nii0;
             nii.img = zeros(nii0.size(1), nii0.size(2), nii0.size(3), sum(indicesLogical));
@@ -355,11 +355,11 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             [~,indexMin] = max(indicesLogical);
             fqfp = sprintf('%s_frames%ito%i', fqfp0, indexMin, sum(indicesLogical));
             nii.noclobber = false;
-            nii.saveas([fqfp '.4dfp.ifh']);
+            nii.saveas([fqfp '.4dfp.hdr']);
         end
         function fqfp = framedSummedImaging(~, fqfp0, indicesLogical)
             assert(isnumeric(indicesLogical) && 1 == max(indicesLogical));
-            ic0     = mlfourd.ImagingContext([fqfp0 '.4dfp.ifh']);
+            ic0     = mlfourd.ImagingContext([fqfp0 '.4dfp.hdr']);
             nii0    = ic0.niftid;
             nii     = nii0;
             nii.img = zeros(nii0.size(1), nii0.size(2), nii0.size(3));
@@ -373,7 +373,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             [~,indexMin] = max(indicesLogical);
             fqfp = sprintf('%s_frames%ito%i_sumt', fqfp0, indexMin, sum(indicesLogical));
             nii.noclobber = false;
-            nii.saveas([fqfp '.4dfp.ifh']);
+            nii.saveas([fqfp '.4dfp.hdr']);
         end
  	end 
     

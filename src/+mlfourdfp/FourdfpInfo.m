@@ -324,8 +324,8 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             
             jimmy = this.load_nii; % struct
             X = jimmy.img; % identical to nii0 = load_untouch_nii(<from nifti_4dfp -n>); nii0.img
-            X = flip(X, 2); % 4dfp convention
-            X = this.flipForOrient(X);
+            X = flip(X, 1); % storage order := Neurological, removing Analyze conventions
+            X = this.flipForOrient(X); % "
             X = this.ensureDatatype(X, this.datatype_);
             untouch = false;
             hdr = this.adjustHdr(jimmy.hdr);
@@ -349,7 +349,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
     methods (Access = protected)
         function hdr  = newHdr(this, hdr)            
             [~,srow] = this.imgrecread;
-            if (~isempty(srow))
+            if (~isempty(srow) && ~this.N)
                 hdr.hist.originator(1) = -srow(1,4);
                 hdr.hist.originator(2) = -srow(2,4);
                 hdr.hist.originator(3) = -srow(3,4);
@@ -368,11 +368,9 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             hdr.hist.qoffset_z = (1-hdr.hist.originator(3))*hdr.dime.pixdim(4);            
             
             % for compliance with NIfTI format
-            if (isempty(srow))
-                srow = [[-hdr.dime.pixdim(2) 0 0          (-1+hdr.hist.originator(1))*hdr.dime.pixdim(2)]; ...
-                        [0 hdr.dime.pixdim(3) 0           ( 1-hdr.hist.originator(2))*hdr.dime.pixdim(3)]; ...
-                        [0 0 hdr.dime.pixdim(4)*this.qfac ( 1-hdr.hist.originator(3))*hdr.dime.pixdim(4)]];
-            end
+            srow = [[hdr.dime.pixdim(2) 0 0           ( 1-hdr.hist.originator(1))*hdr.dime.pixdim(2)]; ...
+                    [0 hdr.dime.pixdim(3) 0           ( 1-hdr.hist.originator(2))*hdr.dime.pixdim(3)]; ...
+                    [0 0 hdr.dime.pixdim(4)*this.qfac ( 1-hdr.hist.originator(3))*hdr.dime.pixdim(4)]];
             
             hdr.hist.srow_x = srow(1,:);
             hdr.hist.srow_y = srow(2,:);
@@ -412,28 +410,29 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             end
         end    
         function p    = ifhread(this)
-            p = mlfourdfp.IfhParser.load([this.fqfileprefix '.4dfp.ifh']);
+            import mlfourdfp.*;
+            p = IfhParser.load([this.fqfileprefix '.4dfp.ifh'], 'N', this.N);
             s = p.asstruct;
             
             assert(lstrfind(lower(this.ImgDataType), lower(s.number_format)), ...
                 'mlfourdfp:inconsistentParamValue', ...
-                'FourdfpInfo.ifhread.ifh.number_format->%s', s.number_format);
+                'FourdfpInfo.ifhread.ifh.number_format->%s != %s', ...
+                s.number_format, this.ImgDataType);
             [~,fp] = myfileparts(s.name_of_data_file);
             assert(lstrfind(fp, this.fileprefix), ...
                 'mlfourdfp:inconsistentParamValue', ...
-                'FourdfpInfo.ifhread.ifh.name_of_data_file->%s', s.name_of_data_file);
+                'FourdfpInfo.ifhread.ifh.name_of_data_file->%s ~= %s', ... 
+                s.name_of_data_file, this.fileprefix);
             assert(s.number_of_bytes_per_pixel == this.BitDepth/8, ...
                 'mlfourdfp:inconsistentParamValue', ...
-                'FourdfpInfo.ifhread.ifh.number_of_bytes_per_pixel->%g', s.number_of_bytes_per_pixel);            
+                'FourdfpInfo.ifhread.ifh.number_of_bytes_per_pixel->%g != %g', ...
+                s.number_of_bytes_per_pixel, this.BitDepth/8);
             assert(this.consistentByteOrder(s.imagedata_byte_order), ...
                 'mlfourdfp:inconsistentParamValue', ...
                 'FourdfpInfo.ifhread.ifh.imagedata_byte_order->%s', s.imagedata_byte_order);
             assert(this.consistentOrientation(s.orientation), ...
                 'mlfourdfp:inconsistentParamValue', ...
-                'FourdfpInfo.ifhread.ifh.orientation->%g', s.orientation);  
-            assert(s.number_of_dimensions == length(this.Dimensions), ...
-                'mlfourdfp:inconsistentParamValue', ...
-                'FourdfpInfo.ifhread.ifh.number_of_dimensions->%g', s.number_of_dimensions);   
+                'FourdfpInfo.ifhread.ifh.orientation->%g', s.orientation);   
         end
         function [cc,sr] = imgrecread(this)
             p = mlfourdfp.ImgRecParser.load([this.fqfileprefix '.4dfp.img.rec']);
@@ -441,6 +440,14 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             sr = p.commonSform;
         end
         function ii    = initialIfh(this)
+            if (~lexist([this.fqfileprefix '.4dfp.ifh'], 'file'))
+                ii = mlfourdfp.IfhParser.constructDenovo( ...
+                    this.hdr, ...
+                    'fileprefix', this.fileprefix, ...
+                    'orientation', 2, ...
+                    'N', true);
+                return
+            end            
             ii = this.ifhread;
         end
         function irl   = initialImgRec(this)

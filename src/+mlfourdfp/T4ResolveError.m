@@ -44,8 +44,8 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             assert(length(imgs) == sum(this.indicesLogical));
         end 
         function idx   = assessValidFrames(this, ipr)
-            if (~lstrfind(ipr.dest, '.4dfp.ifh'))
-                ipr.dest = [ipr.dest '.4dfp.ifh'];
+            if (~lstrfind(ipr.dest, '.4dfp.hdr'))
+                ipr.dest = [ipr.dest '.4dfp.hdr'];
             end
             d = mlfourd.ImagingContext(ipr.dest);
             if (isa(d, 'mlfourd.ImagingContext'))

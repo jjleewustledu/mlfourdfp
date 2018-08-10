@@ -25,7 +25,7 @@ classdef ImgRecLogger < mlpipeline.AbstractLogger
             
             if (lexist(this.fqfilename, 'file'))
                 ipr = mlfourdfp.ImgRecParser.loadx(this.fqfileprefix, this.filesuffix);
-                this.cons(ipr.cellContents);
+                this.cons(['mlfourdfp.ImgRecLogger.ctor' ipr.cellContents]);
             end
         end        
         
@@ -70,6 +70,9 @@ classdef ImgRecLogger < mlpipeline.AbstractLogger
         end
         function save(this)
             this = this.ensureExtension;
+            if (isempty(this.contents))
+                this.add('mlfourdfp.ImgRecLogger.save');
+            end
             mlsystem.FilesystemRegistry.cellArrayListToTextfile( ...
                 this.cellArrayList_, this.fqfilename, 'w');
         end

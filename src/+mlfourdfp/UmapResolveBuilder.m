@@ -202,7 +202,7 @@ classdef UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
                 end
             end
             ctic = this.CarneyImagingContext(ip.Results.rescaledCT);
-            ctic.saveas([umap '.4dfp.ifh']);
+            ctic.saveas([umap '.4dfp.hdr']);
         end
         function             teardownBuildUmaps(this)
             this.teardownLogs;
@@ -243,9 +243,9 @@ classdef UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             %addOptional(ip, 'ctMask', this.sessionData.ctMask('typ', '4dfp.ifh'), @FourdfpVisitor.lexist_4dfp);
             parse(ip, varargin{:});
             
-            ct  = mlfourd.ImagingContext([ip.Results.ctRescaled '.4dfp.ifh']);
+            ct  = mlfourd.ImagingContext([ip.Results.ctRescaled '.4dfp.hdr']);
             ct  = ct.numericalNiftid;
-            %ctm = mlfourd.ImagingContext([ip.Results.ctMask '.4dfp.ifh']);
+            %ctm = mlfourd.ImagingContext([ip.Results.ctMask '.4dfp.hdr']);
             %ctm = ctm.numericalNiftid;
             
             lowHU    = ct.uthresh(this.CarneyBP); 

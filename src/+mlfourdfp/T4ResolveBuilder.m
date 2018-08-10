@@ -191,19 +191,19 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             tag = mybasename(ip.Results.tag);
             
             import mlpet.*;
-            prev = PETImagingContext([ipr.dest '.4dfp.ifh']);
+            prev = PETImagingContext([ipr.dest '.4dfp.hdr']);
             prev = prev.numericalNiftid; 
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f))
-                    curr = PETImagingContext([this.fileprefixIndexedResolved(ipr.dest, f, tag) '.4dfp.ifh']);
+                    curr = PETImagingContext([this.fileprefixIndexedResolved(ipr.dest, f, tag) '.4dfp.hdr']);
                     curr = curr.numericalNiftid;
                     prev.img(:,:,:,f) = curr.img(:,:,:);
                 end
             end
             if (~isempty(tag))
-                prev.filename = [ipr.dest '_' tag '.4dfp.ifh'];
+                prev.filename = [ipr.dest '_' tag '.4dfp.hdr'];
             else
-                prev.filename = [ipr.dest '.4dfp.ifh'];
+                prev.filename = [ipr.dest '.4dfp.hdr'];
             end
             prev.save;
             indicesLogical = this.indicesLogical; %#ok<NASGU>
@@ -258,7 +258,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 this.fileprefixResolved(ipr.dest, this.rnumber-1), ...
                 this.fileprefixRevision(ipr.dest, this.rnumber));
             dt = mlsystem.DirTool( ...
-                sprintf('%s_frame*_%s.4dfp.ifh', this.sessionData.tracerRevision('typ','fp'), this.resolveTag));
+                sprintf('%s_frame*_%s.4dfp.hdr', this.sessionData.tracerRevision('typ','fp'), this.resolveTag));
             for f = 1:length(dt.fns)
                 resolvedFrame = mybasename(dt.fns{f});
                 idx_   = regexp(resolvedFrame, '_frame\d+');
@@ -309,7 +309,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     mskt = mg.constructMskt( ...
                         'source', this.ensureSumtSaved(sd.tracerRevision), ...
                         'intermediaryForMask', sd.T1001, ...
-                        'sourceOfMask', fullfile(sd.vLocation, 'brainmask.4dfp.ifh'));
+                        'sourceOfMask', fullfile(sd.vLocation, 'brainmask.4dfp.hdr'));
                     fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
                     return
                 catch ME
@@ -418,6 +418,15 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     %% PROTECTED
     
     methods (Access = protected)
+        function this = buildProduct(this, ipr)
+            this.ipResults_ = ipr;
+            this.rnumber = this.NRevisions;            
+            this.product_ = mlfourd.ImagingContext([ipr.resolved '.4dfp.hdr']);
+            this.product_.addImgrec( ...
+                {'mlfourdfp.T4ResolveBuilder.constructResolve(' ipr ')'});
+            this.product_.addLog( ...
+                {'mlfourdfp.T4ResolveBuilder.t4ResolveError_.logger.fqfilename->' this.t4ResolveError_.logger.fqfilename});
+        end
         function this = cacheT4s(this, imgFpsc)
             %  @return this.t4s_{1} is the reference; size(this.t4s_) == size(this.indicesLogical).
             

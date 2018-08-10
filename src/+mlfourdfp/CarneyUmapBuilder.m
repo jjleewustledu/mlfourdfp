@@ -142,7 +142,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             delete([umap '_b40.4dfp.*']);
             delete([umap '.log']);
             ic = this.CarneyImagingContext(ip.Results.rescaledCT);
-            ic.saveas([umap '.4dfp.ifh']);
+            ic.saveas([umap '.4dfp.hdr']);
         end
         function        ensureCTForms(this)
             sd = this.sessionData;
@@ -151,7 +151,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             pwd0 = pushd(sd.sessionPath);
             if (~lexist_4dfp(sd.ct('typ', 'fp')))
                 if (~lexist_4dfp(fullfile(sp, 'AC_CT')))
-                    assert(lexist(fullfile(sp, 'AC_CT_series2.4dfp.ifh')))
+                    assert(lexist(fullfile(sp, 'AC_CT_series2.4dfp.hdr')))
                     bv.lns_4dfp(fullfile(sp, 'AC_CT_series2'), 'AC_CT');
                 end
                 bv.lns_4dfp(fullfile(sp, 'AC_CT'), sd.ct('typ', 'fp'));
@@ -168,7 +168,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             addOptional(ip, 'ctRescaled', '', @FourdfpVisitor.lexist_4dfp); % this.buildCTMasked
             parse(ip, varargin{:});
             
-            ct  = mlfourd.ImagingContext([ip.Results.ctRescaled '.4dfp.ifh']);
+            ct  = mlfourd.ImagingContext([ip.Results.ctRescaled '.4dfp.hdr']);
             ct  = ct.numericalNiftid;
             
             lowHU    = ct.uthresh(this.CarneyBP); 

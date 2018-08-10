@@ -11,7 +11,7 @@ classdef IfhParser < mlio.AbstractParser
  	%  $Id$   
     
     properties (Constant)
-        IFH_EXT = {'.4dfp.ifh' };
+        IFH_EXT = '.4dfp.ifh';
         MIN_VERSION = 3.3
         SUPPORTED_KEYS = { ...
             'version_of_keys' 'number_format' 'conversion_program' 'name_of_data_file' ...
@@ -20,7 +20,55 @@ classdef IfhParser < mlio.AbstractParser
     end
     
 	methods (Static)
-        function this = load(fn)
+        function this = constructDenovo(varargin)
+            ip = inputParser;
+            addRequired( ip, 'hdr', @isstruct);
+            addParameter(ip, 'fileprefix', @ischar);
+            addParameter(ip, 'orientation', 2, @isnumeric);
+            addParameter(ip, 'N', true, @islogical);
+            parse(ip, varargin{:});
+            hdr = ip.Results.hdr;
+            
+            assert(isstruct(hdr),        'mlfourdfp:unsupportedInputTypeclass', 'IhfParser.constructDenovo');
+            assert(isfield(hdr, 'hk'),   'mlfourdfp:unsupportedInputTypeclass', 'IhfParser.constructDenovo');
+            assert(isfield(hdr, 'dime'), 'mlfourdfp:unsupportedInputTypeclass', 'IhfParser.constructDenovo');
+            assert(isfield(hdr, 'hist'), 'mlfourdfp:unsupportedInputTypeclass', 'IhfParser.constructDenovo');            
+            
+            this = mlfourdfp.IfhParser;
+            this.denovo_ = struct( ...
+                'version_of_keys', 3.3, ...
+                'number_format', 'float', ...
+                'conversion_program', 'mlfourdfp.IfhParser.constructDenovo', ...
+                'name_of_data_file', ip.Results.fileprefix, ...
+                'patient_ID', '', ...
+                'date', datestr(now), ...
+                'number_of_bytes_per_pixel', 4, ...
+                'imagedata_byte_order', this.imagedataByteOrder, ...
+                'orientation', ip.Results.orientation, ...
+                'number_of_dimensions', 4, ...
+                'matrix_size', hdr.dime.dim(2:5), ...
+                'global_minimum', hdr.dime.glmin, ...
+                'global_maximum', hdr.dime.glmax, ...
+                'scaling_factor', hdr.dime.pixdim(2:4), ...
+                'slice_thickness', hdr.dime.pixdim(4));
+            if (~ip.Results.N), ...
+                this.denovo_.mmppix = hdr.dime.pixdim(2:4);
+                this.denovo_.center = hdr.hist.originator;     
+            end
+        end
+        function o = imagedataByteOrder
+            [~,~,o] = computer;
+            if (strcmpi(o, 'L'))
+                o = 'littleendian';
+            else
+                o = 'bigendian';
+            end
+        end
+        function this = load(fn, varargin)
+            ip = inputParser;
+            addParameter(ip, 'N', true, @islogical);
+            parse(ip, varargin{:});
+            
             assert(lexist(fn, 'file'));
             [pth, fp, fext] = myfileparts(fn); 
             if (lstrfind(fext, mlfourdfp.IfhParser.IFH_EXT) || ...
@@ -29,12 +77,17 @@ classdef IfhParser < mlio.AbstractParser
                 this.filepath_   = pth;
                 this.fileprefix_ = fp;
                 this.filesuffix_ = fext;
+                this.N_ = ip.Results.N;
                 return 
             end
             error('mlio:unsupportedParam', ...
                 'IfhParser.load does not support file-extension .%s; consider using loadx', fext);
         end
-        function this = loadx(fn, ext)
+        function this = loadx(fn, ext, varargin)
+            ip = inputParser;
+            addParameter(ip, 'N', true, @islogical);
+            parse(ip, varargin{:});
+            
             if (~lstrfind(fn, ext))
                 if (~strcmp('.', ext(1)))
                     ext = ['.' ext];
@@ -47,6 +100,7 @@ classdef IfhParser < mlio.AbstractParser
             this.filepath_   = pth;
             this.fileprefix_ = fp;
             this.filesuffix_ = fext;
+            this.N_ = ip.Results.N;
         end
         function s = strrep4regexp(s)
             s = strrep(s,'[','\[');
@@ -57,7 +111,7 @@ classdef IfhParser < mlio.AbstractParser
     end
     
 	methods
-        function s = asstruct(this)
+        function s = asstruct(this, varargin)
             %% ASSTRUCT
             %  @return struct s with fields:
             %  version_of_keys
@@ -70,9 +124,14 @@ classdef IfhParser < mlio.AbstractParser
             %  number_of_dimensions
             %  matrix_size
             %  scaling_factor
-            %  mmppix
-            %  center
+            %  mmppix, if ~this.N
+            %  center, if ~this.N
             %  @return s.version_of_keys >= this.MIN_VERSION.
+            
+            if (~isempty(this.denovo_))
+                s = this.denovo_;
+                return
+            end
             
             assert(this.rightSideNumeric('version of keys') >= this.MIN_VERSION);            
             s = struct( ...
@@ -90,9 +149,11 @@ classdef IfhParser < mlio.AbstractParser
                 'global_minimum', this.rightSideNumeric('global minimum'), ...
                 'global_maximum', this.rightSideNumeric('global maximum'), ...
                 'scaling_factor', this.scalingFactor, ...
-                'slice_thickness', this.sliceThickness, ...
-                'mmppix', this.mmppix, ...
-                'center', this.center);     
+                'slice_thickness', this.sliceThickness);
+            if (~this.N_), ...
+                s.mmppix = this.mmppix;
+                s.center = this.center;     
+            end
         end
         function n = matrixSize(this)
             idx = 1;
@@ -114,7 +175,23 @@ classdef IfhParser < mlio.AbstractParser
             fprintf(fid, 'INTERFILE\t:=\n');
             keys = this.SUPPORTED_KEYS;
             str = this.asstruct;
-            for ik = 1:length(keys)
+            for ik = 1:length(keys)   
+                
+                if (strcmp(keys{ik}, 'mmppix'))
+                    if (~isempty(this.mmppix) && ~this.N_)
+                        m = str.mmppix;
+                        fprintf(fid, 'mmppix\t:=\t%9.6f %9.6f %9.6f\n', m(1), m(2), m(3));
+                    end
+                    continue
+                end  
+                if (strcmp(keys{ik}, 'center')) 
+                    if(~isempty(this.center) && ~this.N_)
+                        c = str.center;
+                        fprintf(fid, 'center\t:=\t%9.4f %9.4f %9.4f\n', c(1), c(2), c(3));
+                    end
+                    continue
+                end   
+                
                 if (ischar(str.(keys{ik})))
                     fprintf(fid, '%s\t:= %s\n', strrep(keys{ik}, '_',' '), str.(keys{ik}));
                     continue
@@ -126,26 +203,12 @@ classdef IfhParser < mlio.AbstractParser
                 if (strcmp(keys{ik}, 'scaling_factor'))
                     this.fprintfMulti_f(fid, [strrep(keys{ik}, '_',' ') ' (mm/pixel)'], str.(keys{ik}));
                     continue
-                end
-                if (strcmp(keys{ik}, 'mmppix'))
-                    if (~isempty(this.mmppix))
-                        m = str.mmppix;
-                        fprintf(fid, 'mmppix\t:=\t%9.6f %9.6f %9.6f\n', m(1), m(2), m(3));
-                    end
-                    continue
-                end
-                if (strcmp(keys{ik}, 'center')) 
-                    if(~isempty(this.center))
-                        c = str.center;
-                        fprintf(fid, 'center\t:=\t%9.4f %9.4f %9.4f\n', c(1), c(2), c(3));
-                    end
-                    continue
-                end
+                end   
                 if (isnumeric(str.(keys{ik})) && length(str.(keys{ik})) > 1)
                     this.fprintfMulti_g(fid, strrep(keys{ik}, '_',' '), str.(keys{ik}));
                     continue
                 end
-                error('mlfourdfp:guardingIfsFailed', 'IfhParser.save');
+                error('mlfourdfp:guardingIfsFailed', 'in IfhParser.save');
             end
             fprintf('\n');
             fclose(fid);
@@ -250,9 +313,18 @@ classdef IfhParser < mlio.AbstractParser
                     this.strrep4regexp(fieldName)), 'names');
             nv    = str2num(strtrim(names.value1)); %#ok<ST2NM>
         end
+        
+        function this = IfhParser
+            this.filesuffix = this.IFH_EXT;
+        end
     end 
     
     %% PROTECTED
+    
+    properties (Access = 'protected')
+        denovo_
+        N_ = true
+    end
     
     methods (Static, Access = 'protected')
         function        fprintfMulti_f(fid, key, val)

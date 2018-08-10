@@ -44,12 +44,12 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 if (isempty(fqfp{i}))
                     continue
                 end
-                ic = mlfourd.ImagingContext([fqfp{i} '.4dfp.ifh']);
+                ic = mlfourd.ImagingContext([fqfp{i} '.4dfp.hdr']);
                 nn = ic.numericalNiftid;
-                nn.filesuffix = '.4dfp.ifh';
+                nn.filesuffix = '.4dfp.hdr';
                 if (4 == length(size(nn)) && size(nn,4) > 1) % short-circuit
-                    if (lexist([nn.fqfileprefix '_sumt.4dfp.ifh']))
-                        nn = mlfourd.NumericalNIfTId.load([nn.fqfileprefix '_sumt.4dfp.ifh']);
+                    if (lexist([nn.fqfileprefix '_sumt.4dfp.hdr']))
+                        nn = mlfourd.NumericalNIfTId.load([nn.fqfileprefix '_sumt.4dfp.hdr']);
                     else                        
                         nn = nn.timeSummed;
                         nn.save;
@@ -349,7 +349,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         mskt = mg.constructMskt( ...
                             'source', ipr.source{ii}, ...
                             'intermediaryForMask', this.sessionData.T1001, ...
-                            'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.ifh'));
+                            'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.hdr'));
                         fqfps{ii} = mskt.fqfileprefix;
                         continue
                     catch ME
@@ -415,7 +415,12 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             for il = 1:length(this.indicesLogical)
                 if (this.indicesLogical(il))
                     il1 = il1 + 1;                    
-                    this.product_{il1} = mlfourd.ImagingContext([ipr.resolved{il} '.4dfp.ifh']);
+                    this.product_{il1} = mlfourd.ImagingContext([ipr.resolved{il} '.4dfp.hdr']);
+                    this.product_{il1}.addImgrec( ...
+                        {'mlfourdfp.CompositeT4ResolveBuilder.constructResolve(' ipr ')'});
+                    this.product_{il1}.addLog( ...
+                        {'mlfourdfp.CompositeT4ResolveBuilder.t4ResolveError_.logger.fqfilename->' ...
+                        this.t4ResolveError_.logger.fqfilename});
                 end
             end            
         end

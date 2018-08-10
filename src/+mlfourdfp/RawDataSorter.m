@@ -267,7 +267,7 @@ classdef RawDataSorter
             %  '/rawdata/HYGLY25_VISIT_1/RESOURCES/RawData'
             %  @param loc1 is the path ending in the session visit folder, e.g., '/path/to/V1', '/path/to/V2', ....
             %  @returns destLocs, cell array of destination paths, e.g., {'/path/to/V1/FDG_V1' ...}.
-            %  @returns loc0.
+            %  @returns srcLocs, cell array of source paths, e.g., {'/path/to/RESOURCE/RawData'}.
             
             assert(isdir(loc0));          
             [~,vfold] = fileparts(loc1);
@@ -308,8 +308,8 @@ classdef RawDataSorter
             %% UTEMATCH
             %  @param loc0 is the path containing rawdata dicoms, e.g., '/rawdata/HYGLY25_VISIT_1/SCANS'.
             %  @param loc1 is the path ending in the session visit folder, e.g., '/path/to/V1', '/path/to/V2', ...
-            %  @returns locs, a cell-array of locations, e.g., '/path/to/V1/FDG_V1/umap'.
-            %  @returns fqdn, the path to source dicoms, e.g., '/rawdata/HYGLY25_VISIT_1/SCANS/45/DICOM'.
+            %  @returns destLocs, a cell-array of locations, e.g., '/path/to/V1/FDG_V1/umap'.
+            %  @returns srcLocs, the path to source dicoms, e.g., '/rawdata/HYGLY25_VISIT_1/SCANS/45/DICOM'.
 
             tags = {'FDG_' 'HO1_' 'HO2_' 'OC1_' 'OC2_' 'OO1_' 'OO2_'};
             [destLocs0,srcLocs0] = umapMatch(this, loc0, loc1, 'MRAC_PET_5min_in_UMAP',  {'Twilite'});
@@ -414,21 +414,16 @@ classdef RawDataSorter
             %  @returns this after applying oper to results of [destLocs,srcLoc] = match.
             
             ip = inputParser;
-            addRequired( ip, 'oper',  @(x) isa(x, 'function_handle'))
-            addRequired( ip, 'match', @(x) isa(x, 'function_handle'))
-            addRequired( ip, 'srcLoc', @isdir);
+            addRequired(ip, 'oper',  @(x) isa(x, 'function_handle'))
+            addRequired(ip, 'match', @(x) isa(x, 'function_handle'))
+            addRequired(ip, 'srcLoc', @isdir);
+            addOptional(ip, 'destLoc', this.sessionData.vLocation, @isdir);
             parse(ip, varargin{:});
 
-            assert(isa(this.sessionData, 'mlpipeline.SessionData'));
-            [destLocs,srcLocs] = ip.Results.match( ...
-                ip.Results.srcLoc, ...
-                fullfile(this.sessionData.sessionPath, sprintf('V%i', this.sessionData.vnumber), ''));
-            if (~iscell(srcLocs))
-                srcLocs = {srcLocs}; 
-            end
-            if (~iscell(destLocs))
-                destLocs = {destLocs}; 
-            end
+            [destLocs,srcLocs] = ip.Results.match(ip.Results.srcLoc, ip.Results.destLoc);
+            
+            srcLocs = ensureCell(srcLocs);
+            destLocs = ensureCell(destLocs);
             assert(length(srcLocs) == length(destLocs));
             for d = 1:length(destLocs)
                 try

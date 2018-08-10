@@ -130,11 +130,11 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
             
             fp = 'fdgv1r2_op_fdgv1e1to4r1_frame4';
             this.fourdfpv.imgblur_4dfp(fp, 11); % overwrite previous testing
-            fdg = mlfourd.NumericalNIfTId.load([fp '.4dfp.ifh']);
+            fdg = mlfourd.NumericalNIfTId.load([fp '.4dfp.hdr']);
             fdg = fdg.timeSummed;
-            fdg.filesuffix = '.4dfp.ifh';
+            fdg.filesuffix = '.4dfp.hdr';
             fdg.save; % overwrite previous testing
-            this.viewer.view({[fp '_b110.4dfp.ifh'] fdg.filename});
+            this.viewer.view({[fp '_b110.4dfp.hdr'] fdg.filename});
             
             popd(pwd1);
         end
