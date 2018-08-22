@@ -288,40 +288,26 @@ classdef FourdfpVisitor
                 tf = lexist(fullfile(p, [f '.v.hdr']));
             end
         end
-        function [s,r] = lns(fqfn)
-            s = 0; r = '';
-            if (~lexist(fullfile(pwd, mybasename(fqfn)), 'file') && ...
-                 lexist(fqfn))
-                [s,r] = mlbash(sprintf('ln -s %s', fqfn));
-            end
-            fprintf('mlfourdfp.FourdfpVisitor.lns->%s\n', fqfn);
+        function [s,r] = lns(varargin)
+            ip = inputParser;
+            addRequired(ip, 'fqfn', @lexist);
+            addOptional(ip, 'fqfn1', '', @ischar);
+            parse(ip, varargin{:});
+            
+            [s,r] = mlbash(sprintf('ln -s %s %s', ip.Results.fqfn, ip.Results.fqfn1));
         end
         function [s,r] = lns_4dfp(varargin)
             ip = inputParser;
-            addRequired(ip, 'fqfpSrc',      @ischar);
-            addOptional(ip, 'fqfpDest', '', @ischar);
+            addRequired(ip, 'fqfp', @(x) lexist_4dfp(myfileprefix(x)));
+            addOptional(ip, 'fqfp1', '', @ischar);
             parse(ip, varargin{:});            
-            fqfpSrc  = myfileprefix(ip.Results.fqfpSrc);
-            fqfpDest = myfileprefix(ip.Results.fqfpDest);
-            if (isempty(fqfpDest))
-                fqfpDest = fullfile(pwd, mybasename(fqfpSrc));
-            end     
+            fqfp  = myfileprefix(ip.Results.fqfp);
+            fqfp1 = myfileprefix(ip.Results.fqfp1);
             
-            s = 0; r = '';
-            ext = { '.hdr' '.ifh' '.img' '.img.rec' };         
-            for e = 1:length(ext) 
-                try
-                    mlbash(sprintf('rm -f %s.4dfp%s', fqfpDest, ext{e}));
-                catch ME
-                    dispwarning(ME);
-                end
-                try
-                    [s,r] = mlbash(sprintf('ln  -s %s.4dfp%s %s.4dfp%s', fqfpSrc, ext{e}, fqfpDest, ext{e}));
-                catch ME
-                    dispwarning(ME);
-                end
+            ext = { '.4dfp.hdr' '.4dfp.ifh' '.4dfp.img' '.4dfp.img.rec' };         
+            for e = 1:length(ext)
+                [s,r] = mlfourdfp.FourdfpVisitor.lns([fqfp ext{e}], [fqfp1 ext{e}]);
             end
-            fprintf('mlfourdfp.FourdfpVisitor.lns_4dfp->%s\n', fqfpDest);
         end
         function fn    = mri_convert(varargin)
             fn = mlsurfer.SurferVisitor.mri_convert(varargin{:});
@@ -633,7 +619,7 @@ classdef FourdfpVisitor
                 this.nifti_4dfp_4(locfp);
                 this.move_4dfp(locfp, locfp1);
             end
-            ic = mlfourd.ImagingContext(ifh);
+            ic = mlfourd.ImagingContext(ifh1);
         end        
         function      [s,r] = copy_4dfp(this, varargin)
             ip = inputParser;
@@ -1069,11 +1055,11 @@ classdef FourdfpVisitor
                      lstrfind(fp, 'TRIO_Y_NDC') || ...
                      lstrfind(fp, '711-2') || ...
                      lstrfind(fp, '_atlas')))
-                    [s,r] = this.nifti_4dfp__(sprintf(' -4 %s %s', fp, fpo));
+                    [s,r] = this.nifitgz_4dfp__(sprintf(' -4 %s %s', fp, fpo));
                     deleteExisting([fp '.nii*']);
                     return
                 end
-                [s,r] = this.nifti_4dfp__(sprintf(' -4 %s % -N', fp, fpo));
+                [s,r] = this.nifitgz_4dfp__(sprintf(' -4 %s %s -N', fp, fpo));
                 deleteExisting([fp '.nii*']);
                 return
                 
@@ -1096,7 +1082,7 @@ classdef FourdfpVisitor
             fpo = fullfile(ptho, fpo);            
 
             if (lexist_4dfp(fp))
-                [s,r] = this.nifti_4dfp__(sprintf(' -n %s %s', fp, fpo));
+                [s,r] = this.nifitgz_4dfp__(sprintf(' -n %s %s', fp, fpo));
                 return
             end
             error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_n:  %s.4dfp.* not found', fp);
@@ -2251,7 +2237,7 @@ classdef FourdfpVisitor
             assert(ischar(args));
             [s,r] = dbbash(sprintf('msktgen3_4dfp %s', args));
         end
-        function [s,r] = nifti_4dfp__(~, args)
+        function [s,r] = nifitgz_4dfp__(~, args)
             % NIFTI_4DFP__
             % $Id: nifti_4dfp.c,v 1.9 2011/09/13 03:40:37 avi Exp $
             % Usage: nifti_4dfp <-4 or -n> <infile> <outfile> [options]

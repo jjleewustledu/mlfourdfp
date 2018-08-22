@@ -170,13 +170,26 @@ classdef IfhParser < mlio.AbstractParser
         function s = nameOfDataFile(this)
             [~,s] = myfileparts(this.rightSideChar('name of data file'));
         end
-        function     save(this)
+        function     save(this, varargin)
+            
+            ip = inputParser;
+            addOptional(ip, 'client', this);
+            parse(ip, varargin{:});
+            
             fid = fopen(this.fqfilename, 'w'); % overwrite
             fprintf(fid, 'INTERFILE\t:=\n');
             keys = this.SUPPORTED_KEYS;
             str = this.asstruct;
-            for ik = 1:length(keys)   
+            for ik = 1:length(keys)
                 
+                if (strcmp(keys{ik}, 'conversion_program'))
+                    fprintf(fid, 'conversion program\t:= %s\n', class(ip.Results.client));
+                    continue
+                end
+                if (strcmp(keys{ik}, 'name_of_data_file'))
+                    fprintf(fid, 'name of data file\t:= %s\n', this.fileprefix);
+                    continue
+                end
                 if (strcmp(keys{ik}, 'mmppix'))
                     if (~isempty(this.mmppix) && ~this.N_)
                         m = str.mmppix;

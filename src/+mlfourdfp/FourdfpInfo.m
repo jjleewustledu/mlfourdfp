@@ -271,6 +271,65 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
         ifh
         imgrec
     end
+    
+    methods (Static)
+        function hdr = adjustHdrForExport(hdr)
+            %% ADJUSTHDRFOREXPORT
+            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
+            %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
+            
+            hdr.hist.qform_code = 0;
+            hdr.hist.sform_code = 1;
+            
+            srow = [[hdr.dime.pixdim(2) 0 0 (0.5-hdr.hist.originator(1))*hdr.dime.pixdim(2)]; ...
+                    [0 hdr.dime.pixdim(3) 0 (0.5-hdr.hist.originator(2))*hdr.dime.pixdim(3)]; ...
+                    [0 0 hdr.dime.pixdim(4) (0.5-hdr.hist.originator(3))*hdr.dime.pixdim(4)]];
+            
+            hdr.hist.srow_x = -srow(1,:);
+            hdr.hist.srow_y =  srow(2,:);
+            hdr.hist.srow_z =  srow(3,:);
+        end
+        function e = defaultFilesuffix
+            e =  mlfourdfp.FourdfpInfo.FILETYPE_EXT;
+        end
+        function X = exportFourdfpToNIfTI(X, varargin)
+        end
+        function X = importFourdfp(X, varargin)
+            ip = inputParser;
+            addOptional(ip, 'orientation', 2, @isnumeric);
+            parse(ip, varargin{:});
+                      
+            switch (ip.Results.orientation)
+                case 2 % transverse
+                    X = flip(X,2);
+                case 3 % coronal
+                    X = flip(flip(X,2),3);
+                case 4 % sagittal
+                    X = flip(flip(flip(X,1),2),3);
+                otherwise
+                    error('mlfourd:unsupportedSwitchcase', 'NIfTId.flip_nii');
+            end
+        end
+        function [X,hdr] = exportFourdfp(X, hdr)
+            %% FLIPTOFOURDFP
+            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
+            %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
+            
+            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr);
+            X = flip(X, 1);
+            X = flip(X, 2);
+        end
+        function [X,hdr] = exportFreeSurferSpaceToFourdfp(X, hdr)
+            %% EXPORTFREESURFERSPACETOFOURDFP
+            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
+            %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
+            
+            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr);           
+            X = flip(X,2);
+            X = flip(X,3);
+            X = permute(X, [1 3 2]); 
+        end
+    end
 
 	methods 
         
@@ -290,22 +349,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
         end 
         
         %%
-            
-        function X    = flipForOrient(this, X)
-            %% applies 4dfp conventions
-            %  @return flips take 4dfp to analyze 7.5
-            
-            switch (this.ifh.asstruct.orientation)
-                case 2
-                    X = flip(X,2);
-                case 3
-                    X = flip(flip(X,2),3);
-                case 4
-                    X = flip(flip(flip(X,1),2),3);
-                otherwise
-                    error('mlfourd:unsupportedSwitchcase', 'NIfTId.flip_nii');
-            end
-        end    
+                
         function fqfn = fqfileprefix_4dfp_hdr(this)
             fqfn = [this.fqfileprefix '.4dfp.hdr'];
         end
@@ -324,8 +368,8 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             
             jimmy = this.load_nii; % struct
             X = jimmy.img; % identical to nii0 = load_untouch_nii(<from nifti_4dfp -n>); nii0.img
-            X = flip(X, 1); % storage order := Neurological, removing Analyze conventions
-            X = this.flipForOrient(X); % "
+            X = flip(X, 1); % storage order := Neurological, removing Analyze conventions  
+            X = this.importFourdfp(X, this.ifh.asstruct.orientation);
             X = this.ensureDatatype(X, this.datatype_);
             untouch = false;
             hdr = this.adjustHdr(jimmy.hdr);
@@ -347,7 +391,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
     %% PROTECTED
     
     methods (Access = protected)
-        function hdr  = newHdr(this, hdr)            
+        function hdr  = newHdr(this, hdr)
             [~,srow] = this.imgrecread;
             if (~isempty(srow) && ~this.N)
                 hdr.hist.originator(1) = -srow(1,4);

@@ -22,9 +22,6 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
         function info = createImagingInfo(fn, varargin)
             info = mlfourdfp.FourdfpInfo(fn, varargin{:});
         end
-        function e = defaultFilesuffix
-            e = mlfourdfp.FourdfpInfo.FOURDFP_EXT;
-        end
         function [s,finfo] = imagingInfo2struct(fn, varargin)
             fn = [myfileprefix(fn) '.4dfp.hdr'];
             finfo = mlfourdfp.FourdfpInfo(fn, varargin{:});
@@ -105,7 +102,10 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
             hdr_ = this.hdr;
             switch (this.filesuffix)
                 case FourdfpInfo.SUPPORTED_EXT
+                    [this.img,hdr_] = FourdfpInfo.exportFourdfp(this.img, hdr_);
+                    this.imagingInfo.hdr = hdr_;
                 case [NIfTIInfo.SUPPORTED_EXT '.hdr']
+                    this.img = FourdfpInfo.exportFourdfpToNIfTI(this.img, this.ifh.asstruct.orientation);
                     info = NIfTIInfo(this.fqfilename, ...
                         'datatype', this.datatype, 'ext', this.imagingInfo.ext, 'filetype', this.imagingInfo.filetype, 'N', this.N , 'untouch', false, 'hdr', this.hdr);
                     this = InnerNIfTI(info, ...
@@ -114,6 +114,7 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
                        'separator', this.separator, 'stack', this.stack, 'viewer', this.viewer);
                     this.imagingInfo.hdr = hdr_;
                 case MGHInfo.SUPPORTED_EXT 
+                    this.img = FourdfpInfo.exportFourdfpToNIfTI(this.img, this.ifh.asstruct.orientation);
                     info = MGHInfo(this.fqfilename, ...
                         'datatype', this.datatype, 'ext', this.imagingInfo.ext, 'filetype', this.imagingInfo.filetype, 'N', this.N , 'untouch', false, 'hdr', this.hdr);
                     this = InnerMGH(info, ...
@@ -140,7 +141,7 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
             catch ME
                 handexcept(ME, 'mlfourdfp:viewerError', ...
                     'InnerFourdfp.viewExternally called mlbash with %s; \nit returned s->%i, r->%s', ...
-                    cmdline, s, r);
+                    app, s, r);
             end
         end        
     end
@@ -148,15 +149,14 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
     %% HIDDEN
     
     methods (Hidden) 
-        function         save__(this)
+        function save__(this)
             warning('off', 'MATLAB:structOnObject');
             try
                 this.img_ = single(this.img_);
-                this.img_ = flip(this.img_, 2); % 4dfp convention
-%                this.imagingInfo_.hdr.hist.srow_x = -this.imagingInfo_.hdr.hist.srow_x;
+                % this.img = flip(this.img, 2);
                 mlniftitools.save_nii(struct(this), this.fqfileprefix_4dfp_hdr);
                 this.imagingInfo_.ifh.fqfileprefix = this.fqfileprefix;
-                this.imagingInfo_.ifh.save;
+                this.imagingInfo_.ifh.save(this);
                 this.imagingInfo_.imgrec.fqfileprefix = this.fqfileprefix;
                 this.imagingInfo_.imgrec.save;
             catch ME
