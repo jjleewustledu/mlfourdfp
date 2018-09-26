@@ -14,6 +14,8 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
  	
 
 	properties
+        sessionData
+        sessionPath
         studyData
  		testObj
         ctFqfp  = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY28', 'AC_CT')
@@ -87,9 +89,11 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
 
  	methods (TestClassSetup)
 		function setupDicomSorter(this)
- 			import mlfourdfp.*;
-            this.studyData = mlraichle.StudyDataSingleton.instance('initialize');
- 			this.testObj_  = DicomSorter('studyData', this.studyData);
+ 			import mlfourdfp.* mlraichle.*;
+            this.studyData = StudyData;
+            this.sessionPath = fullfile(RaichleRegistry.instance.subjectsDir, 'HYGLY28', '');
+            this.sessionData = SessionData('studyData', this.studyData, 'sessionPath', this.sessionPath);
+ 			this.testObj_  = DicomSorter('sessionData', this.sessionData);
  		end
 	end
 

@@ -136,7 +136,8 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
                 tmp = this.tempFqfilename;
                 this.saveas(tmp); % always save temp; internal img likely has changed from img on filesystem
                 v = mlfourdfp.Viewer(app);
-                [s,r] = v.aview([tmp varargin{:}]);
+                tmp = [tmp varargin];
+                [s,r] = v.aview(tmp{:});
                 this.deleteExisting(tmp);
             catch ME
                 handexcept(ME, 'mlfourdfp:viewerError', ...

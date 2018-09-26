@@ -19,7 +19,7 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
         function g = get.framesDynamic(this)
             switch (this.sessionData.tracer)
                 case 'FDG'
-                    g = [false(1,12) true(1,60)];
+                    g = true(1,65);
                 case {'HO' 'OO'}
                     g = true(1,10);
                 case 'OC'

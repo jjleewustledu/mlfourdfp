@@ -273,22 +273,6 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
     end
     
     methods (Static)
-        function hdr = adjustHdrForExport(hdr)
-            %% ADJUSTHDRFOREXPORT
-            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
-            %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
-            
-            hdr.hist.qform_code = 0;
-            hdr.hist.sform_code = 1;
-            
-            srow = [[hdr.dime.pixdim(2) 0 0 (0.5-hdr.hist.originator(1))*hdr.dime.pixdim(2)]; ...
-                    [0 hdr.dime.pixdim(3) 0 (0.5-hdr.hist.originator(2))*hdr.dime.pixdim(3)]; ...
-                    [0 0 hdr.dime.pixdim(4) (0.5-hdr.hist.originator(3))*hdr.dime.pixdim(4)]];
-            
-            hdr.hist.srow_x = -srow(1,:);
-            hdr.hist.srow_y =  srow(2,:);
-            hdr.hist.srow_z =  srow(3,:);
-        end
         function e = defaultFilesuffix
             e =  mlfourdfp.FourdfpInfo.FILETYPE_EXT;
         end
@@ -374,6 +358,41 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             untouch = false;
             hdr = this.adjustHdr(jimmy.hdr);
         end
+        function hdr  = recalculateHdrHistOriginator(this, hdr)
+            [~,srow] = this.imgrecread;
+            if (~isempty(srow) && ~this.N)
+                hdr.hist.originator(1) = -srow(1,4);
+                hdr.hist.originator(2) = -srow(2,4);
+                hdr.hist.originator(3) = -srow(3,4);
+            end
+            
+            hdr.dime.xyzt_units = 2+8; % mm, sec; see also mlniftitools.extra_nii_hdr
+            hdr.hist.qform_code = 0;
+            hdr.hist.sform_code = 1;
+            
+                                    % a = 0.5  * sqrt(1 + trace(R)) = 0.5 + sqrt(2);
+            hdr.hist.quatern_b = 0; % 0.25 * (R(3,2) - R(2,3)) / a;
+            hdr.hist.quatern_c = 0; % 0.25 * (R(1,3) - R(3,1)) / a;
+            hdr.hist.quatern_d = 0; % 0.25 * (R(2,1) - R(1,2)) / a;
+            
+            if (isfield(hdr.hist, 'originator'))
+                hdr.hist.qoffset_x = (1-hdr.hist.originator(1))*hdr.dime.pixdim(2);
+                hdr.hist.qoffset_y = (1-hdr.hist.originator(2))*hdr.dime.pixdim(3);
+                hdr.hist.qoffset_z = (1-hdr.hist.originator(3))*hdr.dime.pixdim(4);            
+
+                % for compliance with NIfTI format
+                srow = [[hdr.dime.pixdim(2) 0 0           ( 1-hdr.hist.originator(1))*hdr.dime.pixdim(2)]; ...
+                        [0 hdr.dime.pixdim(3) 0           ( 1-hdr.hist.originator(2))*hdr.dime.pixdim(3)]; ...
+                        [0 0 hdr.dime.pixdim(4)*this.qfac ( 1-hdr.hist.originator(3))*hdr.dime.pixdim(4)]];
+                hdr.hist.srow_x = srow(1,:);
+                hdr.hist.srow_y = srow(2,:);
+                hdr.hist.srow_z = srow(3,:); 
+            end
+                       
+            hdr = mlniftitools.extra_nii_hdr(hdr);
+            hdr = this.adjustDime(hdr);
+            hdr = this.adjustHist(hdr);
+        end
         
  		function this = FourdfpInfo(varargin)
  			%% FOURDFPINFO
@@ -391,38 +410,6 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
     %% PROTECTED
     
     methods (Access = protected)
-        function hdr  = newHdr(this, hdr)
-            [~,srow] = this.imgrecread;
-            if (~isempty(srow) && ~this.N)
-                hdr.hist.originator(1) = -srow(1,4);
-                hdr.hist.originator(2) = -srow(2,4);
-                hdr.hist.originator(3) = -srow(3,4);
-            end
-            
-            hdr.dime.xyzt_units = 2+8; % mm, sec; see also mlniftitools.extra_nii_hdr
-            hdr.hist.qform_code = 0;
-            hdr.hist.sform_code = 1;
-            
-                                    % a = 0.5  * sqrt(1 + trace(R)) = 0.5 + sqrt(2);
-            hdr.hist.quatern_b = 0; % 0.25 * (R(3,2) - R(2,3)) / a;
-            hdr.hist.quatern_c = 0; % 0.25 * (R(1,3) - R(3,1)) / a;
-            hdr.hist.quatern_d = 0; % 0.25 * (R(2,1) - R(1,2)) / a;
-            hdr.hist.qoffset_x = (1-hdr.hist.originator(1))*hdr.dime.pixdim(2);
-            hdr.hist.qoffset_y = (1-hdr.hist.originator(2))*hdr.dime.pixdim(3);
-            hdr.hist.qoffset_z = (1-hdr.hist.originator(3))*hdr.dime.pixdim(4);            
-            
-            % for compliance with NIfTI format
-            srow = [[hdr.dime.pixdim(2) 0 0           ( 1-hdr.hist.originator(1))*hdr.dime.pixdim(2)]; ...
-                    [0 hdr.dime.pixdim(3) 0           ( 1-hdr.hist.originator(2))*hdr.dime.pixdim(3)]; ...
-                    [0 0 hdr.dime.pixdim(4)*this.qfac ( 1-hdr.hist.originator(3))*hdr.dime.pixdim(4)]];
-            
-            hdr.hist.srow_x = srow(1,:);
-            hdr.hist.srow_y = srow(2,:);
-            hdr.hist.srow_z = srow(3,:);            
-            hdr = mlniftitools.extra_nii_hdr(hdr);
-            hdr = this.adjustDime(hdr);
-            hdr = this.adjustHist(hdr);
-        end
     end
     
     %% PRIVATE
@@ -430,6 +417,25 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
     properties (Access = private)
         ifh_ % struct
         imgrec_ % cell
+    end
+    
+    methods (Static, Access = private)
+        function hdr = adjustHdrForExport(hdr)
+            %% ADJUSTHDRFOREXPORT
+            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
+            %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
+            
+            hdr.hist.qform_code = 0;
+            hdr.hist.sform_code = 1;
+            
+            srow = [[hdr.dime.pixdim(2) 0 0 (0.5-hdr.hist.originator(1))*hdr.dime.pixdim(2)]; ...
+                    [0 hdr.dime.pixdim(3) 0 (0.5-hdr.hist.originator(2))*hdr.dime.pixdim(3)]; ...
+                    [0 0 hdr.dime.pixdim(4) (0.5-hdr.hist.originator(3))*hdr.dime.pixdim(4)]];
+            
+            hdr.hist.srow_x = -srow(1,:);
+            hdr.hist.srow_y =  srow(2,:);
+            hdr.hist.srow_z =  srow(3,:);
+        end
     end
     
     methods (Access = private)
@@ -487,7 +493,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             cc = p.cellContents;
             sr = p.commonSform;
         end
-        function ii    = initialIfh(this)
+        function ii   = initialIfh(this)
             if (~lexist([this.fqfileprefix '.4dfp.ifh'], 'file'))
                 ii = mlfourdfp.IfhParser.constructDenovo( ...
                     this.hdr, ...
@@ -498,7 +504,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             end            
             ii = this.ifhread;
         end
-        function irl   = initialImgRec(this)
+        function irl  = initialImgRec(this)
             irl = mlfourdfp.ImgRecLogger(this.fqfileprefix, this);
         end
     end

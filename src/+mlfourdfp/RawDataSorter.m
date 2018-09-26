@@ -25,7 +25,7 @@ classdef RawDataSorter
             g = this.sessionData.studyData;
         end
         function this = set.studyData(this, s)
-            assert(isa(s, 'mlpipeline.StudyDataHandle'));
+            assert(isa(s, 'mlpipeline.IStudyHandle'));
             assert(~isempty(this.sessionData_));
             this.sessionData_.studyData = s;
         end
@@ -353,12 +353,12 @@ classdef RawDataSorter
  		function this = RawDataSorter(varargin)
  			%% RAWDATASORTER
  			%  Usage:  this = RawDataSorter(param_name, param_value)
-            %  @param 'studyData' is an mlpipeline.StudyDataHandle.
+            %  @param 'studyData' is an mlpipeline.IStudyHandle.
             %  @param 'sessionData' is an mlpipeline.SessionData.
             
             ip = inputParser;
             addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData'));
-            addParameter(ip, 'studyData',   [], @(x) isa(x, 'mlpipeline.StudyDataHandle') || isempty(x));
+            addParameter(ip, 'studyData',   [], @(x) isa(x, 'mlpipeline.IStudyHandle') || isempty(x));
             parse(ip, varargin{:});
             
             this.sessionData_ = ip.Results.sessionData;

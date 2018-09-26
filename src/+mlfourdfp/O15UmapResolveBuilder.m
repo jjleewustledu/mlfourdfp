@@ -437,7 +437,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             addRequired( ip, 'methodName', @ischar);
             addParameter(ip, 'ac', true, @islogical);
             addParameter(ip, 'sessionsExpr', 'HYGLY*', @ischar);
-            addParameter(ip, 'studyd', mlraichle.StudyData, @(x) isa(x, 'mlpipeline.StudyDataHandle'));
+            addParameter(ip, 'studyd', mlraichle.StudyData, @(x) isa(x, 'mlpipeline.IStudyHandle'));
             addParameter(ip, 'tracerExpr', {'HO' 'OO'}, @iscell);
             addParameter(ip, 'visitExpr', {'V1' 'V2'}, @iscell);
             parse(ip, varargin{:});
@@ -479,7 +479,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
             addRequired( ip, 'methodName', @ischar);
             addParameter(ip, 'ac', true, @islogical);
             addParameter(ip, 'sessionsExpr', 'HYGLY*', @ischar);
-            addParameter(ip, 'studyd', mlraichle.StudyData, @(x) isa(x, 'mlpipeline.StudyDataHandle'));
+            addParameter(ip, 'studyd', mlraichle.StudyData, @(x) isa(x, 'mlpipeline.IStudyHandle'));
             addParameter(ip, 'visitExpr', {'V1' 'V2'}, @iscell);
             parse(ip, varargin{:});
             
