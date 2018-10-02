@@ -23,7 +23,7 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
         sessdFDG
         sessdHO
  		testObj
-        theImages
+        theImages = {'T1001.4dfp.hdr' 't2.4dfp.hdr'}
         tracers = {'FDG' 'OC' 'OO' 'HO'}
         
         view = false
@@ -126,7 +126,7 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
                 return
             end
             
-            this.testObj.resolveLog = loggerFilename('', 'func', 'Test_CompositeT4ResolveBuilder_test_t4ResolveAndPaste');
+            this.testObj.resolveLog = this.testObj.loggerFilename('', 'func', 'Test_CompositeT4ResolveBuilder_test_t4ResolveAndPaste');
             [ipr_,imgFns_] = this.testObj.resolveAndPaste(this.ipr);
             this.verifyEqual(ipr_.resolved, ...
                 {'testNativeCropped1_TestCT4RB' ...
@@ -214,8 +214,7 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
                 'NRevisions', 1, ...
                 'resolveTag', this.resolveTag, ...   
                 'theImages', this.theImages, ...
-                'indicesLogical', this.indicesLogical, ... 
-                'indexOfReference', 3);
+                'indicesLogical', this.indicesLogical);
             this.ipr = struct( ...
                 'dest', [], ...
                 'source', [], ...
@@ -229,7 +228,7 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
             this.ipr.sourceBlur = this.blurArray;
             this.ipr.destBlur = this.blurArray;
             this.fvisitor = mlfourdfp.FourdfpVisitor;
-            this.ensureImages;
+            %this.ensureImages;
             setenv('DEBUG', ''); % cf. dbbash
  			this.addTeardown(@this.teardownClass);
  		end

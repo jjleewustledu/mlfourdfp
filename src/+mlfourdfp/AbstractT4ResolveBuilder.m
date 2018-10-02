@@ -67,6 +67,38 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
         function f   = frameNumber(str, offset)
             names = regexp(str, '\w+(-|_)(F|f)rame(?<f>\d+)', 'names');
             f = str2double(names.f) + offset;
+        end            
+        function fqfn = loggerFilename(varargin)
+            %% LOGGERFILENAME ... 
+            %  Usage:  fq_filename = loggerFilename(['func', func_value, 'tag', tag_value, 'path', path_value]) 
+            %  @param method is the name of the calling function
+            %  @param tag is any string identifier
+            %  @param path is the path to the log file
+            %  @returns fqfn is a standardized log filename
+
+            fqfn = [mlfourdfp.AbstractT4ResolveBuilder.loggerFileprefix(varargin{:}) '.log'];
+        end
+        function fqfp = loggerFileprefix(varargin)
+            %% LOGGERFILEPREFIX ... 
+            %  Usage:  fq_fileprefix = loggerFileprefix(['func', func_value, 'tag', tag_value, 'path', path_value]) 
+            %  @param method is the name of the calling function
+            %  @param tag is any string identifier
+            %  @param path is the path to the log file
+            %  @returns fqfp is a standardized log fileprefix
+
+            ip = inputParser;
+            addRequired( ip, 'tag', @ischar);
+            addParameter(ip, 'func', 'unknownFunc', @ischar);
+            addParameter(ip, 'path', pwd, @isdir);
+            parse(ip, varargin{:});
+            tag = strrep(mybasename(ip.Results.tag), '.', '_');
+            if (~isempty(tag) && strcmp(tag(end), '_'))
+                tag = tag(1:end-1);
+            end
+            func = strrep(mybasename(ip.Results.func), '.', '_');
+
+            fqfp = fullfile(ip.Results.path, ...
+                 sprintf('%s_%s_D%s', tag, func, datestr(now,'yyyymmddTHHMMSSFFF')));
         end
         function       printv(varargin)
             if (~isempty(getenv('PRINTV')))
@@ -339,7 +371,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
                 end
             end
             assert(length(fqfps) == sum(this.indicesLogical));
-        end    
+        end
         function msk   = maskBoundaries(this, fqfp)
             this.buildVisitor.nifti_4dfp_n(fqfp);
             ic  = mlfourd.ImagingContext(fqfp);

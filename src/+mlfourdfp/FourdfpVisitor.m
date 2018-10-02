@@ -685,7 +685,7 @@ classdef FourdfpVisitor
             addRequired(ip, 'source', @this.lexist_4dfp);
             addOptional(ip, 't4',     ['_' this.filenameT4(varargin{1}, varargin{2})], @ischar);
             addOptional(ip, 'mode',   2051, @isnumeric);
-            addOptional(ip, 'log',    loggerFilename('', 'func', 'FourdfpVisitor_eta'), @ischar);
+            addOptional(ip, 'log',    sprintf('_FourdfpVisitor_eta_D%s', datestr(now, 'yyyymmddTHHMMSSFFF')), @ischar);
             parse(ip, varargin{:});
             
             this.imgreg_4dfp__(sprintf('%s none %s none %s %i >> %s', ...
@@ -1289,7 +1289,7 @@ classdef FourdfpVisitor
             addRequired( ip, 'output',        @ischar);
             addRequired( ip, 'filenames',     @ischar);
             addParameter(ip, 'options',   '', @ischar);
-            addParameter(ip, 'log',       '', @ischar);
+            addParameter(ip, 'log',       '', @(x) ischar(x) || isa(x, 'Logger'));
             parse(ip, varargin{:});
             log = ip.Results.log;
             if (~isempty(ip.Results.log))

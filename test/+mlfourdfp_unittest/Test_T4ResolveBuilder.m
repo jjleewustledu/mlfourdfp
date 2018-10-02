@@ -103,7 +103,7 @@ classdef Test_T4ResolveBuilder < matlab.unittest.TestCase
                 return
             end
             
-            this.testObj.resolveLog = loggerFilename('', 'func', 'Test_T4ResolveBuilder_test_t4ResolveAndPaste');
+            this.testObj.resolveLog = this.testObj.loggerFilename('', 'func', 'Test_T4ResolveBuilder_test_t4ResolveAndPaste');
             [ipr_,imgFns_] = this.testObj.resolveAndPaste(this.ipr);
             this.verifyEqual(ipr_.resolved, 'testv1r1_Test_T4ResolveBuilder');
             this.verifyEqual(imgFns_, 'testv1r1_frame3 testv1r1_frame5');

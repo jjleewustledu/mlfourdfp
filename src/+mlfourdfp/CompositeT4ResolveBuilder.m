@@ -101,9 +101,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         end        
         function [ipr,this]   = revise(this, ipr)
             ipr = this.copySourceToDest(ipr); % crop/copy ipr.source to ipr.dest       
-            this.imageRegLog = loggerFilename( ...
+            this.imageRegLog = this.loggerFilename( ...
                 ipr.dest{this.indexOfReference}, 'func', 'CompositeT4ResolveBuilder_imageReg', 'path', ipr.logPath);
-            this.resolveLog = loggerFilename( ...
+            this.resolveLog = this.loggerFilename( ...
                 ipr.dest{this.indexOfReference}, 'func', 'CompositeT4ResolveBuilder_t4ResolveAndPaste', 'path', ipr.logPath);
             
             stagedImgs  = this.lazyStageImages(ipr);    % contracted wrt this.indicesLogical
@@ -392,7 +392,13 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 end
                 fqfps{ii} = 'none';
             end
-        end      
+        end  
+        function        cd(~, varargin)
+            if (isempty(varargin) || isempty(varargin{1}))
+                return
+            end
+            cd(varargin{:});
+        end    
         function fqfps   = lazyStageImages(this, ipr)
             assert(iscell(ipr.dest));
             fqfps = {};
