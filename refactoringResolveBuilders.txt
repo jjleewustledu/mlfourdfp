@@ -1,0 +1,25 @@
+Tease apart inheritance.
+
+Different jobs done by *ResolveBuilder hierarchy:
+
+- resolve frames
+- resolve composite of image objects
+
+- resolve by filenames
+- resolve by image objects
+
+- resolve using SessionData objects
+- resolve using alternative data objects
+
+- resolve umaps
+- resolve T1 and other freesurfer objects
+- resolve heterogeneous tracer scans for a single subject
+
+- calls imgreg_4dfp
+
+- calls t4_resolve
+
+- generates masks for imgreg_4dfp
+
+- records error, displacement information
+
