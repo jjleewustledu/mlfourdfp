@@ -29,6 +29,10 @@ classdef AbstractBuilder < mlpipeline.AbstractBuilder
             vtor = mlfourdfp.FourdfpVisitor;
             [s,r] = vtor.nifti_4dfp_n(varargin{:});
         end
+        function fn    = niiFilename(fn)
+            [p,f] = myfileparts(fn);
+            fn = fullfile(p, [f '.nii']);
+        end
         function fn    = niigzFilename(fn)
             [p,f] = myfileparts(fn);
             fn = fullfile(p, [f '.nii.gz']);
