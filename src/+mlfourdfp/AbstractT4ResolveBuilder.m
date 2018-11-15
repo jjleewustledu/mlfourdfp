@@ -726,7 +726,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             %  @param ignoreFinishfile is boolean.
             %  @return property this.finished instantiated with path, tags, the booleans.
             
-            this = updateFinished@mlpipeline.AbstractDataBuilder(this, varargin{:});
+            this = updateFinished@mlpipeline.AbstractBuilder(this, varargin{:});
             this.finished_.tag = sprintf('%s_NRev%i_idxOfRef%i', ...
                 this.finished_.tag, this.NRevisions, this.indexOfReference);
         end
@@ -773,7 +773,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             addParameter(ip, 'theImages',     '',         @(x) iscell(x) || ischar(x));
             parse(ip, varargin{:});            
             this.ipResults_     = ip.Results.ipResults;
-            this.keepForensics  = ip.Results.keepForensics; % override mlpipeline.AbstractDataBuilder
+            this.keepForensics  = ip.Results.keepForensics; % override mlpipeline.AbstractBuilder
             this.maskForImages_ = ip.Results.maskForImages;
             this.NRevisions     = ip.Results.NRevisions;
             this.resolveTag     = ip.Results.resolveTag;

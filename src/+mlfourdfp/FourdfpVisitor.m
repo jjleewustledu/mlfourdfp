@@ -47,7 +47,7 @@ classdef FourdfpVisitor
             end
             error('mlfourdfp:backupRejected', 'FourdfpVisitor.backupn.ip.Results.n -> %i', ip.Results.n);
         end
-        function clearIfhMmppixCenter(fqfp, N)
+        function         clearIfhMmppixCenter(fqfp, N)
             return
             
             import mlfourdfp.*;
