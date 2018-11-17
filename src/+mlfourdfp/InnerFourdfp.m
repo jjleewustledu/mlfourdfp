@@ -104,7 +104,7 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
             hdr_ = this.hdr;
             switch (this.filesuffix)
                 case FourdfpInfo.SUPPORTED_EXT
-                    [this.img,hdr_] = FourdfpInfo.exportFourdfp(this.img, hdr_, this.N);
+                    [this.img,hdr_] = FourdfpInfo.exportFourdfp(this.img, hdr_);
                     this.imagingInfo.hdr = hdr_;
                 case [NIfTIInfo.SUPPORTED_EXT '.hdr']
                     this.img = FourdfpInfo.exportFourdfpToNIfTI(this.img, this.ifh.asstruct.orientation);

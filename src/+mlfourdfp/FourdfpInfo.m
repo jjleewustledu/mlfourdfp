@@ -294,12 +294,12 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
                     error('mlfourd:unsupportedSwitchcase', 'NIfTId.flip_nii');
             end
         end
-        function [X,hdr] = exportFourdfp(X, hdr, N)
+        function [X,hdr] = exportFourdfp(X, hdr)
             %% FLIPTOFOURDFP
             %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
             %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
             
-            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr, N);
+            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr);
             X = flip(X, 1);
             X = flip(X, 2);
         end
@@ -420,7 +420,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
     end
     
     methods (Static, Access = private)
-        function hdr = adjustHdrForExport(hdr, varargin)
+        function hdr = adjustHdrForExport(hdr)
             %% ADJUSTHDRFOREXPORT
             %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
             %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
@@ -435,13 +435,15 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             %fy = hdr.dime.pixdim(3);
             %fz = hdr.dime.pixdim(4);
             
-            srow = [[-abs(hdr.dime.pixdim(2)) 0 0 abs((1-hdr.hist.originator(1))*fx)]; ...
-                    [0    hdr.dime.pixdim(3) 0        (1-hdr.hist.originator(2))*fy]; ...
-                    [0 0  hdr.dime.pixdim(4)          (1-hdr.hist.originator(3))*fz]];
+            assert(mlpet.Resources.instance.defaultN);
             
-            hdr.hist.srow_x = srow(1,:);
-            hdr.hist.srow_y = srow(2,:);
-            hdr.hist.srow_z = srow(3,:);
+            srow = [ [hdr.dime.pixdim(2) 0 0 (1-hdr.hist.originator(1))*fx]; ...
+                     [0 hdr.dime.pixdim(3) 0 (1-hdr.hist.originator(2))*fy]; ...
+                     [0 0 hdr.dime.pixdim(4) (1-hdr.hist.originator(3))*fz] ];
+            
+            hdr.hist.srow_x = -srow(1,:);
+            hdr.hist.srow_y =  srow(2,:);
+            hdr.hist.srow_z =  srow(3,:);
         end
     end
     
