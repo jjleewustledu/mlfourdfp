@@ -46,6 +46,22 @@ classdef RawDataSorter
     end
     
     methods (Static)
+        function this  = Create(varargin)
+            this = mlfourdfp.RawDataSorter(varargin{:});
+        end  
+        function this  = CreateSorted(varargin)
+            this = mlfourdfp.RawDataSorter(varargin{:});
+            rawData = fullfile(this.sourcePath_, 'RESOURCES', 'RawData', '');
+            scans   = fullfile(this.sourcePath_, 'SCANS', '');
+            try
+                this.dcm_sort_PPG(rawData);
+                this.moveRawData(rawData);
+            catch ME
+                dispwarning(ME);
+            end
+            this.copyUTE(scans);  
+        end  
+        
         function [s,r] = bash_copyfile(loc0, loc)
             if (isdir(loc))
                 error('mlfourdfp:potentialDataCorruption', ...
@@ -148,7 +164,7 @@ classdef RawDataSorter
         end
         function pth  = sourceRawDataPath(str)
             assert(ischar(str));
-            pth = fullfile(getenv('PPG'), 'rawdata', str, 'RESOURCES', 'RawData', '');            
+            pth = fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, str, 'RESOURCES', 'RawData', '');            
             if(~isdir(pth))
                 pth = ''; 
             end
@@ -156,9 +172,9 @@ classdef RawDataSorter
         function pth  = sourceScansPath(str)
             assert(ischar(str));
             if (~strcmp(str(1), '/'))
-                pth = fullfile(getenv('PPG'), 'rawdata', str, 'SCANS', '');
+                pth = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, str, 'SCANS', '');
                 if (~isdir(pth))
-                    pth = fullfile(getenv('PPG'), 'rawdata', str, 'scans', '');
+                    pth = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, str, 'scans', '');
                 end
             else
                 pth = fullfile(str, '..', '..', 'SCANS', '');
@@ -357,10 +373,11 @@ classdef RawDataSorter
             %  @param 'sessionData' is an mlpipeline.SessionData.
             
             ip = inputParser;
+            addParameter(ip, 'srcPath',         @isdir); % top-level folder for session raw data
             addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData'));
             addParameter(ip, 'studyData',   [], @(x) isa(x, 'mlpipeline.IStudyHandle') || isempty(x));
             parse(ip, varargin{:});
-            
+            this.sourcePath_ = ip.Results.srcPath;
             this.sessionData_ = ip.Results.sessionData;
             if (~isempty(ip.Results.studyData))
                 this.sessionData_.studyData = ip.Results.studyData;
@@ -372,6 +389,7 @@ classdef RawDataSorter
     
     properties (Access = private)
         sessionData_
+        sourcePath_
     end
 
     methods (Access = private)        

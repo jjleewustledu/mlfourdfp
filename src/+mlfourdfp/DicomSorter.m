@@ -1,6 +1,6 @@
 classdef DicomSorter < mlpipeline.DicomSorter
 	%% DICOMSORTER  
-    %  Top level:  sessionSort.
+    %  TO DO:  refactor to collapse hierarchy.
 
 	%  $Revision$
  	%  was created 18-Sep-2016 15:18:38
@@ -16,11 +16,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
         function this  = CreateSorted(varargin)
             this = mlfourdfp.DicomSorter(varargin{:});
             this = this.sessionSort(varargin{:});
-        end  
-        function [s,r] = copyConverted(varargin)
-            fv = mlfourdfp.FourdfpVisitor;
-            [s,r] = fv.copy_4dfp(varargin{:});
-        end       
+        end        
         function pth   = findRawdataSession(sessd)
             %% FINDRAWDATASESSION is a pseudo-inverse to DicomSorter.destPath
             %  @returns path to rawdata session.
@@ -43,11 +39,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
             
             assert(ischar(str));
             re = regexp(str, '(?<subjid>^([A-Za-z]+\d+|[A-Za-z]+\d+_\d+|[A-Za-z]+\d+-\d+))(_|-)[A-Za-z_-]+(?<visit>\d)\w*', 'names');
-        end
-        function tf    = lexistConverted(fqfp)
-            fv = mlfourdfp.FourdfpVisitor;
-            tf = fv.lexist_4dfp(fqfp);
-        end
+        end 
         function this  = sessions_to_4dfp(varargin)
             ip = inputParser;
             addParameter(ip, 'sessionFilter', @(x) iscell(x) || ischar(x));
@@ -74,16 +66,6 @@ classdef DicomSorter < mlpipeline.DicomSorter
                 end
             end
         end       
-        function names = sortBySeriesNumber(names)
-            seriesNums = zeros(1,length(names));
-            for n = 1:length(names)                
-                re = regexp(names{n}, '\S+_series(?<series>\d+)\S*', 'names');
-                seriesNums(n) = str2double(re.series);
-            end
-            tbl   = table(seriesNums', names', 'VariableNames', {'seriesNums' 'names'});
-            tbl   = sortrows(tbl);
-            names = tbl.names;
-        end
     end
     
 	methods
@@ -104,7 +86,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
             end
             pth = pwd;
         end
-        function canonFp = dcm2imagingFormat(this, info, parentFqdn)
+        function canonFp = dcm2imagingFormat(this, info, parentFqdn, varargin)
             %% DCM_TO_4DFP
             %  @param info is a struct produced by dcminfo.
             %  @param parentFqdn is the parent directory of a DICOM directory.
@@ -162,8 +144,25 @@ classdef DicomSorter < mlpipeline.DicomSorter
             
             this = this@mlpipeline.DicomSorter(varargin{:});
             this.buildVisitor_ = mlfourdfp.FourdfpVisitor;
- 		end
+        end
  	end 
+        
+    %% PROTECTED
+    
+    methods (Access = protected)
+        function [s,r] = copyConverted(~, varargin)
+            fv = mlfourdfp.FourdfpVisitor;
+            [s,r] = fv.copy_4dfp(varargin{:});
+        end 
+        function tf    = lexistConverted(~, fqfp)
+            fv = mlfourdfp.FourdfpVisitor;
+            tf = fv.lexist_4dfp(fqfp);
+        end  
+        function [s,r] = moveConverted(~, varargin)
+            fv = mlfourdfp.FourdfpVisitor;
+            [s,r] = fv.move_4dfp(varargin{:});
+        end       
+    end
     
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
  end
