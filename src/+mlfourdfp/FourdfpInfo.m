@@ -264,7 +264,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
         FILETYPE      = '4DFP'
         FILETYPE_EXT  = '.4dfp.hdr'
         FOURDFP_EXT   = '.4dfp.hdr';
-        SUPPORTED_EXT = {'.4dfp.hdr' '.4dfp.ifh'};
+        SUPPORTED_EXT = {'.4dfp.hdr' '.4dfp.ifh' '.4dfp.img'};
     end
     
     properties (Dependent)
@@ -294,12 +294,12 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
                     error('mlfourd:unsupportedSwitchcase', 'NIfTId.flip_nii');
             end
         end
-        function [X,hdr] = exportFourdfp(X, hdr)
+        function [X,hdr] = exportFourdfp(X, hdr, N)
             %% FLIPTOFOURDFP
             %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
             %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
             
-            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr);
+            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr, N);
             X = flip(X, 1);
             X = flip(X, 2);
         end
@@ -420,7 +420,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
     end
     
     methods (Static, Access = private)
-        function hdr = adjustHdrForExport(hdr)
+        function hdr = adjustHdrForExport(hdr, varargin)
             %% ADJUSTHDRFOREXPORT
             %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
             %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
@@ -428,13 +428,20 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             hdr.hist.qform_code = 0;
             hdr.hist.sform_code = 1;
             
-            srow = [[hdr.dime.pixdim(2) 0 0 (0.5-hdr.hist.originator(1))*hdr.dime.pixdim(2)]; ...
-                    [0 hdr.dime.pixdim(3) 0 (0.5-hdr.hist.originator(2))*hdr.dime.pixdim(3)]; ...
-                    [0 0 hdr.dime.pixdim(4) (0.5-hdr.hist.originator(3))*hdr.dime.pixdim(4)]];
+            fx = 1;
+            fy = 1;
+            fz = 1;
+            %fx = hdr.dime.pixdim(2);
+            %fy = hdr.dime.pixdim(3);
+            %fz = hdr.dime.pixdim(4);
             
-            hdr.hist.srow_x = -srow(1,:);
-            hdr.hist.srow_y =  srow(2,:);
-            hdr.hist.srow_z =  srow(3,:);
+            srow = [[-abs(hdr.dime.pixdim(2)) 0 0 abs((1-hdr.hist.originator(1))*fx)]; ...
+                    [0    hdr.dime.pixdim(3) 0        (1-hdr.hist.originator(2))*fy]; ...
+                    [0 0  hdr.dime.pixdim(4)          (1-hdr.hist.originator(3))*fz]];
+            
+            hdr.hist.srow_x = srow(1,:);
+            hdr.hist.srow_y = srow(2,:);
+            hdr.hist.srow_z = srow(3,:);
         end
     end
     
@@ -499,7 +506,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
                     this.hdr, ...
                     'fileprefix', this.fileprefix, ...
                     'orientation', 2, ...
-                    'N', true);
+                    'N', this.N);
                 return
             end            
             ii = this.ifhread;

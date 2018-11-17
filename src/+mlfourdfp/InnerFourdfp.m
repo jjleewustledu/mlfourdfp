@@ -91,6 +91,8 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
  			%  @param imagingInfo is an mlfourd.ImagingInfo object and is required; it may be an aufbau object.
             
             this = this@mlfourd.AbstractInnerImagingFormat(varargin{:});
+            this = this.adjustQOffsets;
+            this = this.adjustSRows;
         end
     end 
     
@@ -102,7 +104,7 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
             hdr_ = this.hdr;
             switch (this.filesuffix)
                 case FourdfpInfo.SUPPORTED_EXT
-                    [this.img,hdr_] = FourdfpInfo.exportFourdfp(this.img, hdr_);
+                    [this.img,hdr_] = FourdfpInfo.exportFourdfp(this.img, hdr_, this.N);
                     this.imagingInfo.hdr = hdr_;
                 case [NIfTIInfo.SUPPORTED_EXT '.hdr']
                     this.img = FourdfpInfo.exportFourdfpToNIfTI(this.img, this.ifh.asstruct.orientation);
@@ -166,6 +168,21 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
                     'InnerFourdfp.saveByNifti4dfp erred while attempting to save %s', this.fqfilename);
             end
             warning('on', 'MATLAB:structOnObject');
+        end
+    end
+    
+    %% PRIVATE
+    
+    methods (Access = private)
+        function this = adjustQOffsets(this)
+            this.hdr.hist.qoffset_x = this.hdr.hist.qoffset_x / this.hdr.dime.pixdim(2);
+            this.hdr.hist.qoffset_y = this.hdr.hist.qoffset_y / this.hdr.dime.pixdim(3);
+            this.hdr.hist.qoffset_z = this.hdr.hist.qoffset_z / this.hdr.dime.pixdim(4);
+        end
+        function this = adjustSRows(this)
+            this.hdr.hist.srow_x(4) = this.hdr.hist.srow_x(4) / this.hdr.dime.pixdim(2);
+            this.hdr.hist.srow_y(4) = this.hdr.hist.srow_y(4) / this.hdr.dime.pixdim(2);
+            this.hdr.hist.srow_z(4) = this.hdr.hist.srow_z(4) / this.hdr.dime.pixdim(2);
         end
     end
     
