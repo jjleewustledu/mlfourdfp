@@ -25,7 +25,7 @@ classdef IfhParser < mlio.AbstractParser
             addRequired( ip, 'hdr', @isstruct);
             addParameter(ip, 'fileprefix', @ischar);
             addParameter(ip, 'orientation', 2, @isnumeric);
-            addParameter(ip, 'N', true, @islogical);
+            addParameter(ip, 'N', false, @islogical);
             parse(ip, varargin{:});
             hdr = ip.Results.hdr;
             
@@ -35,6 +35,7 @@ classdef IfhParser < mlio.AbstractParser
             assert(isfield(hdr, 'hist'), 'mlfourdfp:unsupportedInputTypeclass', 'IhfParser.constructDenovo');            
             
             this = mlfourdfp.IfhParser;
+            this.fileprefix = ip.Results.fileprefix;
             this.denovo_ = struct( ...
                 'version_of_keys', 3.3, ...
                 'number_format', 'float', ...
@@ -64,12 +65,13 @@ classdef IfhParser < mlio.AbstractParser
                 o = 'bigendian';
             end
         end
-        function this = load(fn, varargin)
+        function this = load(varargin)
             ip = inputParser;
-            addParameter(ip, 'N', true, @islogical);
+            addRequired(ip, 'fn', @(x) lexist(x, 'file'));
+            addParameter(ip, 'N', mlpet.Resources.instance.defaultN, @islogical);
             parse(ip, varargin{:});
+            fn = ip.Results.fn;
             
-            assert(lexist(fn, 'file'));
             [pth, fp, fext] = myfileparts(fn); 
             if (lstrfind(fext, mlfourdfp.IfhParser.IFH_EXT) || ...
                 isempty(fext))
@@ -85,7 +87,7 @@ classdef IfhParser < mlio.AbstractParser
         end
         function this = loadx(fn, ext, varargin)
             ip = inputParser;
-            addParameter(ip, 'N', true, @islogical);
+            addParameter(ip, 'N', mlpet.Resources.instance.defaultN, @islogical);
             parse(ip, varargin{:});
             
             if (~lstrfind(fn, ext))
@@ -327,8 +329,13 @@ classdef IfhParser < mlio.AbstractParser
             nv    = str2num(strtrim(names.value1)); %#ok<ST2NM>
         end
         
-        function this = IfhParser
+        function this = IfhParser(varargin)            
+            ip = inputParser;
+            addParameter(ip, 'N', mlpet.Resources.instance.defaultN, @islogical);
+            parse(ip, varargin{:});
+            
             this.filesuffix = this.IFH_EXT;
+            this.N_ = ip.Results.N;
         end
     end 
     
@@ -336,7 +343,7 @@ classdef IfhParser < mlio.AbstractParser
     
     properties (Access = 'protected')
         denovo_
-        N_ = true
+        N_ 
     end
     
     methods (Static, Access = 'protected')

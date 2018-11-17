@@ -53,10 +53,10 @@ classdef Test_IfhParser < matlab.unittest.TestCase
                 nh.hdr, ...
                 'fileprefix', tmpfp);
             s = deno.asstruct;
-            this.verifyEqual(s.conversion_program, '');
-            this.verifyEqual(s.name_of_data_file, '');
-            this.verifyEqual(s.matrix_size, []);
-            this.verifyEqual(s.scaling_factor, []);
+            this.verifyEqual(s.conversion_program, 'mlfourdfp.IfhParser.constructDenovo');
+            this.verifyTrue(lstrfind(s.name_of_data_file, 'dgv2ConvertedLaForest_dcm2niix'));
+            this.verifyEqual(s.matrix_size, [344 344 127 1]);
+            this.verifyEqual(s.scaling_factor, [2.086260080337524 2.086260080337524 2.031250000000000], 'RelTol', 1e-4);
             
             deno.save;
             this.verifyTrue(lexist([tmpfp '.4dfp.ifh'], 'file'));
