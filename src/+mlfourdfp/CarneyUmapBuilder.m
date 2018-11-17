@@ -11,6 +11,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
 
     properties 
         ct_kVp = 120
+        reuseCarneyUmap = true
     end
     
     methods (Static)
@@ -60,18 +61,6 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
     end
     
 	methods 
-		  
- 		function this = CarneyUmapBuilder(varargin)
- 			%% CARNEYUMAPBUILDER
- 			%  Usage:  this = CarneyUmapBuilder()
-
- 			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
-            %this.sessionData_.tracer = '';
-            this.NRevisions = 2;
-            this.finished_ = mlpipeline.Finished(this, ...
-                'path', this.getLogPath, 'tag', lower(this.sessionData.tracer));
-        end
-        
         function [this,umap] = buildUmap(this, varargin)
             [this,umap] = this.buildCarneyUmap(varargin{:});
         end
@@ -85,13 +74,13 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             this.sessionData_.tracer = 'FDG';
             this.convertUmapTo4dfp; % convert FDG_V*-Converted-NAC/FDG_V*-LM-00/FDG_V*-LM-00-umap.v
             this.sessionData_.tracer = tracer0;
-            this.ensureCTForms;
+            this.ensureSymlinkCTForms;
             ctm  = this.buildCTMasked2; % ct_on_T1001 has excellent alignment
             % [this,ctm] = this.alignCTToMpr(ctm); % wrecks alignment
             ctm  = this.rescaleCT(ctm);
             umap = this.assembleCarneyUmap(ctm);
             umap = this.buildVisitor.imgblur_4dfp(umap, 4);
-            this.teardownBuildUmaps;
+            %this.teardownBuildUmaps;
             popd(pwd0);
         end
         function [this,umap] = buildPhantomUmap(this, varargin)
@@ -100,16 +89,11 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             addOptional(ip, 'ctm', 'ctMasked', @lexist_4dfp);
             parse(ip, varargin{:});
 
-            this.ensureCTForms;
+            this.ensureSymlinkCTForms;
             ctr  = this.rescaleCT(ip.Results.ctm, 'ctOut', 'ctRescaled');
             umap = this.assembleCarneyUmap(ctr, 'umapSynth');
             umap = this.buildVisitor.imgblur_4dfp(umap, 4);
             popd(pwd0);
-        end
-        function               teardownBuildUmaps(this)
-            this.teardownLogs;
-            this.teardownT4s;            
-            this.finished.touchFinishedMarker;
         end
         function umap        = testGroundTruth(this, ct)
             assert(lexist_4dfp(ct));
@@ -117,9 +101,127 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             umap = this.assembleCarneyUmap(ct, [ct '_umap']);
             umap = this.buildVisitor.imgblur_4dfp(umap, 4);
         end
+		  
+        %% E7 Utilities
+        
+        function this  = convertUmapTo4dfp(this)
+            pwd0 = pwd;
+            if (~lexist(this.sessionData.tracerListmodeUmap('typ', '4dfp.img')))
+                cd( this.sessionData.tracerListmodeUmap('typ', 'path'));
+                this.buildVisitor.IFhdr_to_4dfp( ...
+                    this.sessionData.tracerListmodeUmap('typ', 'v.hdr'));
+                cd(pwd0);
+            end
+        end
+        function this  = convertUmapToE7Format(this, varargin)
+            sessd = this.sessionData;
+            sessd.rnumber = 1;
+            this.mmrBuilder_ = mlsiemens.MMRBuilder('sessionData', this.sessionData);
+            
+            ip = inputParser;
+            addOptional(ip, 'umap', ...
+                fullfile(sessd.tracerNACLocation, ...
+                    sprintf('%s_op_%s', sessd.umapSynth('typ', 'fp'), sessd.tracerNACRevision('typ', 'fp'))), ...
+                @lexist_4dfp);
+            addParameter(ip, 'zoom', this.mmrBuilder_.inverseCrop, @isnumeric);
+            parse(ip, varargin{:});
+            umap = ip.Results.umap;
+            
+            flipped = this.buildVisitor.flip_4dfp('z', umap);
+            ic = mlfourd.ImagingContext([flipped '.4dfp.hdr']);
+            ic = ic.zoomed(ip.Results.zoom);
+            ic.noclobber = false;
+            ic.saveas([flipped '.4dfp.hdr']);
+            movefile( ...
+                sprintf('%s.4dfp.img', flipped), ...
+                sprintf('%s.v',        umap), 'f');
+            if (~this.keepForensics)
+                delete(sprintf('%s.4dfp.*', flipped));
+                delete(sprintf('%sfz.4dfp.*', umap));
+                delete(sprintf('%s*.log', umap));
+            end
+            
+            this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
+        end
+        function this  = convertUmapsToE7Format(this, umaps)
+            assert(iscell(umaps));
+            prodCell = {};
+            for fr = 1:length(umaps)
+                this = this.convertUmapToE7Format(umaps{fr});
+                prodCell{fr} = this.product_.fqfilename; %#ok<AGROW>
+            end
+            
+            this.product_ = prodCell;
+        end  
+        function this  = repUmapToE7Format(this, umaps)
+            assert(iscell(umaps));
+            prodCell = {};
+            for fr = 1:length(umaps)
+                this = this.repUmapToE7Format__(umaps{fr});
+                prodCell{fr} = this.product_.fqfilename; %#ok<AGROW>
+            end
+            
+            this.product_ = prodCell;
+        end 
+        function this  = repUmapToE7Format__(this, varargin)
+            sessd = this.sessionData;
+            sessd.rnumber = 1;
+            this.mmrBuilder_ = mlsiemens.MMRBuilder('sessionData', this.sessionData);
+            
+            ip = inputParser;
+            addOptional(ip, 'umap', ...
+                fullfile(sessd.tracerNACLocation, ...
+                    sprintf('%s_op_%s', sessd.umapSynth('typ', 'fp'), sessd.tracerNACRevision('typ', 'fp'))), ...
+                @lexist_4dfp);            
+            addParameter(ip, 'zoom', this.mmrBuilder_.inverseCrop, @isnumeric);
+            parse(ip, varargin{:});
+            umap = ip.Results.umap;
+            
+            flipped = this.buildVisitor.flip_4dfp('z', umap);
+            ic = mlfourd.ImagingContext([flipped '.4dfp.hdr']);
+            ic = ic.zoomed(ip.Results.zoom);
+            ic.noclobber = false;
+            ic.saveas([flipped '.4dfp.hdr']);
+            movefile( ...
+                sprintf('%s.4dfp.img', flipped), ...
+                sprintf('%s.v',        umap), 'f');
+            if (~this.keepForensics)
+                delete(sprintf('%s.4dfp.*', flipped));
+                delete(sprintf('%sfz.4dfp.*', umap));
+                delete(sprintf('%s*.log', umap));
+            end
+            
+            this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
+        end 
+        function         reconvertUmapsToE7Format(this)
+            pwd0 = pushd(this.sessionData.fdgNACLocation);
+            for fr = 1:length(this.indicesLogical)
+                this.buildVisitor.extract_frame_4dfp(this.umapsOpTracer, fr);
+                this.convertUmapToE7Format(this.umapsOpTracerFrame(fr));
+                delete([this.umapsOpTracerFrame(fr) '.4dfp.*']);
+                delete([this.umapsOpTracerFrame(fr) '_flipz.log']);
+            end
+            popd(pwd0);
+        end
+        
+        %%
+        
+ 		function this = CarneyUmapBuilder(varargin)
+ 			%% CARNEYUMAPBUILDER
+ 			%  Usage:  this = CarneyUmapBuilder()
+
+ 			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
+            this.NRevisions = 2;
+            this.finished_ = mlpipeline.Finished(this, ...
+                'path', this.getLogPath, 'tag', lower(this.sessionData.tracer));
+        end        
  	end 
 
-    %% PROTECTED
+    %% PROTECTED   
+    
+    properties (Access = protected)
+        mmrBuilder_
+    end
     
     methods (Access = protected)
         function umap = assembleCarneyUmap(this, varargin)
@@ -144,7 +246,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             ic = this.CarneyImagingContext(ip.Results.rescaledCT);
             ic.saveas([umap '.4dfp.hdr']);
         end
-        function        ensureCTForms(this)
+        function        ensureSymlinkCTForms(this)
             sd = this.sessionData;
             sp = sd.sessionPath;
             bv = this.buildVisitor;

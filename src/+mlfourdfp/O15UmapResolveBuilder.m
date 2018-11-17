@@ -1,4 +1,4 @@
-classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
+classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
 	%% O15UMAPRESOLVEBUILDER  
 
 	%  $Revision$
@@ -126,8 +126,8 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
  			%% O15UMAPRESOLVEBUILDER
  			%  Usage:  this = O15UmapResolveBuilder()
 
- 			this = this@mlfourdfp.AbstractUmapResolveBuilder0(varargin{:});
-            this.f18UmapResolveBuilder_ = mlfourdfp.UmapResolveBuilder(varargin{:});
+ 			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
+            this.f18UmapResolveBuilder_ = mlfourdfp.CarneyUmapBuilder(varargin{:});
             sessd = this.sessionData;
             sessd.tracer = 'FDG';
             assert(this.f18UmapResolveBuilder_.isfinished);

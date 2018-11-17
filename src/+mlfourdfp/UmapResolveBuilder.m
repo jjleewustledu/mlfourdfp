@@ -1,4 +1,4 @@
-classdef UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder0
+classdef UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
 	%% UMAPRESOLVEBUILDER  
 
 	%  $Revision$

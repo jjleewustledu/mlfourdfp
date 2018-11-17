@@ -18,32 +18,63 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
         ct_rescaleIntercept = -1024
         reuseCTMasked = true
         reuseCTRescaled = true
-        reuseCarneyUmap = true
         sessionDataCache
     end
     
-    methods (Static)
-        function fn = fourdfpImg(fp)
-            fn = [fp '.4dfp.img'];
+	methods        
+        function [ctm,ic] = buildCTMasked(this)
+            %% BUILDCTMASKED calls CT2mpr_4dfp
+            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
+            %  @return ic  := ctMasked as ImagingContext on CT-space
+            
+            import mlfourd.*;
+            mpr  = this.sessionData.mpr('typ', 'fqfp');
+            ct   = this.sessionData.ct('typ', 'fqfp');
+            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
+            if (lexist(this.fourdfpImg(ctm)) && this.reuseCTMasked)
+                ic = ImagingContext(ctm);
+                return
+            end
+            
+            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', datestr(now,30)));
+            mprToCtT4 = this.buildVisitor.t4_inv(ctToMprT4);
+            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
+            
+            ct_  = sprintf('%s_%s', ct, datestr(now, 30));
+            ct_  = this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
+            ct__ = sprintf('%s%s', ct_, 'a');
+            ct__ = this.buildVisitor.maskimg_4dfp(ct_, ct_, ct__, 'options', '-t50');
+            ctm  = this.buildVisitor.t4img_4dfp(mprToCtT4, ct__, 'out', ctm, 'options', ['-O' ct]); % back to ct-space
+            ic = ImagingContext(ctm);
+            delete([ct_ '.4dfp.*']);
+            %delete([ct__ '.4dfp.*']); ct__ in mpr-space has best
+            %registration
         end
-    end
-    
-	methods
-        
- 		function this  = AbstractUmapResolveBuilder(varargin)
- 			%% ABSTRACTUMAPRESOLVEBUILDER
- 			%  Usage:  this = AbstractUmapResolveBuilder()
-
- 			this = this@mlfourdfp.CompositeT4ResolveBuilder(varargin{:});
-            this.mmrBuilder_ = mlsiemens.MMRBuilder('sessionData', this.sessionData);
-            this.NRevisions = 2;
-            this.blurArg_ = 1.5; % per Avi, 2016oct25
-        end
-        
-        function this  = buildUmap(this, varargin)
-        end
-        function this  = buildUmaps(this, varargin)
-        end        
+        function [ctm,ic,ctToMprT4] = buildCTMasked2(this)
+            %% BUILDCTMASKED2 calls CT2mpr_4dfp
+            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
+            %  @return ic  := ctMasked as ImagingContext on MPR-space
+            
+            import mlfourd.*;
+            mpr  = this.sessionData.mpr('typ', 'fqfp');
+            ct   = this.sessionData.ct('typ', 'fqfp');
+            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
+            if (lexist(this.fourdfpImg(ctm)) && this.reuseCTMasked)
+                ic = ImagingContext(ctm);
+                return
+            end
+            
+            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', datestr(now,30)));
+            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
+            
+            ct_  = sprintf('%s_%s', ct, datestr(now, 30));
+            this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
+            this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
+            ic = ImagingContext(ctm);
+            delete([ct_ '.4dfp.*']); % ct__ in mpr-space has best registration
+        end       
         function dest  = buildTracerNAC(this, varargin)
             %% BUILDTRACERNAC builds 4dfp formatted NAC images.
             %  See also:  mlfourdfp.FourdfpVisitor.sif_4dfp.
@@ -73,93 +104,6 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             ipr = struct('dest', dest, 'source', lm, 'rnumber', 0);
             this.copySourceToDest(ipr);
         end
-        function this  = convertUmapTo4dfp(this)
-            pwd0 = pwd;
-            if (~lexist(this.sessionData.tracerListmodeUmap('typ', '4dfp.img')))
-                cd( this.sessionData.tracerListmodeUmap('typ', 'path'));
-                this.buildVisitor.IFhdr_to_4dfp( ...
-                    this.sessionData.tracerListmodeUmap('typ', 'v.hdr'));
-                cd(pwd0);
-            end
-        end
-        function this  = convertUmapToE7Format(this, varargin)
-            sessd = this.sessionData;
-            sessd.rnumber = 1;
-            
-            ip = inputParser;
-            addOptional(ip, 'umap', ...
-                fullfile(sessd.tracerNACLocation, ...
-                    sprintf('%s_op_%s', sessd.umapSynth('typ', 'fp'), sessd.tracerNACRevision('typ', 'fp'))), ...
-                @lexist_4dfp);
-            addParameter(ip, 'zoom', this.mmrBuilder_.inverseCrop, @isnumeric);
-            parse(ip, varargin{:});
-            umap = ip.Results.umap;
-            
-            flipped = this.buildVisitor.flip_4dfp('z', umap);
-            ic = mlfourd.ImagingContext([flipped '.4dfp.hdr']);
-            ic = ic.zoomed(ip.Results.zoom);
-            ic.noclobber = false;
-            ic.saveas([flipped '.4dfp.hdr']);
-            movefile( ...
-                sprintf('%s.4dfp.img', flipped), ...
-                sprintf('%s.v',        umap), 'f');
-            if (~this.keepForensics)
-                delete(sprintf('%s.4dfp.*', flipped));
-                delete(sprintf('%sfz.4dfp.*', umap));
-                delete(sprintf('%s*.log', umap));
-            end
-            
-            this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
-        end
-        function this  = convertUmapsToE7Format(this, umaps)
-            assert(iscell(umaps));
-            prodCell = {};
-            for fr = 1:length(umaps)
-                this = this.convertUmapToE7Format(umaps{fr});
-                prodCell{fr} = this.product_.fqfilename; %#ok<AGROW>
-            end
-            
-            this.product_ = prodCell;
-        end  
-        function this  = repUmapToE7Format(this, umaps)
-            assert(iscell(umaps));
-            prodCell = {};
-            for fr = 1:length(umaps)
-                this = this.repUmapToE7Format__(umaps{fr});
-                prodCell{fr} = this.product_.fqfilename; %#ok<AGROW>
-            end
-            
-            this.product_ = prodCell;
-        end 
-        function this  = repUmapToE7Format__(this, varargin)
-            sessd = this.sessionData;
-            sessd.rnumber = 1;
-            
-            ip = inputParser;
-            addOptional(ip, 'umap', ...
-                fullfile(sessd.tracerNACLocation, ...
-                    sprintf('%s_op_%s', sessd.umapSynth('typ', 'fp'), sessd.tracerNACRevision('typ', 'fp'))), ...
-                @lexist_4dfp);
-            addParameter(ip, 'zoom', this.mmrBuilder_.inverseCrop, @isnumeric);
-            parse(ip, varargin{:});
-            umap = ip.Results.umap;
-            
-            flipped = this.buildVisitor.flip_4dfp('z', umap);
-            ic = mlfourd.ImagingContext([flipped '.4dfp.hdr']);
-            ic = ic.zoomed(ip.Results.zoom);
-            ic.noclobber = false;
-            ic.saveas([flipped '.4dfp.hdr']);
-            movefile( ...
-                sprintf('%s.4dfp.img', flipped), ...
-                sprintf('%s.v',        umap), 'f');
-            if (~this.keepForensics)
-                delete(sprintf('%s.4dfp.*', flipped));
-                delete(sprintf('%sfz.4dfp.*', umap));
-                delete(sprintf('%s*.log', umap));
-            end
-            
-            this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
-        end 
         function this  = loadSessionDataCache(this, varargin)
             ip = inputParser;
             addOptional(ip, 'tracers', {'OC' 'HO' 'OO'}, @iscell);
@@ -178,16 +122,22 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             end
             this.sessionDataCache = cache;
         end
-        function         reconvertUmapsToE7Format(this)
-            pwd0 = pushd(this.sessionData.fdgNACLocation);
-            for fr = 1:length(this.indicesLogical)
-                this.buildVisitor.extract_frame_4dfp(this.umapsOpTracer, fr);
-                this.convertUmapToE7Format(this.umapsOpTracerFrame(fr));
-                delete([this.umapsOpTracerFrame(fr) '.4dfp.*']);
-                delete([this.umapsOpTracerFrame(fr) '_flipz.log']);
+        function ctOut = rescaleCT(this, varargin)
+            ip = inputParser;
+            addRequired( ip, 'ctMasked', @lexist_4dfp);
+            addParameter(ip, 'ctOut', this.sessionData.ctRescaled('typ', 'fqfp'), @ischar);
+            parse(ip, varargin{:});
+            ctOut = ip.Results.ctOut;
+            if (lexist([ctOut '.4dfp.hdr'], 'file') && this.reuseCTRescaled)
+                return
             end
-            popd(pwd0);
-        end
+            
+            ic = mlfourd.ImagingContext([ip.Results.ctMasked '.4dfp.hdr']);
+            ic = ic.numericalNiftid;
+            ic = ic * this.ct_rescaleSlope + this.ct_rescaleIntercept;            
+            ic.noclobber = false;
+            ic.saveas([ctOut '.4dfp.hdr']);
+        end  
         function loc   = resolveSequenceLocation(this, varargin)
             %  @param named tracer is a string identifier.
             %  @param named snumber is the scan number; is numeric.
@@ -229,6 +179,11 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             end
             fp = sprintf('%sUmapResolveSequencev%i', sessd.tracer, sessd.vnumber);
         end
+        function         teardownBuildUmaps(this)
+            this.teardownLogs;
+            this.teardownT4s;            
+            this.finished.touchFinishedMarker;
+        end
         function umaps = umapsOpTracer(this)
             umaps = sprintf('umapsOp%sv%ir%i', ...
                 upperFirst(this.sessionData.tracer), this.sessionData.vnumber, this.sessionData.rnumber);
@@ -245,14 +200,27 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 this.sessionData.tracerNACRevision, ...
                 this.umapsOpTracer));
         end
+        
+ 		function this  = AbstractUmapResolveBuilder(varargin)
+ 			%% ABSTRACTUMAPRESOLVEBUILDER
+ 			%  Usage:  this = AbstractUmapResolveBuilder()
+
+ 			this = this@mlfourdfp.CompositeT4ResolveBuilder(varargin{:});
+            this.NRevisions = 2;
+            this.blurArg_ = 1.5; % per Avi, 2016oct25
+        end
+        
     end 
     
-    %% PROTECTED
+    %% PRIVATE
     
-    properties (Access = protected)
-        f18UmapResolveBuilder_
-        mmrBuilder_
+    methods (Access = private)
+        function fn = fourdfpImg(~, fp)
+            fn = [fp '.4dfp.img'];
+        end
     end
+    
+    %% PROTECTED
     
     methods (Access = protected)
         function [this,ct]         = alignCTToSumtResolved(this, varargin)
@@ -279,61 +247,6 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             this.resolveTag = ['op_' mybasename(ip.Results.mpr)];
             this = this.resolveSequence(ip.Results.mpr, mybasename(ctOnMpr1));
             ctOnMpr1 = this.product{2}.fqfp;
-        end
-        function [ctm,ic]          = buildCTMasked(this)
-            %% CTMASKED
-            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
-            %  @return ic  := ctMasked as ImagingContext on CT-space
-            
-            import mlfourd.*;
-            mpr  = this.sessionData.mpr('typ', 'fqfp');
-            ct   = this.sessionData.ct('typ', 'fqfp');
-            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
-            if (lexist(this.fourdfpImg(ctm)) && this.reuseCTMasked)
-                ic = ImagingContext(ctm);
-                return
-            end
-            
-            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
-                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', datestr(now,30)));
-            mprToCtT4 = this.buildVisitor.t4_inv(ctToMprT4);
-            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
-            
-            ct_  = sprintf('%s_%s', ct, datestr(now, 30));
-            ct_  = this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
-            ct__ = sprintf('%s%s', ct_, 'a');
-            ct__ = this.buildVisitor.maskimg_4dfp(ct_, ct_, ct__, 'options', '-t50');
-            ctm  = this.buildVisitor.t4img_4dfp(mprToCtT4, ct__, 'out', ctm, 'options', ['-O' ct]); % back to ct-space
-            ic = ImagingContext(ctm);
-            delete([ct_ '.4dfp.*']);
-            %delete([ct__ '.4dfp.*']); ct__ in mpr-space has best
-            %registration
-        end
-        function [ctm,ic,ctToMprT4] = buildCTMasked2(this)
-            %% CTMASKED
-            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
-            %  @return ic  := ctMasked as ImagingContext on MPR-space
-            
-            import mlfourd.*;
-            mpr  = this.sessionData.mpr('typ', 'fqfp');
-            ct   = this.sessionData.ct('typ', 'fqfp');
-            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
-            if (lexist(this.fourdfpImg(ctm)) && this.reuseCTMasked)
-                ic = ImagingContext(ctm);
-                return
-            end
-            
-            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
-                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', datestr(now,30)));
-            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
-            
-            ct_  = sprintf('%s_%s', ct, datestr(now, 30));
-            this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
-            this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
-            ic = ImagingContext(ctm);
-            delete([ct_ '.4dfp.*']);
-            %delete([ct__ '.4dfp.*']); ct__ in mpr-space has best
-            %registration
         end
         function imageOnSumt       = ctOnPetSumt(this, ct, petSumt)
             assert(lexist(this.fourdfpImg(ct)));
@@ -405,22 +318,6 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 pet, this.msktgenThresh, ...
                 'options', ['-T' this.atlas('typ', 'fqfp')]);            
         end    
-        function ctOut             = rescaleCT(this, varargin)
-            ip = inputParser;
-            addRequired( ip, 'ctMasked', @lexist_4dfp);
-            addParameter(ip, 'ctOut', this.sessionData.ctRescaled('typ', 'fqfp'), @ischar);
-            parse(ip, varargin{:});
-            ctOut = ip.Results.ctOut;
-            if (lexist([ctOut '.4dfp.hdr'], 'file') && this.reuseCTRescaled)
-                return
-            end
-            
-            ic = mlfourd.ImagingContext([ip.Results.ctMasked '.4dfp.hdr']);
-            ic = ic.numericalNiftid;
-            ic = ic * this.ct_rescaleSlope + this.ct_rescaleIntercept;            
-            ic.noclobber = false;
-            ic.saveas([ctOut '.4dfp.hdr']);
-        end  
         function this              = resolveSequence(this, varargin)
             import mlfourdfp.*;
             basenames = cellfun(@(x) mybasename(x), varargin, 'UniformOutput', false);
