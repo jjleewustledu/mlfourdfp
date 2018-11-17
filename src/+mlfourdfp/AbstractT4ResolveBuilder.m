@@ -1,4 +1,4 @@
-classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder & mlfourdfp.IT4ResolveBuilder
+classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder & mlfourdfp.IT4ResolveBuilder
 	%% ABSTRACTT4RESOLVEBUILDER  
 
 	%  $Revision$
@@ -740,7 +740,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlpipeline.AbstractSessionBuilder
             %  @param named ipResults
 
  			
-            this = this@mlpipeline.AbstractSessionBuilder(varargin{:});
+            this = this@mlfourdfp.AbstractSessionBuilder(varargin{:});
             if (0 == nargin); return; end
             
             %% invoke copy-ctor

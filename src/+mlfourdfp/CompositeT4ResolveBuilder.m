@@ -9,34 +9,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
  	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64.  Copyright 2017 John Joowon Lee.
  	
 
-	methods 		  
- 		function this = CompositeT4ResolveBuilder(varargin)
- 			%% COMPOSITET4RESOLVEBUILDER
-            %  TODO:  consider support for cctor;  See also mlfourdfp.T4ResolveBuilder.
-            %  @param theImages =: safe fileprefix =: time summed.  Always contracted to ${\rm I\!R}^3$ by method
-            %  embedInEuclideanR3.  
-            %  @param blurArg; default := this.sessiondata.compositeT4ResolveBuilderBlurArg.
-            %  @param indicesLogical 
-            %  @param indexOfReference; default := 1, the first of theImages.
- 			
-            this = this@mlfourdfp.AbstractT4ResolveBuilder(varargin{:});            
-            ip = inputParser;
-            ip.KeepUnmatched = true;
-            addParameter(ip, 'blurArg', this.sessionData.compositeT4ResolveBuilderBlurArg, @isnumeric);
-            addParameter(ip, 'indicesLogical', true, @islogical);
-            addParameter(ip, 'indexOfReference', 1, @isnumeric);
-            parse(ip, varargin{:});
-                                        
-            this.imageComposite_ = mlfourdfp.ImageComposite( ...
-                this, ...
-                'theImages', this.embedInEuclideanR3( ...
-                             this.ensureLocalFourdfp(this.theImages)), ...
-                'indicesLogical', ip.Results.indicesLogical, ...
-                'indexOfReference', ip.Results.indexOfReference);
-            this.blurArg_ = ip.Results.blurArg;  
-            this = this.updateFinished;
-        end
-        
+	methods 		          
         function fqfp         = embedInEuclideanR3(this, varargin)
             fqfp = ensureCell( ...                   
                    this.ensureSafeFileprefix(varargin{:}));
@@ -76,6 +49,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'logPath',        this.getLogPath,        @ischar);
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
+            this.maskForImages_ = ip.Results.maskForImages_;
             this.resolveTag = ip.Results.resolveTag;  
             ipr = ip.Results;        
             ipr = this.expandDest(ipr);
@@ -349,7 +323,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         mskt = mg.constructMskt( ...
                             'source', ipr.source{ii}, ...
                             'intermediaryForMask', this.sessionData.T1001, ...
-                            'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.hdr'));
+                            'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.hdr'), ...
+                            'blurForMask', 33);
                         fqfps{ii} = mskt.fqfileprefix;
                         continue
                     catch ME
@@ -390,6 +365,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         rethrow(ME);
                     end
                 end
+                if (~isempty(ipr.maskForImages{ii}))
+                    fqfps{ii} = ipr.maskForImages{ii};
+                    continue
+                end
                 fqfps{ii} = 'none';
             end
         end  
@@ -407,7 +386,36 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     fqfps = [fqfps ipr.dest{d}]; %#ok<AGROW>
                 end
             end
-        end        
+        end   
+        
+        %%
+        
+ 		function this = CompositeT4ResolveBuilder(varargin)
+ 			%% COMPOSITET4RESOLVEBUILDER
+            %  TODO:  consider support for cctor;  See also mlfourdfp.T4ResolveBuilder.
+            %  @param theImages =: safe fileprefix =: time summed.  Always contracted to ${\rm I\!R}^3$ by method
+            %  embedInEuclideanR3.  
+            %  @param blurArg; default := this.sessiondata.compositeT4ResolveBuilderBlurArg.
+            %  @param indicesLogical 
+            %  @param indexOfReference; default := 1, the first of theImages.
+ 			
+            this = this@mlfourdfp.AbstractT4ResolveBuilder(varargin{:});            
+            ip = inputParser;
+            ip.KeepUnmatched = true;
+            addParameter(ip, 'blurArg', this.sessionData.compositeT4ResolveBuilderBlurArg, @isnumeric);
+            addParameter(ip, 'indicesLogical', true, @islogical);
+            addParameter(ip, 'indexOfReference', 1, @isnumeric);
+            parse(ip, varargin{:});
+                                        
+            this.imageComposite_ = mlfourdfp.ImageComposite( ...
+                this, ...
+                'theImages', this.embedInEuclideanR3( ...
+                             this.ensureLocalFourdfp(this.theImages)), ...
+                'indicesLogical', ip.Results.indicesLogical, ...
+                'indexOfReference', ip.Results.indexOfReference);
+            this.blurArg_ = ip.Results.blurArg;  
+            this = this.updateFinished;
+        end
     end 
     
     %% PROTECTED

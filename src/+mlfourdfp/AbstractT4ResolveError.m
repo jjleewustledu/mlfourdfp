@@ -1,4 +1,4 @@
-classdef (Abstract) AbstractT4ResolveError < mlpipeline.AbstractSessionBuilder
+classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
 	%% ABSTRACTT4RESOLVEERROR  
 
 	%  $Revision$
@@ -220,7 +220,7 @@ classdef (Abstract) AbstractT4ResolveError < mlpipeline.AbstractSessionBuilder
  			%% ABSTRACTT4RESOLVEERROR
  			%  @param .
 
- 			this = this@mlpipeline.AbstractSessionBuilder(varargin{:});
+ 			this = this@mlfourdfp.AbstractSessionBuilder(varargin{:});
             ip = inputParser;
             ip.KeepUnmatched = true;
             addParameter(ip, 'theImages', this.sessionData.tracerRevision('typ','fqfp')); % alternative cell-array composite
