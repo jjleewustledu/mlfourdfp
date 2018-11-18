@@ -38,7 +38,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
                 g = this.theImages;
                 return
             end
-            g = this.sessionData.tracerSif('typ', 'fqfp');
+            g = this.sessionData.tracerRevision('typ', 'fqfp');
         end
         function g    = get.sourceImageTable(this)
             assert(isa(this.sourceImageTable_, 'table'));
@@ -122,7 +122,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
         function fr    = nonEmptyImageIndices(this, varargin)
             %% NONEMPTYIMAGEINDICES
             %  @param fqfn is the filename for the dynamic tracer image;
-            %  default is this.it4ResolveBuilder.sessionData.tracerSif('typ', '4dfp.ifh').
+            %  default is this.it4ResolveBuilder.sessionData.tracerRevision('typ', '4dfp.ifh').
             %  @param named fracThresh is < 1; 
             %  default is this.fractionalImageFrameThresh.
             %  @returns fr, a binary vector indicating nonempty indicesLogical
