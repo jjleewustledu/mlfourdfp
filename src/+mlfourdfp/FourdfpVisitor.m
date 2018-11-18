@@ -262,6 +262,13 @@ classdef FourdfpVisitor
             [~,fp] = myfileparts(obj);
             tf = lexist_4dfp(fp);
         end
+        function tf    = latlfind(str)
+            assert(ischar(str));
+            tf = lstrfind(str, '111') || lstrfind(str, '222') || lstrfind(str, '333') || ...
+                 lstrfind(str, 'TRIO_Y_NDC') || ...
+                 lstrfind(str, '711-2') || ...
+                 lstrfind(str, '_atlas');
+        end
         function tf    = lexist_4dfp(fqfp, varargin)
             %  @param fqfp exist as a filename on the filesystem or 
             %         fqfp is the fileprefix for 4dfp files on the filesystem.
@@ -1044,28 +1051,25 @@ classdef FourdfpVisitor
             addOptional(ip, 'fileprefixOut', varargin{1}, @ischar);
             addParameter(ip, 'minusN', true);
             parse(ip, varargin{:}); 
-            [pth,fp] = myfileparts(ip.Results.fileprefix);
-            fp = fullfile(pth, fp);
+            [pth,fp]   = myfileparts(ip.Results.fileprefix);
+            fqfp       = fullfile(pth, fp);
             [ptho,fpo] = myfileparts(ip.Results.fileprefixOut);
-            fpo = fullfile(ptho, fpo);
+            fqfpo      = fullfile(ptho, fpo);
             
-            if (lexist([fp '.nii']) || lexist([fp '.nii.gz']))
-                if (~ip.Results.minusN && ...
-                    (lstrfind(fp, '111') || lstrfind(fp, '222') || lstrfind(fp, '333') || ...
-                     lstrfind(fp, 'TRIO_Y_NDC') || ...
-                     lstrfind(fp, '711-2') || ...
-                     lstrfind(fp, '_atlas')))
-                    [s,r] = this.nifitgz_4dfp__(sprintf(' -4 %s %s', fp, fpo));
-                    deleteExisting([fp '.nii*']);
+            if (lexist([fqfp '.nii.gz']))
+                gunzip([fqfp '.nii.gz']);
+            end
+            if (lexist([fqfp '.nii']))
+                if (~ip.Results.minusN && latlfind(fp))
+                    [s,r] = this.nifti_4dfp__(sprintf(' -4 %s %s', fqfp, fqfpo));
+                    deleteExisting([fqfp '.nii*']);
                     return
                 end
-                [s,r] = this.nifitgz_4dfp__(sprintf(' -4 %s %s -N', fp, fpo));
-                deleteExisting([fp '.nii*']);
+                [s,r] = this.nifti_4dfp__(sprintf(' -4 %s %s -N', fqfp, fqfpo));
+                deleteExisting([fqfp '.nii*']);
                 return
-                
-                %deleteExisting([fp '.4dfp.img_to_atlas_t4']); % incipient BUG
             end
-            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s.nii* not found', fp);
+            error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_4:  %s.nii* not found', fqfp);
         end
         function      [s,r] = nifti_4dfp_n(this, varargin)
             %% NIFTI_4DFP_4 converts .4dfp.* to .nii[.gz], keeping all .4dfp.* afterwards.
@@ -1082,7 +1086,7 @@ classdef FourdfpVisitor
             fpo = fullfile(ptho, fpo);            
 
             if (lexist_4dfp(fp))
-                [s,r] = this.nifitgz_4dfp__(sprintf(' -n %s %s', fp, fpo));
+                [s,r] = this.niftigz_4dfp__(sprintf(' -n %s %s', fp, fpo));
                 return
             end
             error('mlfourdfp:fileNotFound', 'FourdfpVisitor.nifti_4dfp_n:  %s.4dfp.* not found', fp);
@@ -2237,7 +2241,7 @@ classdef FourdfpVisitor
             assert(ischar(args));
             [s,r] = dbbash(sprintf('msktgen3_4dfp %s', args));
         end
-        function [s,r] = nifitgz_4dfp__(~, args)
+        function [s,r] = nifti_4dfp__(~, args)
             % NIFTI_4DFP__
             % $Id: nifti_4dfp.c,v 1.9 2011/09/13 03:40:37 avi Exp $
             % Usage: nifti_4dfp <-4 or -n> <infile> <outfile> [options]
@@ -2252,6 +2256,24 @@ classdef FourdfpVisitor
             % N.B.:	".4dfp.hdr" or ".nii" are appended to filenames specified without extension
             % N.B.:	option -N has effect only on converting nii->4dfp
             % N.B.:	option -T has effect only on converting 4dfp->nii
+            
+            assert(ischar(args));
+            if (lstrcmp(computer, 'MACI64'))
+                [s,r] = dbbash(sprintf('%s/Local/bin/nifti_4dfp %s', getenv('HOME'), args));
+                return
+            end
+            [s,r] = dbbash(sprintf('nifti_4dfp %s', args));
+        end
+        function [s,r] = niftigz_4dfp__(~, args)
+            % NIFTIGZ_4DFP__
+            % usage:	niftigz_4dfp <nifti_4dfp args>
+            % e.g.:	niftigz_4dfp -4 VB18896_mpr_n1_333_t88.nii.gz VB18896_mpr_n1_333_t88
+            % 	option
+            % 	-v	verbose mode
+            % 	-s<int>	skip specified number of frames at run start on 4dfp->NIfTI coversion
+            % N.B.:	niftigz_4dfp is a wrapper for nifti_4dfp
+            % N.B.:	niftigz_4dfp always gzips NIfTI output but unzipped NIfTI input is left unchanged
+            
             assert(ischar(args));
             if (lstrcmp(computer, 'MACI64'))
                 [s,r] = dbbash(sprintf('%s/Local/bin/niftigz_4dfp %s', getenv('HOME'), args));
