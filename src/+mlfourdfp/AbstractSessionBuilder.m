@@ -213,25 +213,19 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         end
         function this = updateFinished(this, varargin)
             %% UPDATEFINISHED, the protected superclass property which is an mlpipeline.Finished;
-            %  overrides mlpipeline.AbstractSessionBuilder.updateFinished.
+            %  overrides mlpipeline.AbstractBuilder.updateFinished.
             %  @param tag containing information such as this.sessionData.tracerRevision, class(this).
-            %  @param neverMarkFinished is boolean.
-            %  @param ignoreFinishfile is boolean.
             %  @return property this.finished instantiated with path, tags, the booleans.
             
-            res = mlpet.Resources.instance;
             ip = inputParser;
-            addParameter(ip, 'tag', sprintf('%s_%s', lower(this.sessionData.tracerRevision('typ','fp')), class(this)), @ischar);
-            addParameter(ip, 'neverMarkFinished', res.neverMarkFinished, @islogical);
-            addParameter(ip, 'ignoreFinishfile', true, @islogical);
+            addParameter(ip, 'path', this.getLogPath, @isdir);
+            addParameter(ip, 'tag', this.sessionTag, @ischar);
             parse(ip, varargin{:});
             
             ensuredir(this.getLogPath);
             this.finished_ = mlpipeline.Finished(this, ...
-                'path',                 this.getLogPath, ...
-                'tag',                  ip.Results.tag, ...
-                'neverMarkFinished', ip.Results.neverMarkFinished, ...
-                'ignoreFinishfile',     ip.Results.ignoreFinishfile);
+                'path', ip.Results.path, ...
+                'tag',  ip.Results.tag);
         end    
         function obj  = vallLocation(this, varargin)
             obj = this.sessionData.vallLocation(varargin{:});
@@ -249,7 +243,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             parse(ip, varargin{:});            
             this.census_ = ip.Results.census;
             this.sessionData_ = ip.Results.sessionData;
-            this = this.setLogPath(fullfile(this.sessionData_.vLocation, 'Log', ''));
+            this = this.setLogPath(fullfile(this.sessionData_.tracerLocation, 'Log', ''));
  		end
     end 
     
@@ -263,6 +257,21 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
     
     properties (Access = private)
         census_
+    end
+    
+    methods (Access = private)
+        function t    = sessionTag(this)
+            t = [class(this) '_' this.sessionData.tracerRevision('typ','fp')];            
+            p = this.product_;
+            if (isempty(p))
+                return
+            end
+            t = [t '_' class(p)];
+            if (~isprop(p, 'fileprefix'))
+                return
+            end
+            t = [t '_' p.fileprefix];
+        end
     end
     
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
