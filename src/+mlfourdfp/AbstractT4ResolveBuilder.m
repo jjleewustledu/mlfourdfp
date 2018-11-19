@@ -331,10 +331,12 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             fqfp = sprintf('%s_sumt%i', fqfp, sum(this.indicesLogical));
         end
         function this  = finalize(this, ipr)
-            this.t4ResolveError_.logger.save;
             this = this.buildProduct(ipr);            
             this.teardownResolve(ipr);
-            this.finished.touchFinishedMarker;  
+            this.logger.save;
+            this.t4ResolveError_.logger.save;
+            this.finished.markAsFinished( ...
+                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_finalize']);  
         end
         function this  = img2atl(this, fqfp)
             sd = this.sessionData;
@@ -721,8 +723,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             %% UPDATEFINISHED, the protected superclass property which is an mlpipeline.Finished
             %  @param tag containing information such as this.sessionData.tracerRevision, this.NRevisions.
             %  this.indexOfReference.
-            %  @param tag2.
-            %  @param neverTouchFinishfile is boolean.
+            %  @param neverMarkFinished is boolean.
             %  @param ignoreFinishfile is boolean.
             %  @return property this.finished instantiated with path, tags, the booleans.
             
@@ -890,7 +891,16 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
         end
         function this = prepareT4ResolveError(this)
             this.t4ResolveError_ = mlfourdfp.T4ResolveError( ...
-                'sessionData', this.sessionData, 'theImages', this.theImages, 'logPath', this.getLogPath);
+                'sessionData', this.sessionData, 'theImages', this.theImages, 'logPath', pthToImages);
+            
+            function pth = pthToImages
+                if (iscell(this.theImages))
+                    assert(~isempty(this.theImages));
+                    pth = myfileparts(this.theImages{1});
+                    return
+                end
+                pth = myfileparts(this.theImages);
+            end
         end
         function this = prepareCacheT4s(this)
             this.t4s_ = cell(1, length(this.NRevisions));

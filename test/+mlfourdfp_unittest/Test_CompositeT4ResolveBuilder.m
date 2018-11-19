@@ -63,9 +63,9 @@ classdef Test_CompositeT4ResolveBuilder < matlab.unittest.TestCase
         function test_finished(this)
             touchfile = fullfile(this.testObj.getLogPath, '.test_mlfourdfp.CompositeT4ResolveBuilder_isfinished.touch');
             if (lexist(touchfile)); delete(touchfile); end 
-            this.verifyEqual(this.testObj.finished.finishedMarkerFilename, touchfile);           
-            this.testObj.finished.touchFinishedMarker;
-            this.verifyTrue(lexist(this.testObj.finished.finishedMarkerFilename, 'file'));
+            this.verifyEqual(this.testObj.finished.markerFilename, touchfile);           
+            this.testObj.finished.markAsFinished;
+            this.verifyTrue(lexist(this.testObj.finished.markerFilename, 'file'));
             this.verifyTrue(this.testObj.finished.isfinished);
             delete(touchfile); 
         end

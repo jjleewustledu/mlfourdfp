@@ -1,6 +1,7 @@
 classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
 	%% DynamicUmapsBuilder builds umaps for Siemens e7tools, one umap for every dynamic frame of NAC PET data. 
     %  TODO:  replace magic numbers in get.framesDynamic with invariant variables.
+    %  TODO:  verify this class is obsolete and delete.
     
 	%  $Revision$
  	%  was created 02-Dec-2016 13:23:54
@@ -183,10 +184,11 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
             %ensuredir(this.onAtlasPath);
             %movefiles(sprintf('*%s*', this.atlas('typ', 'fp')), this.onAtlasPath);
             %ensuredir(this.resolveSequenceLocation);
-            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
-            
+            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);            
             %delete([this.resolveSequenceTag '*_frame*4dfp*']);
-            this.finished.touchFinishedMarker;
+            
+            this.finished.markAsFinished( ...
+                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_teardownBuildUmaps']); 
         end
     end
     

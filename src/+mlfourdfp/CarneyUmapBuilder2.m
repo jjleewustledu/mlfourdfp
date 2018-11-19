@@ -1,6 +1,7 @@
 classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
 	%% CARNEYUMAPBUILDER2  
     %  N.B. CarneyImagingContext which requires flip.
+    %  Refactoring:  pull up methods from AbstractUmapResolveBuilder and isolate from CompositeT4ResolveBuilder.
 
 	%  $Revision$
  	%  was created 15-Nov-2018 15:49:50 by jjlee,
@@ -77,10 +78,11 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
         end
         function        teardownBuildUmaps(this)
             this.teardownLogs;
-            this.teardownT4s;            
-            this.finished.touchFinishedMarker;
+            this.teardownT4s;
             deleteExisting(fullfile(this.sessionData.vLocation, 'ctRescaled*.4dfp.*'));
             deleteExisting(fullfile(this.sessionData.vLocation, 'ct_on_*.4dfp.*'));
+            this.finished.markAsFinished( ...
+                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_teardownBuildUmaps']); 
         end
 		  
  		function this = CarneyUmapBuilder2(varargin)

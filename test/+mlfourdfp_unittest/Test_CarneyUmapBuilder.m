@@ -74,8 +74,8 @@ classdef Test_CarneyUmapBuilder < matlab.unittest.TestCase
 
 	methods (Access = private)
 		function cleanFiles(this)
-            if (lexist(this.testObj_.finished.finishedMarkerFilename, 'file'))
-                delete(this.testObj_.finished.finishedMarkerFilename); end
+            if (lexist(this.testObj_.finished.markerFilename, 'file'))
+                delete(this.testObj_.finished.markerFilename); end
             popd(this.pwd0);
  		end
 	end

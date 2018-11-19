@@ -97,7 +97,8 @@ classdef O15CUmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
             sessd.tracer = 'FDG';
             assert(this.f18UmapResolveBuilder_.isfinished);
             cd(sessd.vLocation);
-            this.finished_ = mlpipeline.Finished(this, 'path', this.logPath, 'tag', lower(this.sessionData.tracer));
+            this.finished_ = mlpipeline.Finished(this, ...
+                'path', this.getLogPath, 'tag', lower(this.sessionData.tracer));
         end
         
         function this = buildUmaps(this, varargin)
@@ -153,12 +154,13 @@ classdef O15CUmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
             %ensuredir(this.onAtlasPath);
             %movefiles(sprintf('*%s*', this.atlas('typ', 'fp')), this.onAtlasPath);
             %ensuredir(this.resolveSequenceLocation);
-            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
-            
+            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);            
             %delete([this.resolveSequenceTag '*_frame*4dfp*']);
             %delete(sprintf('%s_on_*.4dfp.*', this.sessionData.ct('typ', 'fp')));  
             %delete(sprintf('%s_on_*.4dfp.*', this.sessionData.ctMasked('typ', 'fp')));
-            this.finished.touchFinishedMarker;
+            
+            this.finished.markAsFinished( ...
+                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_teardownBuildUmaps']); 
         end        
     end 
     

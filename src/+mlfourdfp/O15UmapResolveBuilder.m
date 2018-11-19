@@ -132,7 +132,8 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
             sessd.tracer = 'FDG';
             assert(this.f18UmapResolveBuilder_.isfinished);
             cd(sessd.vLocation);
-            this.finished_ = mlpipeline.Finished(this, 'path', this.logPath, 'tag', lower(this.sessionData.tracer));
+            this.finished_ = mlpipeline.Finished(this, ...
+                'path', this.getLogPath, 'tag', lower(this.sessionData.tracer));
         end
         
         function tf = isfinished(~, sessd)
@@ -152,7 +153,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
             sessd_oc.snumber = 2;
             ocUrb = mlfourdfp.O15UmapResolveBuilder('sessionData', sessd_oc);
             
-            tf = lexist(ooUrb.finished.finishedMarkerFilename, 'file') && lexist(ocUrb.finished.finishedMarkerFilename, 'file');
+            tf = lexist(ooUrb.finished.markerFilename, 'file') && lexist(ocUrb.finished.markerFilename, 'file');
         end
         function tf = isfinishedOC(~, sessd)
             if (mlfourdfp.O15UmapResolveBuilder.REPLACE_COMPLETED)
@@ -163,7 +164,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
             sessd.tracer = 'OC';
             sessd.snumber = 2;
             this = mlfourdfp.O15UmapResolveBuilder('sessionData', sessd);
-            tf = lexist(this.finished.finishedMarkerFilename, 'file');
+            tf = lexist(this.finished.markerFilename, 'file');
         end
         function tf = isfinishedOO(~, sessd)
             if (mlfourdfp.O15UmapResolveBuilder.REPLACE_COMPLETED)
@@ -174,7 +175,7 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
             sessd.tracer = 'OO';
             sessd.snumber = 2;
             this = mlfourdfp.O15UmapResolveBuilder('sessionData', sessd);
-            tf = lexist(this.finished.finishedMarkerFilename, 'file');
+            tf = lexist(this.finished.markerFilename, 'file');
         end
         function this            = buildUmaps(this, varargin)
 %             if (~this.isfinishedOC(this.sessionData))
@@ -208,7 +209,9 @@ classdef O15UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
             %delete([this.resolveSequenceTag '*_frame*nii.gz']);
             %ensuredir(this.resolveSequenceLocation);
             %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
-            this.finished.touchFinishedMarker;
+            
+            this.finished.markAsFinished( ...
+                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_teardownBuildUmaps']); 
         end 
         function this            = buildO15AfterAC(this, sdc)
             assert(isnumeric(sdc));

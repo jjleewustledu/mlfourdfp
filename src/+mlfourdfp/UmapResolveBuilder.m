@@ -137,8 +137,9 @@ classdef UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
  			%% UMAPRESOLVEBUILDER
  			%  Usage:  this = UmapResolveBuilder()
 
- 			this = this@mlfourdfp.AbstractUmapResolveBuilder0(varargin{:});
-            this.finished = mlpipeline.Finished(this, 'path', this.logPath, 'tag', lower(this.sessionData.tracer));
+ 			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
+            this.finished = mlpipeline.Finished(this, ...
+                'path', this.getLogPath, 'tag', lower(this.sessionData.tracer));
         end        
         
         function  this     = buildUmaps(this, varargin)
@@ -211,12 +212,13 @@ classdef UmapResolveBuilder < mlfourdfp.AbstractUmapResolveBuilder
             %ensuredir(this.onAtlasPath);
             %movefiles(sprintf('*%s*', this.atlas('typ', 'fp')), this.onAtlasPath);
             %ensuredir(this.resolveSequenceLocation);
-            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);
-            
+            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);            
             %delete([this.resolveSequenceTag '*_frame*4dfp*']);
             %delete(sprintf('%s_on_*.4dfp.*', this.sessionData.ct('typ', 'fp')));  
             %delete(sprintf('%s_on_*.4dfp.*', this.sessionData.ctMasked('typ', 'fp')));
-            this.finished.touchFinishedMarker;
+            
+            this.finished.markAsFinished( ...
+                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_teardownBuildUmaps']); 
         end
         
         %% UTILITY
