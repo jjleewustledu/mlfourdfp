@@ -1,4 +1,4 @@
-classdef AbstractSessionBuilder < mlfourdfp.AbstractBuilder
+classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
 	%% ABSTRACTSESSIONBUILDER provides convenience methods that return information from this.sessionData.
 
 	%  $Revision$
@@ -136,16 +136,16 @@ classdef AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             %% PREPAREMPRTOATLAST4
             %  @param this.sessionData.{mprage,atlas} are valid.
             %  @return this.product_ := [mprage '_to_' atlas '_t4'], existing in the same folder as mprage.
+            %  TODO:  return fqfn t4.
             
-            sess       = this.sessionData;
-            mpr        = sess.mprage('typ', 'fp');
-            mprToAtlT4 = [mpr '_to_' sess.atlas('typ', 'fp') '_t4'];            
-            if (~lexist(fullfile(sess.mprage('typ', 'path'), mprToAtlT4)))
-                pwd0 = pushd(sess.mprage('typ', 'path'));
-                this.buildVisitor.msktgenMprage(mpr);
+            s = this.sessionData;
+            t4 = [               s.mprage('typ', 'fp') '_to_' s.atlas('typ', 'fp') '_t4'];            
+            if (~lexist(fullfile(s.mprage('typ', 'path'), t4)))
+                pwd0 = pushd(    s.mprage('typ', 'path'));
+                this.buildVisitor.msktgenMprage(s.mprage('typ', 'fp'));
                 popd(pwd0);
             end
-            this.product_ = mprToAtlT4;
+            this.product_ = t4;
         end
         function sess = refreshTracerResolvedFinalSumt(this, sess)
             while (~lexist(sess.tracerResolvedFinalSumt) && sess.supEpoch > 0)
@@ -215,24 +215,23 @@ classdef AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             %% UPDATEFINISHED, the protected superclass property which is an mlpipeline.Finished;
             %  overrides mlpipeline.AbstractSessionBuilder.updateFinished.
             %  @param tag containing information such as this.sessionData.tracerRevision, class(this).
-            %  @param tag2.
-            %  @param neverTouchFinishfile is boolean.
+            %  @param neverMarkFinished is boolean.
             %  @param ignoreFinishfile is boolean.
             %  @return property this.finished instantiated with path, tags, the booleans.
             
+            res = mlpet.Resources.instance;
             ip = inputParser;
             addParameter(ip, 'tag', sprintf('%s_%s', lower(this.sessionData.tracerRevision('typ','fp')), class(this)), @ischar);
-            addParameter(ip, 'tag2', '', @ischar);
-            addParameter(ip, 'neverTouchFinishfile', false, @islogical);
-            addParameter(ip, 'ignoreFinishfile', false, @islogical);
+            addParameter(ip, 'neverMarkFinished', res.neverMarkFinished, @islogical);
+            addParameter(ip, 'ignoreFinishfile', true, @islogical);
             parse(ip, varargin{:});
             
             ensuredir(this.getLogPath);
             this.finished_ = mlpipeline.Finished(this, ...
-                'path', this.getLogPath, ...
-                'tag', [ip.Results.tag ip.Results.tag2], ...
-                'neverTouchFinishfile', ip.Results.neverTouchFinishfile, ...
-                'ignoreFinishfile', ip.Results.ignoreFinishfile);
+                'path',                 this.getLogPath, ...
+                'tag',                  ip.Results.tag, ...
+                'neverMarkFinished', ip.Results.neverMarkFinished, ...
+                'ignoreFinishfile',     ip.Results.ignoreFinishfile);
         end    
         function obj  = vallLocation(this, varargin)
             obj = this.sessionData.vallLocation(varargin{:});

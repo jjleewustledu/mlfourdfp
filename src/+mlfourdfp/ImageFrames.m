@@ -55,11 +55,6 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             assert(iscell(s) || ischar(s));
             this.theImages_ = mlfourdfp.FourdfpVisitor.ensureSafeFileprefix(s);
             this.length_ = this.readLength(this.theImages);
-            if (this.fractionalImageFrameThresh < eps)
-                this.nonEmptyImageIndices_ = true(1, this.length_);
-            else
-                this.nonEmptyImageIndices_ = this.nonEmptyImageIndices;
-            end
             this.indicesLogical = true;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
         end
@@ -83,12 +78,6 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
                 this.length_ = this.readLength;
             else
                 this.length_ = this.readLength(this.theImages);
-            end
-            if (this.fractionalImageFrameThresh < eps)
-                this.nonEmptyImageIndices_ = true(1, this.length_);
-            else 
-                % TODO: this.nonEmptyImageIndices_ would need to be available to T4ResolveBuilder.resolveAndPaste when managing epochs
-                this.nonEmptyImageIndices_ = this.nonEmptyImageIndices;
             end
             this.indicesLogical = ip.Results.indicesLogical;
             [this.indexMin_,this.indexMax_] = this.findIndexBounds;
@@ -118,46 +107,6 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
         end
         function len   = length(this)
             len = this.length_;
-        end
-        function fr    = nonEmptyImageIndices(this, varargin)
-            %% NONEMPTYIMAGEINDICES
-            %  @param fqfn is the filename for the dynamic tracer image;
-            %  default is this.it4ResolveBuilder.sessionData.tracerRevision('typ', '4dfp.ifh').
-            %  @param named fracThresh is < 1; 
-            %  default is this.fractionalImageFrameThresh.
-            %  @returns fr, a binary vector indicating nonempty indicesLogical
-            %  @returns this
-            
-            ip = inputParser;
-            addOptional(ip, 'fqfn', [this.sourceImage '.4dfp.hdr'], @(x) lexist(x, 'file'));
-            addParameter(ip, 'fracThresh', this.fractionalImageFrameThresh, @isnumeric);
-            parse(ip, varargin{:});
-            
-            fr = true;
-            return
-            %% DEBUGGING
-            
-            
-            
-            
-            if (~isempty(this.nonEmptyImageIndices_))
-                fr = this.nonEmptyImageIndices_;
-                return
-            end
-            
-            cache = [myfileprefix(ip.Results.fqfn) '_nonEmptyImageIndices.nii.gz'];
-            if (lexist(cache))
-                tr = mlfourd.NIfTId.load(cache);
-                fr = ensureRowVector(tr.img);
-                return
-            end
-            
-            tr = mlfourd.NumericalNIfTId.load(ip.Results.fqfn);
-            tr = tr.volumeAveraged;
-            tr = tr > ip.Results.fracThresh*median(tr.img);
-            tr.img = double(tr.img);
-            tr.saveas(cache);
-            fr = logical(ensureRowVector(tr.img));
         end
         function len   = readLength(this, varargin)
             ip = inputParser;

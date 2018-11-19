@@ -55,9 +55,6 @@ classdef ImageComposite < mlfourdfp.AbstractImageComposite
         function len  = length(this)
             len = length(this.theImages_);
         end
-        function ii   = nonEmptyImageIndices(this)
-            ii = true(1, this.length);
-        end
  	end 
     
     %% PROTECTED

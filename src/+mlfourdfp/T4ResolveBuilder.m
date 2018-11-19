@@ -102,6 +102,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             len = sum(this.indicesLogical);
             t4fails = zeros(len, len);
             for m = 1:len
+                this.logger.add('revise.outer for m->%i', m);
                 for n = 1:len
                     if (m ~= n) 
                         try

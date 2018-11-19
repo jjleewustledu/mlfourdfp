@@ -55,8 +55,8 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
                 d = mlfourd.NumericalNIfTId(d);
             end
             
-            d   = d.volumeAveraged;
-            idx = d.img > this.sessionData.fractionalImageFrameThresh * median(d.img) + this.noiseFloorOfCounts;
+            d   = d.volumeSummed;
+            idx = d.img > this.sessionData.fractionalImageFrameThresh * median(d.img) + this.noiseFloorOfActivity;
             idx = ensureRowVector(idx);
             this.logger.add('mlfourdfp.T4ResolveError.assessValidFrames.idx->%s\n', mat2str(idx));
         end
@@ -97,11 +97,12 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
         end
         function this  = updateLogging(this)
             import mlpipeline.*;
-            this = this.setLogPath(fullfile(pwd, 'Log', '')); % See also meanAndStd, summarize*
-            ensuredir(this.getLogPath);
+            [pth,fp] = myfileparts(this.representativeImgs);
+            logpth = fullfile(pth, 'Log', '');
+            ensuredir(logpth);            
             this.logger_ = Logger( ... ...
-                fullfile(this.getLogPath, ...
-                sprintf('%s_T4ResolveErr_D%s', this.representativeImgs, datestr(now,'yyyymmddTHHMMSSFFF'))));
+                fullfile(logpth, ...
+                sprintf('%s_T4ResolveErr_D%s', fp, datestr(now,'yyyymmddTHHMMSSFFF'))));
         end
     end
 

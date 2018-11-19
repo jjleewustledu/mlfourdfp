@@ -242,7 +242,8 @@ classdef FourdfpVisitor
         end
         function m     = ifhMatrixSize(fqfn)
             if (~lstrfind(fqfn, '.4dfp.ifh'))
-                fqfn = [fqfn '.4dfp.ifh'];
+                [a,b] = myfileparts(fqfn);
+                fqfn = fullfile(a, [b '.4dfp.ifh']);
             end
             assert(lexist(fqfn));
             ifhp       = mlfourdfp.IfhParser.load(fqfn);

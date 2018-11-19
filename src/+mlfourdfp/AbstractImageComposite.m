@@ -13,7 +13,6 @@ classdef AbstractImageComposite < mlfourdfp.IImageComposite
 
     methods (Abstract)
         len = length(this)
-        ii  = nonEmptyImageIndices(this)
     end
     
     properties (Dependent)

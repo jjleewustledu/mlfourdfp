@@ -1,4 +1,4 @@
-classdef AbstractBuilder < mlpipeline.AbstractBuilder
+classdef (Abstract) AbstractBuilder < mlpipeline.AbstractBuilder
 	%% ABSTRACTBUILDER  
 
 	%  $Revision$
@@ -36,14 +36,6 @@ classdef AbstractBuilder < mlpipeline.AbstractBuilder
         function fn    = niigzFilename(fn)
             [p,f] = myfileparts(fn);
             fn = fullfile(p, [f '.nii.gz']);
-        end
-        function sz    = size_4dfp(fqfp)
-            %% SIZETRACERREVISION
-            %  @return sz, the size of the image data specified by this.tracerRevision.
-            
-            bv = mlfourdfp.FourdfpVisitor;
-            assert(bv.lexist_4dfp( fqfp));
-            sz = bv.ifhMatrixSize([fqfp '.4dfp.ifh']);
         end
     end
     
