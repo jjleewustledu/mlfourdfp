@@ -108,7 +108,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             parse(ip, varargin{:});
             
             ct  = mlfourd.ImagingContext2([ip.Results.ctRescaled '.4dfp.hdr']);
-            ct  = flip(ct, 1);
+            %ct  = flip(ct, 1);
             
             lowHU    = ct.uthresh(this.CarneyBP); 
             lowMask  = lowHU.binarized;
