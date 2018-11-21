@@ -308,10 +308,11 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
             %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
             
-            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr);           
+            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr);   
+            X = flip(X,1);
             X = flip(X,2);
-            X = flip(X,3);
-            X = permute(X, [1 3 2]); 
+            %X = flip(X,3);
+            %X = permute(X, [1 3 2]); 
         end
     end
 
