@@ -1,4 +1,4 @@
-classdef RegistrationTool < handle & mlfourd.AbstractImagingTool
+classdef RegistrationTool < handle & mlfourd.ImagingFormatTool
 	%% REGISTRATIONTOOL  
 
 	%  $Revision$
@@ -16,8 +16,7 @@ classdef RegistrationTool < handle & mlfourd.AbstractImagingTool
  			%% REGISTRATIONTOOL
  			%  @param .
 
-            this = this@mlfourd.AbstractImagingTool(h, varargin{:});
-            this.innerImaging_ = mlfourd.ImagingFormatContext(varargin{:});
+            this = this@mlfourd.ImagingFormatTool(h, varargin{:});
  		end
  	end 
 

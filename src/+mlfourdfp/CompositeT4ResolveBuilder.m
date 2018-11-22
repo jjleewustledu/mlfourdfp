@@ -49,7 +49,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             addParameter(ip, 'logPath',        this.getLogPath,        @ischar);
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
-            this.maskForImages_ = ip.Results.maskForImages_;
+            this.maskForImages_ = ip.Results.maskForImages;
             this.resolveTag = ip.Results.resolveTag;  
             ipr = ip.Results;        
             ipr = this.expandDest(ipr);
@@ -116,9 +116,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             % e. g., image1_to_image2_t4    
                         catch ME
                             t4fails(m,n) = t4fails(m,n) + 1;
-                            copyfile( ...
-                                this.buildVisitor.transverse_t4, ...
-                                this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}), 'f');
+%                             copyfile( ...
+%                                 this.buildVisitor.transverse_t4, ...
+%                                 this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}), 'f');
                             dispwarning(ME);
                         end                        
                     end
@@ -322,6 +322,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             'logPath', fullfile(pwd, 'Log', ''));
                         mskt = mg.constructMskt( ...
                             'source', ipr.source{ii}, ...
+                            'blurArg', ipr.sourceBlur(ii), ...
                             'intermediaryForMask', this.sessionData.T1001, ...
                             'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.hdr'), ...
                             'blurForMask', 33);
@@ -329,10 +330,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         continue
                     catch ME
                         fprintf('CT4RB.lazyMaskForImages:  ipr.maskForImages{%i} <- T1001\n', ii);
-                        fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));                        
-                        ipr.maskForImages{ii} = 'none';
-                        this.cd(fileparts(ipr.source{ii}));
-                        rethrow(ME);
+                        fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
+                        fqfps{ii} = 'none';
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
@@ -345,9 +344,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     catch ME
                         fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
-                        ipr.maskForImages{ii} = 'none';
-                        this.cd(fileparts(ipr.source{ii}));
-                        rethrow(ME);
+                        fqfps{ii} = 'none';
                     end
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'msktgen_4dfp'))
@@ -360,9 +357,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     catch ME
                         fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
-                        ipr.maskForImages{ii} = 'none';
-                        this.cd(fileparts(ipr.source{ii}));
-                        rethrow(ME);
+                        fqfps{ii} = 'none';
                     end
                 end
                 if (~isempty(ipr.maskForImages{ii}))
