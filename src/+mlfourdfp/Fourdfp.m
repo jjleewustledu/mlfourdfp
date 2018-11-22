@@ -59,6 +59,7 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
             end
             this = this.append_descrip('decorated by mlfourdfp.Fourdfp');
             this.component_.filesuffix = FourdfpInfo.FOURDFP_EXT;
+            this.component_.img        = single(this.component_.img);
             this.fvisitor_ = FourdfpVisitor;
  		end
     end 
