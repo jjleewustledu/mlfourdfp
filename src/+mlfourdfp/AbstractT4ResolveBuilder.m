@@ -335,8 +335,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             this.teardownResolve(ipr);
             this.logger.save;
             this.t4ResolveError_.logger.save;
-            this.finished.markAsFinished( ...
-                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_finalize']);  
+            this.finished.markAsFinished; 
         end
         function this  = img2atl(this, fqfp)
             sd = this.sessionData;
@@ -358,7 +357,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             fqfp_ = this.fileprefixIndexed(ipr);
             fqfp  = this.fileprefixBlurred(fqfp_, blur);
             if (~this.buildVisitor.lexist_4dfp(fqfp))
-                this.buildVisitor.imgblur_4dfp(fqfp_, blur);
+                ic2 = mlfourd.ImagingContext2([fqfp_ '.4dfp.hdr']);
+                ic2 = ic2.blurred(blur, 'krnlMult', 1);
+                ic2.saveas([fqfp '.4dfp.hdr']);
             end
         end
         function fqfps = lazyBlurImages(this, ipr)
@@ -723,11 +724,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             %% UPDATEFINISHED, the protected superclass property which is an mlpipeline.Finished
             %  @param tag containing information such as this.sessionData.tracerRevision, this.NRevisions.
             %  this.indexOfReference.
-            %  @param neverMarkFinished is boolean.
-            %  @param ignoreFinishfile is boolean.
             %  @return property this.finished instantiated with path, tags, the booleans.
             
-            this = updateFinished@mlpipeline.AbstractBuilder(this, varargin{:});
+            this = updateFinished@mlfourdfp.AbstractSessionBuilder(this, varargin{:});            
+            fqfps = ensureCell(this.theImages);
+            this.finished_.path = fullfile(myfileparts(fqfps{1}), 'Log', '');
             this.finished_.tag = sprintf('%s_NRev%i_idxOfRef%i', ...
                 this.finished_.tag, this.NRevisions, this.indexOfReference);
         end
@@ -890,7 +891,14 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             end
         end
         function this = prepareT4ResolveError(this)
-            this.t4ResolveError_ = mlfourdfp.T4ResolveError( ...
+            p = pthToImages;
+            import mlfourdfp.T4ResolveError;
+            if (isempty(p))                
+                this.t4ResolveError_ = T4ResolveError( ...
+                    'sessionData', this.sessionData, 'theImages', this.theImages);
+                return
+            end
+            this.t4ResolveError_ = T4ResolveError( ...
                 'sessionData', this.sessionData, 'theImages', this.theImages, 'logPath', pthToImages);
             
             function pth = pthToImages
