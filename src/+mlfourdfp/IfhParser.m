@@ -23,9 +23,9 @@ classdef IfhParser < mlio.AbstractParser
         function this = constructDenovo(varargin)
             ip = inputParser;
             addRequired( ip, 'hdr', @isstruct);
-            addParameter(ip, 'fileprefix', @ischar);
+            addParameter(ip, 'fqfileprefix', @ischar);
             addParameter(ip, 'orientation', 2, @isnumeric);
-            addParameter(ip, 'N', false, @islogical);
+            addParameter(ip, 'N', mlpet.Resources.instance.defaultN, @islogical);
             parse(ip, varargin{:});
             hdr = ip.Results.hdr;
             
@@ -35,12 +35,12 @@ classdef IfhParser < mlio.AbstractParser
             assert(isfield(hdr, 'hist'), 'mlfourdfp:unsupportedInputTypeclass', 'IhfParser.constructDenovo');            
             
             this = mlfourdfp.IfhParser;
-            this.fileprefix = ip.Results.fileprefix;
+            this.fqfileprefix = ip.Results.fqfileprefix;
             this.denovo_ = struct( ...
                 'version_of_keys', 3.3, ...
                 'number_format', 'float', ...
                 'conversion_program', 'mlfourdfp.IfhParser.constructDenovo', ...
-                'name_of_data_file', ip.Results.fileprefix, ...
+                'name_of_data_file', this.fileprefix, ...
                 'patient_ID', '', ...
                 'date', datestr(now), ...
                 'number_of_bytes_per_pixel', 4, ...
@@ -57,7 +57,7 @@ classdef IfhParser < mlio.AbstractParser
                 this.denovo_.center = hdr.hist.originator;     
             end
         end
-        function o = imagedataByteOrder
+        function o    = imagedataByteOrder
             [~,~,o] = computer;
             if (strcmpi(o, 'L'))
                 o = 'littleendian';
@@ -104,7 +104,7 @@ classdef IfhParser < mlio.AbstractParser
             this.filesuffix_ = fext;
             this.N_ = ip.Results.N;
         end
-        function s = strrep4regexp(s)
+        function s    = strrep4regexp(s)
             s = strrep(s,'[','\[');
             s = strrep(s,']','\]');
             s = strrep(s,'(','\(');
@@ -178,10 +178,16 @@ classdef IfhParser < mlio.AbstractParser
             addOptional(ip, 'client', this);
             parse(ip, varargin{:});
             
-            fid = fopen(this.fqfilename, 'w'); % overwrite
+            that = mlfourdfp.IfhParser.constructDenovo( ...
+                ip.Results.client.hdr, ...
+                'fqfileprefix', ip.Results.client.fqfileprefix, ...
+                'orientation', ip.Results.client.imagingInfo.ifh_orientation, ...
+                'N', ip.Results.client.N);
+            
+            fid = fopen(that.fqfilename, 'w'); % overwrite
             fprintf(fid, 'INTERFILE\t:=\n');
-            keys = this.SUPPORTED_KEYS;
-            str = this.asstruct;
+            keys = that.SUPPORTED_KEYS;
+            str = that.asstruct;
             for ik = 1:length(keys)
                 
                 if (strcmp(keys{ik}, 'conversion_program'))
@@ -189,18 +195,18 @@ classdef IfhParser < mlio.AbstractParser
                     continue
                 end
                 if (strcmp(keys{ik}, 'name_of_data_file'))
-                    fprintf(fid, 'name of data file\t:= %s\n', this.fileprefix);
+                    fprintf(fid, 'name of data file\t:= %s\n', that.fileprefix);
                     continue
                 end
                 if (strcmp(keys{ik}, 'mmppix'))
-                    if (~isempty(this.mmppix) && ~this.N_)
+                    if (~isempty(that.mmppix) && ~that.N_)
                         m = str.mmppix;
                         fprintf(fid, 'mmppix\t:=\t%9.6f %9.6f %9.6f\n', m(1), m(2), m(3));
                     end
                     continue
                 end  
                 if (strcmp(keys{ik}, 'center')) 
-                    if(~isempty(this.center) && ~this.N_)
+                    if(~isempty(that.center) && ~that.N_)
                         c = str.center;
                         fprintf(fid, 'center\t:=\t%9.4f %9.4f %9.4f\n', c(1), c(2), c(3));
                     end
@@ -215,12 +221,16 @@ classdef IfhParser < mlio.AbstractParser
                     fprintf(fid, '%s\t:= %g\n', strrep(keys{ik}, '_',' '), str.(keys{ik}));
                     continue
                 end
+                if (strcmp(keys{ik}, 'matrix_size'))
+                    that.fprintfMulti_g(fid, [strrep(keys{ik}, '_',' ')], str.(keys{ik}));
+                    continue
+                end   
                 if (strcmp(keys{ik}, 'scaling_factor'))
-                    this.fprintfMulti_f(fid, [strrep(keys{ik}, '_',' ') ' (mm/pixel)'], str.(keys{ik}));
+                    that.fprintfMulti_f(fid, [strrep(keys{ik}, '_',' ') ' (mm/pixel)'], str.(keys{ik}));
                     continue
                 end   
                 if (isnumeric(str.(keys{ik})) && length(str.(keys{ik})) > 1)
-                    this.fprintfMulti_g(fid, strrep(keys{ik}, '_',' '), str.(keys{ik}));
+                    that.fprintfMulti_g(fid, strrep(keys{ik}, '_',' '), str.(keys{ik}));
                     continue
                 end
                 error('mlfourdfp:guardingIfsFailed', 'in IfhParser.save');

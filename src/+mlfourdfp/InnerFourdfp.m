@@ -155,6 +155,7 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
         function save__(this)
             warning('off', 'MATLAB:structOnObject');
             try
+                assert(lstrfind(this.filesuffix, '.4dfp'));
                 ana = mlniftitools.make_ana(single(this.img_), this.mmppix);
                 mlniftitools.save_untouch_nii(ana, this.fqfileprefix_4dfp_hdr);                
                 this.imagingInfo_.ifh.fqfileprefix = this.fqfileprefix;

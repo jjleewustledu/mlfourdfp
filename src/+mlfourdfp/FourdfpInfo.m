@@ -269,6 +269,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
     
     properties (Dependent)
         ifh
+        ifh_orientation
         imgrec
     end
     
@@ -322,6 +323,22 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
         
         function g    = get.ifh(this)
             g = this.ifh_;
+        end 
+        function g    = get.ifh_orientation(this)
+            if (lstrfind(lower(this.Orientation), 'transverse'))
+                g = 2;
+                return
+            end
+            if (lstrfind(lower(this.Orientation), 'coronal'))
+                g = 3;
+                return
+            end
+            if (lstrfind(lower(this.Orientation), 'sagittal'))
+                g = 4;
+                return
+            end
+            
+            error('mlfourdfp:ValueError', 'FourdfpInfo.get.ifh_orientation');
         end 
         function this = set.ifh(this, s)
             this.ifh_ = s;
@@ -507,7 +524,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             if (~lexist([this.fqfileprefix '.4dfp.ifh'], 'file'))
                 ii = mlfourdfp.IfhParser.constructDenovo( ...
                     this.hdr, ...
-                    'fileprefix', this.fileprefix, ...
+                    'fqfileprefix', this.fqfileprefix, ...
                     'orientation', 2, ...
                     'N', this.N);
                 return
