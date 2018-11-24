@@ -1,4 +1,4 @@
-classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
+classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
 	%% INNERFOURDFP  
 
 	%  $Revision$
@@ -45,24 +45,24 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
         
         %% GET/SET
         
-        function x    = get.hdxml(~)
+        function x = get.hdxml(~)
             x = '';
         end
-        function g    = get.ifh(this)
+        function g = get.ifh(this)
             if (~isprop(this.imagingInfo_, 'ifh'))
                 g = [];
                 return
             end
             g = this.imagingInfo_.ifh;
         end
-        function this = set.ifh(this, s)
+        function     set.ifh(this, s)
             if (~isprop(this.imagingInfo_, 'ifh'))
                 return
             end
             assert(isa(s, mlfourdfp.IfhParser));
             this.imagingInfo_.ifh = s;
         end
-        function o    = get.orient(this)
+        function o = get.orient(this)
             if (~isempty(this.orient_))
                 o = this.orient_;
                 return
@@ -74,10 +74,10 @@ classdef InnerFourdfp < mlfourd.AbstractInnerImagingFormat
             end
             o = '';
         end
-        function u    = get.untouch(this)
+        function u = get.untouch(this)
             u = this.imagingInfo_.untouch;
         end
-        function this = set.untouch(this, s)
+        function     set.untouch(this, s)
             this.imagingInfo_.untouch = logical(s);
         end
         
