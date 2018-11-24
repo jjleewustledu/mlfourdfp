@@ -47,19 +47,19 @@ classdef Test_IfhParser < matlab.unittest.TestCase
         end
         function test_constructDenovo(this)
             import mlfourdfp.*;
-            nh = mlfourd.ImagingFormatContext([this.fileprefix '.4dfp.hdr']);
+            nh = InnerFourdfp(FourdfpInfo([this.fileprefix '.4dfp.hdr']));
             tmpfp = tempFileprefix(this.fileprefix);
             deno = IfhParser.constructDenovo( ...
                 nh.hdr, ...
-                'fileprefix', tmpfp);
+                'fqfileprefix', tmpfp);
             s = deno.asstruct;
             this.verifyEqual(s.conversion_program, 'mlfourdfp.IfhParser.constructDenovo');
             this.verifyTrue(lstrfind(s.name_of_data_file, 'dgv2ConvertedLaForest_dcm2niix'));
             this.verifyEqual(s.matrix_size, [344 344 127 1]);
             this.verifyEqual(s.scaling_factor, [2.086260080337524 2.086260080337524 2.031250000000000], 'RelTol', 1e-4);
             
-            deno.save;
-            this.verifyTrue(lexist([tmpfp '.4dfp.ifh'], 'file'));
+            deno.save(nh);
+            this.verifyTrue(lexist(fullfile(this.TmpDir, [this.fileprefix '.4dfp.ifh']), 'file'));
             this.deleteExisting([tmpfp '.4dfp.ifh']);
         end
         function test_read(this)
