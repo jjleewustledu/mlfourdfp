@@ -170,7 +170,7 @@ classdef IfhParser < mlio.AbstractParser
             end
         end
         function s = nameOfDataFile(this)
-            [~,s] = myfileparts(this.rightSideChar('name of data file'));
+            s = mybasename(this.rightSideChar('name of data file'));
         end
         function     save(this, varargin)
             
