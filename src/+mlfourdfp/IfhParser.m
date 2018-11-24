@@ -1,4 +1,4 @@
-classdef IfhParser < mlio.AbstractParser
+classdef IfhParser < handle & mlio.AbstractParser
 	%% IfhParser parses numerical values to the right or left of a text field-name.
     %  For more fine-grained parsing features, see TextParser.
 
@@ -222,7 +222,7 @@ classdef IfhParser < mlio.AbstractParser
                     continue
                 end
                 if (strcmp(keys{ik}, 'matrix_size'))
-                    that.fprintfMulti_g(fid, [strrep(keys{ik}, '_',' ')], str.(keys{ik}));
+                    that.fprintfMulti_g(fid, strrep(keys{ik}, '_',' '), str.(keys{ik}));
                     continue
                 end   
                 if (strcmp(keys{ik}, 'scaling_factor'))

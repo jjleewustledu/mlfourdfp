@@ -1,4 +1,4 @@
-classdef ImgRecLogger < mlpipeline.AbstractLogger
+classdef ImgRecLogger < handle & mlpipeline.AbstractLogger
 	%% IMGRECLOGGER accumulates logging strings in a CellArrayList.  It is a handle class.
 
 	%  $Revision$

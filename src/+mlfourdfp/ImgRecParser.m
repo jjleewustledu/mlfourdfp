@@ -1,4 +1,4 @@
-classdef ImgRecParser < mlio.AbstractParser
+classdef ImgRecParser < handle & mlio.AbstractParser
 	%% IMGRECPARSER parses numerical values to the right or left of a text field-name.
     %  For more fine-grained parsing features, see TextParser.
 
