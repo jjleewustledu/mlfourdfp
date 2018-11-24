@@ -113,8 +113,8 @@ classdef IfhParser < handle & mlio.AbstractParser
     end
     
 	methods
-        function s = asstruct(this, varargin)
-            %% ASSTRUCT
+        function s = struct(this)
+            %% STRUCT
             %  @return struct s with fields:
             %  version_of_keys
             %  number_format
@@ -187,7 +187,7 @@ classdef IfhParser < handle & mlio.AbstractParser
             fid = fopen(that.fqfilename, 'w'); % overwrite
             fprintf(fid, 'INTERFILE\t:=\n');
             keys = that.SUPPORTED_KEYS;
-            str = that.asstruct;
+            str = struct(that);
             for ik = 1:length(keys)
                 
                 if (strcmp(keys{ik}, 'conversion_program'))
@@ -237,6 +237,9 @@ classdef IfhParser < handle & mlio.AbstractParser
             end
             fprintf('\n');
             fclose(fid);
+            
+            % reload to update the cell contents
+            ip.Results.client.imagingInfo.ifh = that.load(that.fqfilename);
         end
         function n = scalingFactor(this)
             idx = 1;
