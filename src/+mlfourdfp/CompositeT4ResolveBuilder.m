@@ -17,20 +17,18 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 if (isempty(fqfp{i}))
                     continue
                 end
-                ic = mlfourd.ImagingContext([fqfp{i} '.4dfp.hdr']);
-                nn = ic.numericalNiftid;
-                nn.filesuffix = '.4dfp.hdr';
-                if (4 == length(size(nn)) && size(nn,4) > 1) % short-circuit
-                    if (lexist([nn.fqfileprefix '_sumt.4dfp.hdr']))
-                        nn = mlfourd.NumericalNIfTId.load([nn.fqfileprefix '_sumt.4dfp.hdr']);
+                ic = mlfourd.ImagingContext2([fqfp{i} '.4dfp.hdr']);
+                if (4 == length(size(ic)) && size(ic,4) > 1) % short-circuit
+                    if (lexist([ic.fqfileprefix '_sumt.4dfp.hdr']))
+                        ic = mlfourd.ImagingContext2([ic.fqfileprefix '_sumt.4dfp.hdr']);
                     else                        
-                        nn = nn.timeSummed;
-                        nn.save;
+                        ic = ic.timeSummed;
+                        ic.save;
                         fprintf('mlfourdfp.CompositeT4ResolveBuilder.embedInEuclideanR3 saved %s\n', ...
-                            nn.fqfilename);
+                            ic.fqfilename);
                     end
                 end
-                fqfp{i} = nn.fqfileprefix;
+                fqfp{i} = ic.fqfileprefix;
             end
         end
         function this         = resolve(this, varargin)
@@ -329,6 +327,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fqfps{ii} = mskt.fqfileprefix;
                         continue
                     catch ME
+                        handexcept(ME);
                         fprintf('CT4RB.lazyMaskForImages:  ipr.maskForImages{%i} <- T1001\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         fqfps{ii} = 'none';
@@ -342,6 +341,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fqfps{ii} = [ipr.maskForImages{ii} '_mskt'];
                         continue
                     catch ME
+                        handexcept(ME);
                         fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         fqfps{ii} = 'none';
@@ -355,6 +355,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         fqfps{ii} = [ipr.source{ii} '_mskt'];
                         continue
                     catch ME
+                        handexcept(ME);
                         fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
                         fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         fqfps{ii} = 'none';
@@ -424,7 +425,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             for il = 1:length(this.indicesLogical)
                 if (this.indicesLogical(il))
                     il1 = il1 + 1;                    
-                    this.product_{il1} = mlfourd.ImagingContext([ipr.resolved{il} '.4dfp.hdr']);
+                    this.product_{il1} = mlfourd.ImagingContext2([ipr.resolved{il} '.4dfp.hdr']);
                     this.product_{il1}.addImgrec( ...
                         {'mlfourdfp.CompositeT4ResolveBuilder.constructResolve(' ipr ')'});
                     this.product_{il1}.addLog( ...

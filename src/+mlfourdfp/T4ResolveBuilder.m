@@ -191,13 +191,13 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             parse(ip, ipr, varargin{:});            
             tag = mybasename(ip.Results.tag);
             
-            import mlpet.*;
-            prev = PETImagingContext([ipr.dest '.4dfp.hdr']);
-            prev = prev.numericalNiftid; 
+            import mlpet.* mlfourd.*;
+            prev = ImagingContext2([ipr.dest '.4dfp.hdr']);
+            prev = prev.nifti; 
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f))
-                    curr = PETImagingContext([this.fileprefixIndexedResolved(ipr.dest, f, tag) '.4dfp.hdr']);
-                    curr = curr.numericalNiftid;
+                    curr = ImagingContext2([this.fileprefixIndexedResolved(ipr.dest, f, tag) '.4dfp.hdr']);
+                    curr = curr.nifti;
                     prev.img(:,:,:,f) = curr.img(:,:,:);
                 end
             end
@@ -315,6 +315,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
                     return
                 catch ME
+                    handexcept(ME);
                     fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- wholehead\n');
                     fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                     ipr.maskForImages = 'wholehead';
@@ -329,6 +330,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                     return
                 catch ME
+                    handexcept(ME);
                     fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- none\n');
                     fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                     ipr.maskForImages = 'none';
@@ -348,6 +350,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                     return
                 catch ME
+                    handexcept(ME);
                     fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- wholehead2\n');
                     fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                     ipr.maskForImages = 'wholehead2';
@@ -369,7 +372,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 return
             end
             
-            ic = mlfourd.ImagingContext(ipr.source);
+            ic = mlfourd.ImagingContext2(ipr.source);
             ic = ic.timeSummed;
             ic.save;
             fqfp = ic.fqfileprefix;
@@ -423,7 +426,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function this = buildProduct(this, ipr)
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;            
-            this.product_ = mlfourd.ImagingContext([ipr.resolved '.4dfp.hdr']);
+            this.product_ = mlfourd.ImagingContext2([ipr.resolved '.4dfp.hdr']);
             this.product_.addImgrec( ...
                 {'mlfourdfp.T4ResolveBuilder.constructResolve(' ipr ')'});
             this.product_.addLog( ...
