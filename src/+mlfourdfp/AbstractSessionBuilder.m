@@ -205,8 +205,8 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function obj  = tof(this, varargin)
             obj = this.sessionData.tof(varargin{:});
         end
-        function fqfp = umap(this, varargin)
-            fqfp = this.sessionData.umap(varargin{:});
+        function fqfp = umapTagged(this, varargin)
+            fqfp = this.sessionData.umapTagged(varargin{:});
         end 
         function fqfp = umapSynth(this, varargin)
             fqfp = this.sessionData.umapSynth(varargin{:});
