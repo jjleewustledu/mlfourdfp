@@ -58,7 +58,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             addParameter(ip, 'typ', 'fqfp', @ischar);
             parse(ip, varargin{:});
             
-            ic = mlfourd.ImagingContext(obj);
+            ic = mlfourd.ImagingContext2(obj);
             ic = ic.timeSummed;
             ffp = ic.fourdfp;
             ffp.save;
@@ -223,8 +223,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 fqfp1 = strrep(fqfp_, '0.1','0_1');
                 bv.move_4dfp(fqfp_, fqfp1);
             end
-            ic  = ImagingContext([fqfp1 '.4dfp.hdr']);
-            ic  = ic.thresh(ic.numericalNiftid.dipmax*this.maskForImagesThreshFactor);
+            ic  = ImagingContext2([fqfp1 '.4dfp.hdr']);
+            ic  = ic.thresh(ic.dipmax*this.maskForImagesThreshFactor);
             ic  = ic.binarized;
             ic.saveas([ip.Results.fp '.4dfp.hdr']);
             fp  = ic.fqfileprefix;
@@ -250,10 +250,10 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 fqfp2 = strrep(fqfp_, '0.1','0_1');
                 bv.move_4dfp(fqfp_, fqfp2);
             end
-            ic1 = ImagingContext([fqfp1 '.4dfp.hdr']);
-            ic2 = ImagingContext([fqfp2 '.4dfp.hdr']);
-            ic  = ImagingContext(ic1.numericalNiftid + ic2.numericalNiftid);
-            ic  = ic.thresh(ic.numericalNiftid.dipmax*this.maskForImagesThreshFactor);
+            ic1 = ImagingContext2([fqfp1 '.4dfp.hdr']);
+            ic2 = ImagingContext2([fqfp2 '.4dfp.hdr']);
+            ic  = ImagingContext2(ic1 + ic2);
+            ic  = ic.thresh(ic.dipmax*this.maskForImagesThreshFactor);
             ic  = ic.binarized;
             ic.saveas([ip.Results.fp '.4dfp.hdr']);
             fp  = ic.fqfileprefix;
@@ -377,7 +377,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
         end
         function msk   = maskBoundaries(this, fqfp)
             this.buildVisitor.nifti_4dfp_n(fqfp);
-            ic  = mlfourd.ImagingContext(fqfp);
+            ic  = mlfourd.ImagingContext2(fqfp);
             ic  = ic.ones;
             ic.noclobber = false;
             ic.saveas([fqfp '_ones']);
@@ -607,7 +607,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 this.ensureLastRnumber(sourceFqfp,1), ...
                 'out', outFqfp, ...
                 'options', options); 
-            this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.hdr']);
+            this.product_ = mlfourd.ImagingContext2([outFqfp '.4dfp.hdr']);
         end
         function this  = t4img_4dfpr2(this, varargin)
             %% T4IMG_4DFPR2 supplies transformations for NRevisions = 2.
@@ -632,7 +632,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 % t4dest->op_fdgv1${e}r1_frame${idxRef}
             t4source = this.markLastRevisionMarking(t4source);
                 % t4source->${E}/fdgv1${e}r0_frame${e}
-            sourceFqfp = this.markLastRevisionMarking(myfileprefix(ip.Results.source));
+            sourceFqfp = myfileprefix(ip.Results.source);
                 % sourceFqfp ~ E1to9/umapSynth_op_fdgv1e1to9r1_frame${e}
             outFqfp = myfileprefix(ip.Results.out);
                 % outFqfp ~ ${E}/umapSynth_op_fdgv1${e}r1_frame${idxRef}
@@ -672,7 +672,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 'options', options); 
                 % t4->${E}/fdgv1${e}r1r2_frame${e}_to_op_fdgv1${e}r1_frame${idxRef}_t4
             fprintf('t4img_4dfpr2 wrote out:\n    %s\n\n', outFqfp);
-            this.product_ = mlfourd.ImagingContext([outFqfp '.4dfp.hdr']);
+            this.product_ = mlfourd.ImagingContext2([outFqfp '.4dfp.hdr']);
         end
         function pth   = t4Path(this)
             pth = fullfile(this.sessionData.tracerLocation, 'T4', '');
@@ -804,7 +804,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
         function this = buildProduct(this, ipr)
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;            
-            this.product_ = mlfourd.ImagingContext([ipr.resolved '.4dfp.hdr']);
+            this.product_ = mlfourd.ImagingContext2([ipr.resolved '.4dfp.hdr']);
             this.product_.addImgrec( ...
                 {'mlfourdfp.AbstractT4ResolveBuilder.constructResolve(' ipr ')'});
             this.product_.addLog( ...
