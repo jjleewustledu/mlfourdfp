@@ -371,7 +371,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             jimmy = this.load_nii; % struct
             X = jimmy.img; % identical to nii0 = load_untouch_nii(<from nifti_4dfp -n>); nii0.img
             X = flip(X, 1); % storage order := Neurological, removing Analyze conventions  
-            X = this.importFourdfp(X, this.ifh.asstruct.orientation);
+            X = this.importFourdfp(X, struct(this.ifh).orientation);
             X = this.ensureDatatype(X, this.datatype_);
             untouch = false;
             hdr = this.adjustHdr(jimmy.hdr);
@@ -489,7 +489,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
         function p    = ifhread(this)
             import mlfourdfp.*;
             p = IfhParser.load([this.fqfileprefix '.4dfp.ifh'], 'N', this.N);
-            s = p.asstruct;
+            s = struct(p);
             
             try
                 assert(lstrfind(lower(this.ImgDataType), lower(s.number_format)), ...
