@@ -27,9 +27,6 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             parse(ip, varargin{:});            
             umap = ip.Results.umap;
             
-            if (FourdfpVisitor.lexist_4dfp(umap) && this.reuseCarneyUmap)
-                return
-            end
             deleteExisting([umap '.4dfp.*']);
             deleteExisting([umap '_b*.4dfp.*']);
             deleteExisting([umap '.log']);

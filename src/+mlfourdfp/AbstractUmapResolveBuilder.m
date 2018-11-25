@@ -16,8 +16,8 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
 	properties
         ct_rescaleSlope = 1
         ct_rescaleIntercept = -1024
-        reuseCTMasked = true
-        reuseCTRescaled = true
+        reuseCTMasked = false
+        reuseCTRescaled = false
         sessionDataCache
     end
     
@@ -60,10 +60,6 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             mpr  = this.sessionData.mpr('typ', 'fqfp');
             ct   = this.sessionData.ct('typ', 'fqfp');
             ctm  = this.sessionData.ctMasked('typ', 'fqfp');
-            if (lexist(this.fourdfpImg(ctm)) && this.reuseCTMasked)
-                ic = ImagingContext(ctm);
-                return
-            end
             
             [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
                 'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', datestr(now,30)));
@@ -72,7 +68,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             ct_  = sprintf('%s_%s', ct, datestr(now, 30));
             this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
             this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
-            ic = ImagingContext(ctm);
+            ic = ImagingContext2(ctm);
             delete([ct_ '.4dfp.*']); % ct__ in mpr-space has best registration
         end       
         function dest  = buildTracerNAC(this, varargin)
@@ -132,8 +128,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 return
             end
             
-            ic = mlfourd.ImagingContext([ip.Results.ctMasked '.4dfp.hdr']);
-            ic = ic.numericalNiftid;
+            ic = mlfourd.ImagingContext2([ip.Results.ctMasked '.4dfp.hdr']);
             ic = ic * this.ct_rescaleSlope + this.ct_rescaleIntercept;            
             ic.noclobber = false;
             ic.saveas([ctOut '.4dfp.hdr']);
