@@ -310,10 +310,17 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
             
             hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr);   
-            X = flip(X,1);
+            
+                                     
+            X = permute(X, [1 3 2]); % rl, pa, si with respect to fsleyes voxel/world orientations
             X = flip(X,2);
-            %X = flip(X,3);
-            %X = permute(X, [1 3 2]); 
+            X = flip(X,3);
+            
+            % eigen flips
+            % X = flip(X,1); % rl, pa, si -> LR, pa, si
+            % X = flip(X,2); % rl, pa, si -> rl, AP, si 
+            % X = flip(X,3); % rl, pa, si -> rl, pa, IS
+            % rl, AP, IS is target for 4dfp
         end
     end
 
