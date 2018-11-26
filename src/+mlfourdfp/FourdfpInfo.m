@@ -274,12 +274,55 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
     end
     
     methods (Static)
-        function e = defaultFilesuffix
+        function e       = defaultFilesuffix
             e =  mlfourdfp.FourdfpInfo.FILETYPE_EXT;
         end
-        function X = exportFourdfpToNIfTI(X, varargin)
+        function [X,hdr] = exportFourdfp(X, hdr)
+            %% FLIPTOFOURDFP
+            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
+            %  niftigz_4dfp is not compliant with NIfTI qfac.
+            
+            import mlfourdfp.FourdfpInfo.*;
+            hdr = adjustHdrForExport(hdr);
+            X = flip(X, 1);
+            X = flip(X, 2);
         end
-        function X = importFourdfp(X, varargin)
+        function [X,hdr] = exportFourdfpToFreesurferSpace(X, hdr)   
+            
+            import mlfourdfp.FourdfpInfo.*;
+            hdr = adjustHdrForSurferExport(hdr);
+            X = flip(X,3);  
+            X = flip(X,1);                   
+            X = permute(X, [1 3 2]); 
+        end
+        function X       = exportFourdfpToNIfTI(X, varargin)
+        end
+        function [X,hdr] = exportFreeSurferSpaceToFourdfp(X, hdr)
+            %% EXPORTFREESURFERSPACETOFOURDFP
+            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
+            %  niftigz_4dfp is not compliant with NIfTI qfac.
+                  
+            import mlfourdfp.FourdfpInfo.*;
+            hdr = adjustHdrForExport(hdr);    
+            X = permute(X, [1 3 2]); % rl, pa, si with respect to fsleyes voxel/world orientations
+            X = flip(X,2);
+            X = flip(X,3); 
+            
+            % eigen flips
+            % X = flip(X,1); % rl, pa, si -> LR, pa, si
+            % X = flip(X,2); % rl, pa, si -> rl, AP, si 
+            % X = flip(X,3); % rl, pa, si -> rl, pa, IS
+            % rl, AP, IS is target for 4dfp
+        end
+        function tf      = hdrIsReasonableNii(~)
+            tf = false;
+        end
+        function tf      = hdrIsReasonableSurfer(hdr)
+            tf = all(abs(hdr.hist.srow_x( 2:3 ))             < 1e-4) && ...
+                 all(abs(hdr.hist.srow_y( 1:2 ))             < 1e-4) && ...
+                 all(abs(hdr.hist.srow_z([true false true])) < 1e-4);
+        end
+        function X       = importFourdfp(X, varargin)
             ip = inputParser;
             addOptional(ip, 'orientation', 2, @isnumeric);
             parse(ip, varargin{:});
@@ -294,33 +337,6 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
                 otherwise
                     error('mlfourd:unsupportedSwitchcase', 'NIfTId.flip_nii');
             end
-        end
-        function [X,hdr] = exportFourdfp(X, hdr)
-            %% FLIPTOFOURDFP
-            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
-            %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
-            
-            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr);
-            X = flip(X, 1);
-            X = flip(X, 2);
-        end
-        function [X,hdr] = exportFreeSurferSpaceToFourdfp(X, hdr)
-            %% EXPORTFREESURFERSPACETOFOURDFP
-            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
-            %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
-            
-            hdr = mlfourdfp.FourdfpInfo.adjustHdrForExport(hdr);   
-            
-                                     
-            X = permute(X, [1 3 2]); % rl, pa, si with respect to fsleyes voxel/world orientations
-            X = flip(X,2);
-            X = flip(X,3);
-            
-            % eigen flips
-            % X = flip(X,1); % rl, pa, si -> LR, pa, si
-            % X = flip(X,2); % rl, pa, si -> rl, AP, si 
-            % X = flip(X,3); % rl, pa, si -> rl, pa, IS
-            % rl, AP, IS is target for 4dfp
         end
     end
 
@@ -448,7 +464,11 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
         function hdr = adjustHdrForExport(hdr)
             %% ADJUSTHDRFOREXPORT
             %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
-            %  niftigz_4dfp is not compliant with NIfTI qfac; it also adds permute(~, [1 3 2])
+            %  niftigz_4dfp is not compliant with NIfTI qfac.
+            
+            if (mlfourdfp.FourdfpInfo.hdrIsReasonableNii(hdr))
+                return
+            end
             
             hdr.hist.qform_code = 0;
             hdr.hist.sform_code = 1;
@@ -469,6 +489,35 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             hdr.hist.srow_x = -srow(1,:);
             hdr.hist.srow_y =  srow(2,:);
             hdr.hist.srow_z =  srow(3,:);
+        end
+        function hdr = adjustHdrForSurferExport(hdr)
+            %% ADJUSTHDRFOREXPORT
+            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
+            %  niftigz_4dfp is not compliant with NIfTI qfac.
+            
+            if (mlfourdfp.FourdfpInfo.hdrIsReasonableSurfer(hdr))
+                return
+            end
+                
+            hdr.hist.qform_code = 0;
+            hdr.hist.sform_code = 1;
+            
+            fx = 1;
+            fy = 1;
+            fz = 1;
+            %fx = hdr.dime.pixdim(2);
+            %fy = hdr.dime.pixdim(3);
+            %fz = hdr.dime.pixdim(4);
+            
+            assert(mlpet.Resources.instance.defaultN);
+            
+            srow = [ [-hdr.dime.pixdim(2) 0  0 -(1-hdr.hist.originator(1))*fx]; ...
+                     [ 0  0 hdr.dime.pixdim(3)  (1-hdr.hist.originator(2))*fz]; ...
+                     [ 0 -hdr.dime.pixdim(4) 0 -(1-hdr.hist.originator(3))*fy] ];
+            
+            hdr.hist.srow_x = srow(1,:);
+            hdr.hist.srow_y = srow(2,:);
+            hdr.hist.srow_z = srow(3,:);
         end
     end
     
