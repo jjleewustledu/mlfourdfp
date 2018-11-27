@@ -261,12 +261,12 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
     
     methods (Access = private)
         function t    = sessionTag(this)
-            t = [class(this) '_' this.sessionData.tracerRevision('typ','fp')];            
+            t = [myclass(this) '_' this.sessionData.tracerRevision('typ','fp')];            
             p = this.product_;
             if (isempty(p))
                 return
             end
-            t = [t '_' class(p)];
+            t = [t '_' myclass(p)];
             if (~isprop(p, 'fileprefix'))
                 return
             end

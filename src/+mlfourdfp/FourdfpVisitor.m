@@ -334,6 +334,41 @@ classdef FourdfpVisitor
             s = 0; r = ''; %#ok<NASGU>
             [s,r] = mlbash('popd');
         end
+        function s     = safesprintf(unsafeStr, fp, idxs)
+            idx1 = idxs(1);
+            idx2 = idx1;
+            try
+                switch (unsafeStr)
+                    case '_on_'
+                        idx2 = idx1+4;
+                        s = sprintf('%sOn%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
+                    case '_op_'
+                        idx2 = idx1+4;
+                        s = sprintf('%sOp%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
+                    case '+'
+                        idx2 = idx1+1;
+                        s = sprintf('%s%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
+                    case '.a2009s'
+                        idx2 = idx1+1;
+                        s = sprintf('%s%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
+                    otherwise
+                        error('mlfourdfp:unsupportedSwitchcase', 'FourdfpVisitor.safesprintf.fp->%s', fp)
+                end
+            catch ME
+                assert(idx1 > 1, ...
+                    'FourdfpVisitor.safesprintf.fp->%s may be missing prefix', fp);
+                assert(length(fp) >= idx2, ...
+                    'FourdfpVisitor.safesprintf.fp->%s may be missing suffix', fp);
+                handexcept(ME);
+            end
+        end
+        function sz    = size_4dfp(obj)
+            %% SIZE_4DFP
+            %  @return sz, the size of the image data specified by obj.fqfileprefix.
+            
+            assert(isprop(obj, 'fqfileprefix'));
+            sz = mlfourdfp.FourdfpVisitor.ifhMatrixSize(obj.fqfileprefix);
+        end
     end
 
 	methods
@@ -1740,34 +1775,6 @@ classdef FourdfpVisitor
     %% PRIVATE
     
     methods (Static, Access = private)
-        function s = safesprintf(unsafeStr, fp, idxs)
-            idx1 = idxs(1);
-            idx2 = idx1;
-            try
-                switch (unsafeStr)
-                    case '_on_'
-                        idx2 = idx1+4;
-                        s = sprintf('%sOn%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
-                    case '_op_'
-                        idx2 = idx1+4;
-                        s = sprintf('%sOp%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
-                    case '+'
-                        idx2 = idx1+1;
-                        s = sprintf('%s%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
-                    case '.a2009s'
-                        idx2 = idx1+1;
-                        s = sprintf('%s%s%s', fp(1:idx1-1), upper(fp(idx2)), fp(idx2+1:end));
-                    otherwise
-                        error('mlfourdfp:unsupportedSwitchcase', 'FourdfpVisitor.safesprintf.fp->%s', fp)
-                end
-            catch ME
-                assert(idx1 > 1, ...
-                    'FourdfpVisitor.safesprintf.fp->%s may be missing prefix', fp);
-                assert(length(fp) >= idx2, ...
-                    'FourdfpVisitor.safesprintf.fp->%s may be missing suffix', fp);
-                handexcept(ME);
-            end
-        end
     end
     
     methods (Access = private)

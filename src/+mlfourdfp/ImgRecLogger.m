@@ -25,12 +25,15 @@ classdef ImgRecLogger < handle & mlpipeline.AbstractLogger
             
             if (lexist(this.fqfilename, 'file'))
                 ipr = mlfourdfp.ImgRecParser.loadx(this.fqfileprefix, this.filesuffix);
-                this.cons(['mlfourdfp.ImgRecLogger.ctor' ipr.cellContents]);
+                this.cons([sprintf('mlfourdfp.ImgRecLogger.ctor fqfilename->%s', this.fqfilename) ipr.cellContents]);
             end
         end        
         
         function add(this, varargin) 
             this.cons(sprintf(varargin{:}));
+        end
+        function addNoHeadFoot(this, preface)
+            this.consNoHeadFoot(preface);
         end
         function c = clone(this)
             %% CLONE
@@ -71,7 +74,7 @@ classdef ImgRecLogger < handle & mlpipeline.AbstractLogger
         function save(this)
             this = this.ensureExtension;
             if (isempty(this.contents))
-                this.add('mlfourdfp.ImgRecLogger.save');
+                this.cons('mlfourdfp.ImgRecLogger.save; see also %s.log', this.fqfileprefix);
             end
             mlsystem.FilesystemRegistry.cellArrayListToTextfile( ...
                 this.cellArrayList_, this.fqfilename, 'w');

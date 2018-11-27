@@ -79,7 +79,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             deleteExisting(fullfile(this.sessionData.vLocation, 'ctRescaled*.4dfp.*'));
             deleteExisting(fullfile(this.sessionData.vLocation, 'ct_on_*.4dfp.*'));
             this.finished.markAsFinished( ...
-                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_teardownBuildUmaps']); 
+                'path', this.logger.filepath, 'tag', [this.finished.tag '_' myclass(this) '_teardownBuildUmaps']); 
         end
 		  
  		function this = CarneyUmapBuilder2(varargin)

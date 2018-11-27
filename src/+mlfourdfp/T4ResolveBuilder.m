@@ -193,22 +193,22 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             
             import mlpet.* mlfourd.*;
             prev = ImagingContext2([ipr.dest '.4dfp.hdr']);
-            prev = prev.nifti; 
+            pffp = prev.fourdfp; 
             for f = 1:length(this.indicesLogical)
                 if (this.indicesLogical(f))
                     curr = ImagingContext2([this.fileprefixIndexedResolved(ipr.dest, f, tag) '.4dfp.hdr']);
-                    curr = curr.nifti;
-                    prev.img(:,:,:,f) = curr.img(:,:,:);
+                    cffp = curr.fourdfp;
+                    pffp.img(:,:,:,f) = cffp.img(:,:,:);
                 end
             end
             if (~isempty(tag))
-                prev.filename = [ipr.dest '_' tag '.4dfp.hdr'];
+                pffp.filename = [ipr.dest '_' tag '.4dfp.hdr'];
             else
-                prev.filename = [ipr.dest '.4dfp.hdr'];
+                pffp.filename = [ipr.dest '.4dfp.hdr'];
             end
-            prev.save;
+            pffp.save;
             indicesLogical = this.indicesLogical; %#ok<NASGU>
-            save([prev.fqfileprefix '_indicesLogical.mat'], 'indicesLogical');
+            save([pffp.fqfileprefix '_indicesLogical.mat'], 'indicesLogical');
         end
         function                teardownResolve(this, ipr)
             try

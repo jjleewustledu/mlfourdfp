@@ -178,7 +178,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             this.teardownLogs;
             this.teardownT4s;  
             this.finished.markAsFinished( ...
-                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_teardownBuildUmaps']);           
+                'path', this.logger.filepath, 'tag', [this.finished.tag '_' myclass(this) '_teardownBuildUmaps']);           
         end
         function umaps = umapsOpTracer(this)
             umaps = sprintf('umapsOp%sv%ir%i', ...
