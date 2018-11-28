@@ -86,19 +86,6 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
         function deleteExisting(~, fn)
             deleteExisting_4dfp(fn);
         end
-        
-        function this = InnerFourdfp(varargin)
- 			%  @param imagingInfo is an mlfourd.ImagingInfo object and is required; it may be an aufbau object.
-            
-            this = this@mlfourd.AbstractInnerImagingFormat(varargin{:});
-            this = this.adjustQOffsets;
-            this = this.adjustSRows;
-        end
-    end 
-    
-    %% PROTECTED
-    
-    methods (Access = protected)
         function this = mutateInnerImagingFormatByFilesuffix(this)
             import mlfourd.* mlfourdfp.* mlsurfer.*;  
             hdr_ = this.hdr;
@@ -132,6 +119,19 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
                         'InnerNIfTI.filesuffix->%s', this.filesuffix);
             end
         end
+        
+        function this = InnerFourdfp(varargin)
+ 			%  @param imagingInfo is an mlfourd.ImagingInfo object and is required; it may be an aufbau object.
+            
+            this = this@mlfourd.AbstractInnerImagingFormat(varargin{:});
+            this = this.adjustQOffsets;
+            this = this.adjustSRows;
+        end
+    end 
+    
+    %% PROTECTED
+    
+    methods (Access = protected)
         function [s,r] = viewExternally(this, app, varargin)
             s = []; r = '';
             try

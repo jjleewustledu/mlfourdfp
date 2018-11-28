@@ -74,7 +74,7 @@ classdef ImgRecLogger < handle & mlpipeline.AbstractLogger
         function save(this)
             this = this.ensureExtension;
             if (isempty(this.contents))
-                this.cons('mlfourdfp.ImgRecLogger.save; see also %s.log', this.fqfileprefix);
+                this.add('mlfourdfp.ImgRecLogger.save; see also %s.log', this.fqfileprefix);
             end
             mlsystem.FilesystemRegistry.cellArrayListToTextfile( ...
                 this.cellArrayList_, this.fqfilename, 'w');
