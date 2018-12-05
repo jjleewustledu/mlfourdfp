@@ -91,8 +91,6 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
             hdr_ = this.hdr;
             switch (this.filesuffix)
                 case FourdfpInfo.SUPPORTED_EXT
-                    [this.img,hdr_] = FourdfpInfo.exportFourdfp(this.img, hdr_);
-                    this.imagingInfo.hdr = hdr_;
                 case [NIfTIInfo.SUPPORTED_EXT]
                     deleteExisting([this.fqfileprefix '.nii*']);
                     this.img = FourdfpInfo.exportFourdfpToNIfTI(this.img, struct(this.ifh).orientation);
@@ -135,15 +133,17 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
         function [s,r] = viewExternally(this, app, varargin)
             s = []; r = '';
             try
+                that = copy(this); % avoid side effects
                 assert(0 == mlbash(sprintf('which %s', app)), ...
                     'mlfourdfp:externalAppNotFound', ...
                     'InnerFourdfp.viewExternally could not find %s', app);
-                tmp = this.tempFqfilename;
-                this.saveas(tmp); % always save temp; internal img likely has changed from img on filesystem
+                tmp = that.tempFqfilename;
+                that.fqfilename = tmp;
+                that.save; % always save temp; internal img likely has changed from img on filesystem
                 v = mlfourdfp.Viewer(app);
                 tmp = [tmp varargin];
                 [s,r] = v.aview(tmp{:});
-                this.deleteExisting(tmp);
+                that.deleteExisting(tmp);
             catch ME
                 handexcept(ME, 'mlfourdfp:viewerError', ...
                     'InnerFourdfp.viewExternally called mlbash with %s; \nit returned s->%i, r->%s', ...
@@ -157,18 +157,24 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
     methods (Hidden) 
         function save__(this)
             warning('off', 'MATLAB:structOnObject');
+            that = copy(this);
             try
                 assert(lstrfind(this.filesuffix, '.4dfp'));
-                ana = mlniftitools.make_ana(single(this.img_), this.mmppix);
-                mlniftitools.save_untouch_nii(ana, this.fqfileprefix_4dfp_hdr);                
-                this.imagingInfo_.ifh.fqfileprefix = this.fqfileprefix;
-                this.imagingInfo_.ifh.save(this);
-                this.imagingInfo_.imgrec.fqfileprefix = this.fqfileprefix;
-                this.imagingInfo_.imgrec.save;
+                
+                %% KLUDGE
+                [that.img_,hdr_] = mlfourdfp.FourdfpInfo.exportFourdfp(that.img_, that.imagingInfo.hdr);
+                that.imagingInfo_.hdr = hdr_;
+                
+                ana = mlniftitools.make_ana(single(that.img_), that.mmppix);
+                mlniftitools.save_untouch_nii(ana, that.fqfileprefix_4dfp_hdr);                
+                that.imagingInfo_.ifh.fqfileprefix = that.fqfileprefix;
+                that.imagingInfo_.ifh.save(that);
+                that.imagingInfo_.imgrec.fqfileprefix = that.fqfileprefix;
+                that.imagingInfo_.imgrec.save;
             catch ME
                 dispexcept(ME, ...
                     'mlfourdfp:IOError', ...
-                    'InnerFourdfp.saveByNifti4dfp erred while attempting to save %s', this.fqfilename);
+                    'InnerFourdfp.saveByNifti4dfp erred while attempting to save %s', that.fqfilename);
             end
             warning('on', 'MATLAB:structOnObject');
         end
