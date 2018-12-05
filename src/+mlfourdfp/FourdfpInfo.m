@@ -278,7 +278,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             e =  mlfourdfp.FourdfpInfo.FILETYPE_EXT;
         end
         function [X,hdr] = exportFourdfp(X, hdr)
-            %% FLIPTOFOURDFP
+            %% EXPORTFOURDFP
             %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
             %  niftigz_4dfp is not compliant with NIfTI qfac.
             
@@ -306,11 +306,8 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             import mlfourdfp.FourdfpInfo.*;
             if (hdrIsReasonableSurfer(hdr))
                 X = permute(X, [1 3 2]); % rl, pa, si with respect to fsleyes voxel/world orientations
-                X = flip(X,2);
-                X = flip(X,3);
-            else
                 X = flip(X,1);
-                X = flip(X,2);
+                X = flip(X,3);
             end
             hdr = adjustHdrForExport(hdr);    
             
