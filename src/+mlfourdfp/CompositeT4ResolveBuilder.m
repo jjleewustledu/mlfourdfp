@@ -213,7 +213,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function this         = alreadyFinalized(this, ipr)
             dest         = cellfun(@(x) this.fileprefixRevision(x, this.NRevisions), ipr.dest, 'UniformOutput', false);
             ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest, 'UniformOutput', false);
-            this         = this.buildProduct(ipr);
+            
+            this.logger_.add(sprintf('%s is finished; building product with ipr->\n%s', class(this), evalc('disp(ipr)')));
+            this.logger_.add(sprintf('ipr.resolved->\n%s', evalc('disp(ipr.resolved'')')));
+            this = this.buildProduct(ipr);
         end
         function                teardownResolve(this, ipr)
             if (this.keepForensics); return; end
@@ -312,7 +315,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 ipr.maskForImages = repmat(ensureCell(ipr.maskForImages), size(ipr.source));
             end
             assertSizeEqual(ipr.maskForImages, ipr.source);
-            for ii = 1:length(ipr.source)           
+            for ii = 1:length(ipr.maskForImages)           
                 if (strcmp(ipr.maskForImages{ii}, 'Msktgen'))
                     try
                         mg   = mlpet.Msktgen( ...
@@ -324,6 +327,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             'intermediaryForMask', this.sessionData.T1001, ...
                             'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.hdr'), ...
                             'blurForMask', 33);
+                        if (~lexist_4dfp(mskt.fileprefix))
+                            this.buildVisitor.copyfile_4dfp(mskt.fqfileprefix);
+                        end
                         fqfps{ii} = mskt.fqfileprefix;
                         continue
                     catch ME
@@ -418,6 +424,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     
     methods (Access = protected)
         function this = buildProduct(this, ipr)
+            
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;            
             this.product_ = cell(1, sum(this.indicesLogical));            
@@ -425,7 +432,13 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             for il = 1:length(this.indicesLogical)
                 if (this.indicesLogical(il))
                     il1 = il1 + 1;                    
-                    this.product_{il1} = mlfourd.ImagingContext2([ipr.resolved{il} '.4dfp.hdr']);
+                    this.product_{il1} = mlfourd.ImagingContext2([ipr.resolved{il1} '.4dfp.hdr']);
+                    assert(~isempty(ipr.resolved{il1}), ...
+                        'mlfourdfp:ValueError', ...
+                        'T4ResolveBuilder.buildProduct.ipr.resolved{%i}->%s', il1, ipr.resolved{il1});
+                    assert(~isempty(this.product_{il1}), ...
+                        'mlfourdfp:ValueError', ...
+                        'T4ResolveBuilder.buildProduct.this.product{%i}->%s', il1, this.product_{il1}.fqfilename);
                     this.product_{il1}.addImgrec( ...
                         {'mlfourdfp.CompositeT4ResolveBuilder.constructResolve(' ipr ')'});
                     this.product_{il1}.addLog( ...

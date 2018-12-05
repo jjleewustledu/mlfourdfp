@@ -198,9 +198,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
         %%
         
         function this  = alreadyFinalized(this, ipr)
-            dest         = this.fileprefixRevision(ipr.dest, this.NRevisions);
-            ipr.resolved = sprintf('%s_%s', dest, this.resolveTag);
-            this         = this.buildProduct(ipr);
+            ipr.resolved = sprintf('%s_%s', ...
+                this.fileprefixRevision(ipr.dest, this.NRevisions), this.resolveTag);
+            this.logger_.add( ...
+                sprintf('%s is finished; building product with ipr->\n%s', class(this), evalc('disp(ipr)')));
+            this = this.buildProduct(ipr);
         end
         function         appendImageRegLog(this, s)
             if (~lexist(this.imageRegLog))
@@ -804,7 +806,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
         function this = buildProduct(this, ipr)
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;            
-            this.product_ = mlfourd.ImagingContext2([ipr.resolved '.4dfp.hdr']);
+            this.product_ = mlfourd.ImagingContext2([ipr.resolved '.4dfp.hdr']); % may have state for FilesystemTool
             this.product_.addImgrec( ...
                 {'mlfourdfp.AbstractT4ResolveBuilder.constructResolve(' ipr ')'});
             this.product_.addLog( ...

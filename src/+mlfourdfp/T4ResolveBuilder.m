@@ -313,12 +313,15 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         'sourceOfMask', fullfile(sd.vLocation, 'brainmask.4dfp.hdr'), ...
                         'blurForMask', 10);
                     fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
+                    if (~lexist_4dfp(mskt.fileprefix))
+                        this.buildVisitor.copyfile_4dfp(mskt.fqfileprefix);
+                    end
                     return
                 catch ME
                     handexcept(ME);
                     fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- wholehead\n');
                     fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
-                    ipr.maskForImages = 'wholehead';
+                    ipr.maskForImages = 'none';
                     cd(this.sessionData.tracerLocation);
                 end
             end
@@ -353,7 +356,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     handexcept(ME);
                     fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- wholehead2\n');
                     fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
-                    ipr.maskForImages = 'wholehead2';
+                    ipr.maskForImages = 'none';
                     cd(this.sessionData.tracerLocation);
                     rethrow(ME);
                 end
@@ -423,15 +426,6 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     %% PROTECTED
     
     methods (Access = protected)
-        function this = buildProduct(this, ipr)
-            this.ipResults_ = ipr;
-            this.rnumber = this.NRevisions;            
-            this.product_ = mlfourd.ImagingContext2([ipr.resolved '.4dfp.hdr']);
-            this.product_.addImgrec( ...
-                {'mlfourdfp.T4ResolveBuilder.constructResolve(' ipr ')'});
-            this.product_.addLog( ...
-                {'mlfourdfp.T4ResolveBuilder.t4ResolveError_.logger.fqfilename->' this.t4ResolveError_.logger.fqfilename});
-        end
         function this = cacheT4s(this, imgFpsc)
             %  @return this.t4s_{1} is the reference; size(this.t4s_) == size(this.indicesLogical).
             
