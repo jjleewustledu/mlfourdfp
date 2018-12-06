@@ -689,14 +689,14 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 movefiles('*.mat0', this.getLogPath);   
                 movefiles('*.sub', this.getLogPath); 
             catch ME
-                handwarning(ME);
+                dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                    'AbstractT4ResolveBuilder.teardownLogs failed to move files into %s', this.getLogPath);
             end
         end
         function         teardownT4s(this)
             if (this.keepForensics); return; end
             
             %% The following will break t4_resolve operations requiring *_t4 files.
-            %     try
             %         ensuredir(this.t4Path);
             %         movefiles('*_t4', this.t4Path);
             %         sessd = this.sessionData;
@@ -704,9 +704,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             %             fullfile(this.t4Path, ...
             %                 sprintf('%s_to_%s_t4', sessd.mpr('typ', 'fp'), sessd.atlas('typ', 'fp'))), ...
             %             pwd);
-            %     catch ME
-            %         handwarning(ME);
-            %     end
         end
         function         teardownRevision(this, ipr)
             if (iscell(ipr.maskForImages))
@@ -719,7 +716,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 this.teardownLogs;
                 this.teardownT4s;
             catch ME
-                handwarning(ME);
+                handwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                    'AbstractT4ResolveBuilder.teardownRevision failed to delete %s.4dfp.* and clean logs, t4s', ...
+                    ipr.maskForImages);
             end
         end
         function this  = updateFinished(this, varargin)
@@ -819,10 +818,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             this.t4s_{this.rnumber} = cell(size(imgFpsc));
             for f = 1:length(imgFpsc)
                 try
-                    this.t4s_{this.rnumber}{f} = sprintf('%s_to_%s_t4', imgFpsc{f}, this.resolveTag);
+                    this.t4s_{this.rnumber}{f} = sprintf('%s_frame%i_to_%s_t4', imgFpsc{f}, f, this.resolveTag);
                 catch ME
-                    dispwarning(ME);
-                end
+                    dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                        'AbstractT4ResolveBuilder.cacheT4s could not assign %s', this.t4s_{this.rnumber}{f});
+                end                
             end
         end
         function fp   = clipLastRevisionMarking(~, fp)
@@ -979,7 +979,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                             'out', sprintf('%s_%s', destFp, tag), ...
                             'options', ['-O' ipr.dest{this.indexOfReference}]);
                     catch ME
-                        handwarning(ME);
+                        dispexcept(ME, 'mlfourdfp:RuntimeError', ...
+                            'AbstractT4ResolveBuilder.t4imgAll failed t4img_4dfp on %s and %s', ...
+                            sprintf('%s_to_%s_t4', destFp, tag), destFp);
                     end
                 end
             end

@@ -72,8 +72,10 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
                             this.errMat_(m,n) = ...
                                 this.pairedErrParser(mybasename(simgs{m}), mybasename(simgs{n}));
                         catch ME
-                            dispwarning(ME);
+                            dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                                'AbstractT4ResolveError.estimateErr failed to assign errMat_(%i,%i)', m, n);
                         end                        
+
                     end
                 end
             end 
