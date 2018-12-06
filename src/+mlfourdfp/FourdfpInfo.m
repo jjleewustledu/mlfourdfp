@@ -283,11 +283,20 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             %  niftigz_4dfp is not compliant with NIfTI qfac.
             
             import mlfourdfp.FourdfpInfo.*;
-            X = flip(X, 1);
-            X = flip(X, 2);
+            if (hdrIsReasonableSurfer(hdr))
+                X = permute(X, [1 3 2]); % rl, pa, si with respect to fsleyes voxel/world orientations
+                %X = flip(X,1);
+                X = flip(X,3);
+                
+                %X = flip(X,1);
+                X = flip(X,2);
+            else
+                X = flip(X,1);
+                X = flip(X,2);
+            end
             hdr = adjustHdrForExport(hdr);
         end
-        function [X,hdr] = exportFourdfpToFreesurferSpace(X, hdr)   
+        function [X,hdr] = exportFourdfpToFreesurferSpace(X, hdr)
             
             import mlfourdfp.FourdfpInfo.*;
             if (hdrIsReasonableSurfer(hdr))
