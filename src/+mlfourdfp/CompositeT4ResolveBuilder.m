@@ -114,9 +114,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             % e. g., image1_to_image2_t4    
                         catch ME
                             t4fails(m,n) = t4fails(m,n) + 1;
-                            dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
-                                'CompositeT4ResolveBulder.imageReg could not operate %s on dest %s, source %s, t4 %s', ...
-                                this.sessionData.compAlignMethod, blurredImgs{n}, blurredImgs{m}, t4);
+%                             copyfile( ...
+%                                 this.buildVisitor.transverse_t4, ...
+%                                 this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}), 'f');
+                            dispwarning(ME);
                         end                        
                     end
                 end
@@ -220,28 +221,26 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function                teardownResolve(this, ipr)
             if (this.keepForensics); return; end
             
-            for r = 1:this.NRevisions
-                for il = 1:length(this.indicesLogical)
-                    fp0 = ipr.dest{il};
-                    if (this.indicesLogical(il))
-                        try
+            try
+                for r = 1:this.NRevisions                
+                    for il = 1:length(this.indicesLogical)
+                        fp0 = ipr.dest{il};
+                        if (this.indicesLogical(il))
                             deleteExisting(sprintf('%sr%i.4dfp.*',    fp0, r));
                             deleteExisting(sprintf('%sr%i_b*.4dfp.*', fp0, r));
                             deleteExisting(sprintf('%sr%i_C*.4dfp.*', fp0, r));
                             deleteExisting(sprintf('%sr%i_%s.4dfp.*', fp0, r, this.resolveTag));
                             deleteExisting(sprintf('%sr%i_g*.nii.gz', fp0, r));
-                        catch ME
-                            handwarning(ME, ...
-                                'mlfourdfp:RuntimeWarning', ...
-                                'CompositeT4ResolveBuilder.teardownResolve failed to delete %sr%i', fp0, r);
                         end
                     end
+                end   
+                if (iscell(ipr.maskForImages))                    
+                    cellfun(@(x) deleteExisting(sprintf('%s_*_*.4dfp.*', x)), ipr.maskForImages);
+                else
+                    deleteExisting(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
                 end
-            end
-            if (iscell(ipr.maskForImages))
-                cellfun(@(x) deleteExisting(sprintf('%s_*_*.4dfp.*', x)), ipr.maskForImages);
-            else
-                deleteExisting(sprintf('%s_*_*.4dfp.*', ipr.maskForImages));
+            catch ME
+                handwarning(ME)
             end
         end
         
@@ -265,9 +264,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         end
                     end
                 catch ME
-                    handexcept(ME, 'mlfourdfp:RuntimeError', ...
-                        'CompositeT4ResolveBuilder.copySourceToDest could not copy 4dfp %s to %s', ...
-                        ipr.source{s}, ipr.dest{s});
+                    handexcept(ME);
                 end
                 return
             end
@@ -334,44 +331,45 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             this.buildVisitor.copyfile_4dfp(mskt.fqfileprefix);
                         end
                         fqfps{ii} = mskt.fqfileprefix;
+                        continue
                     catch ME
-                        dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
-                            'CompositeT4ResolveBuilder.lazyMaskForImages failed case Msktgen on %s; trying %s', ...
-                            ipr.source{ii}, 'none');
+                        handexcept(ME);
+                        fprintf('CT4RB.lazyMaskForImages:  ipr.maskForImages{%i} <- T1001\n', ii);
+                        fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         fqfps{ii} = 'none';
                     end
-                    return
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
                     try
-                        if (~lexist_4dfp([ipr.maskForImages{ii} '_mskt']))
+                        if (~lexist_4dfp( [ipr.maskForImages{ii} '_mskt']))
                             this.buildVisitor.msktgenMprage(ipr.maskForImages{ii});
                         end
                         fqfps{ii} = [ipr.maskForImages{ii} '_mskt'];
+                        continue
                     catch ME
-                        dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
-                            'CompositeT4ResolveBuilder.lazyMaskForImages failed case T1001; trying none');
+                        handexcept(ME);
+                        fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
+                        fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         fqfps{ii} = 'none';
                     end
-                    return
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'msktgen_4dfp'))
                     try
-                        if (~lexist_4dfp([ipr.source{ii} '_mskt']))
+                        if (~lexist_4dfp( [ipr.source{ii} '_mskt']))
                             this.buildVisitor.msktgenMprage(ipr.source{ii}, this.sessionData.atlas('typ','fqfp'));
                         end
                         fqfps{ii} = [ipr.source{ii} '_mskt'];
+                        continue
                     catch ME
-                        dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
-                            'CompositeT4ResolveBuilder.lazyMaskForImages failed case msktgen_4dfp on %s; trying %s', ...
-                            ipr.source{ii}, 'none');
+                        handexcept(ME);
+                        fprintf('CT4RB.lazyMaskForImages:  fqfps{%i} <- none\n', ii);
+                        fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                         fqfps{ii} = 'none';
                     end
-                    return
                 end
                 if (~isempty(ipr.maskForImages{ii}))
                     fqfps{ii} = ipr.maskForImages{ii};
-                    return
+                    continue
                 end
                 fqfps{ii} = 'none';
             end

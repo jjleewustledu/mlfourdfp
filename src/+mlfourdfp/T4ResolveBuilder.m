@@ -122,9 +122,10 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             % e. g., fdgv1r1_frame13_to_fdgv1r1_frame72_t4                            
                         catch ME
                             t4fails(m,n) = t4fails(m,n) + 1;
-                            dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
-                                'T4ResolveBulder.imageReg could not operate %s on dest %s, source %s, t4 %s', ...
-                                this.sessionData.frameAlignMethod, blurredImgs{n}, blurredImgs{m}, t4);
+%                             copyfile( ...
+%                                 this.buildVisitor.transverse_t4, ...
+%                                 this.buildVisitor.filenameT4(stagedImgs{n}, stagedImgs{m}), 'f');
+                            dispwarning(ME);
                         end
                     end
                 end
@@ -227,8 +228,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 deleteExisting(sprintf('%s_*_*.*', ipr.maskForImages));
                 deleteExisting(sprintf('*_g0_1.4dfp.*'));
             catch ME
-                handwarning(ME, 'mlfourdfp:RuntimeWarning', ...
-                    'T4ResolveBuilder.teardownResolve could not delete existing %s_frame%i*', fp0, il);
+                handwarning(ME);
             end
         end
         
@@ -246,8 +246,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         this.buildVisitor.copy_4dfp(ipr.source, ipr.dest);
                     end
                 catch ME
-                    dispexcept(ME, 'mlfourdfp:RuntimeError', ...
-                        'T4ResolveBuilder.copySourceToDest could not movefile %s', ipr.source);
+                    handexcept(ME);
                 end
                 return
             end
@@ -269,8 +268,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 try
                     this.buildVisitor.move_4dfp(resolvedFrame, newRev);
                 catch ME
-                    dispexcept(ME, 'mlfourdfp:RuntimeError', ...
-                        'T4ResolveBuilder.copyResolvedToNewRevision could not movefile %s', resolvedFrame);
+                    handexcept(ME);
                 end
             end
         end
@@ -320,10 +318,11 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                     return
                 catch ME
-                    dispwarning(ME, 'mlfourdfp:RuntimeError', ...
-                        'T4ResolveBuilder.lazyMaskForImages failed to build ipr.maskForImages->%s; trying %s', ...
-                        ipr.maskForImages, 'none');
+                    handexcept(ME);
+                    fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- wholehead\n');
+                    fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                     ipr.maskForImages = 'none';
+                    cd(this.sessionData.tracerLocation);
                 end
             end
             if (strcmp(ipr.maskForImages, 'wholehead2'))
@@ -334,10 +333,12 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                     return
                 catch ME
-                    dispwarning(ME, 'mlfourdfp:RuntimeError', ...
-                        'T4ResolveBuilder.lazyMaskForImages failed to build ipr.maskForImages->%s; trying %s', ...
-                        ipr.maskForImages, 'none');
+                    handexcept(ME);
+                    fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- none\n');
+                    fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                     ipr.maskForImages = 'none';
+                    cd(this.sessionData.tracerLocation);
+                    rethrow(ME);
                 end
             end
             if (strcmp(ipr.maskForImages, 'wholehead'))
@@ -352,10 +353,12 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                     return
                 catch ME
-                    dispwarning(ME, 'mlfourdfp:RuntimeError', ...
-                        'T4ResolveBuilder.lazyMaskForImages failed to build ipr.maskForImages->%s; trying %s', ...
-                        ipr.maskForImages, 'none');
+                    handexcept(ME);
+                    fprintf('T4RB.lazyMaskForImages:  ipr.maskForImages <- wholehead2\n');
+                    fprintf('%s\n%s\n', ME.message, struct2str(ME.stack));
                     ipr.maskForImages = 'none';
+                    cd(this.sessionData.tracerLocation);
+                    rethrow(ME);
                 end
             end
             fqfps = cellfun(@(x) 'none', fqfps, 'UniformOutput', false);
@@ -431,8 +434,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 try
                     this.t4s_{this.rnumber}{f} = sprintf('%s_frame%i_to_%s_t4', imgFpsc{f}, f, this.resolveTag);
                 catch ME
-                    dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
-                        'T4ResolveBuilder.cacheT4s could not assign %s', this.t4s_{this.rnumber}{f});
+                    dispwarning(ME);
                 end
             end
         end
