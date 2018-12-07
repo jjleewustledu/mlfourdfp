@@ -255,7 +255,9 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             imageOnSumt       = this.buildVisitor.t4img_4dfp(ctToPetT4, ct, 'options', ['-O' petSumt]);
         end 
         function [ctOnMpr,ctToMprT4] = CT2mpr_4dfp(this, ct, varargin)
-            assert(lexist(this.fourdfpImg(ct), 'file')); % not necessarily in pwd            
+            assert(lexist(this.fourdfpImg(ct), 'file'), ...
+                'mlfourdfp:RuntimeError', ...
+                'AbstractUmapResolveBuilder.CT2mpr_4dfp could not find %s', this.fourdfpImg(ct)); % not necessarily in pwd            
             mpr       = this.sessionData.mpr('typ', 'fqfp');
             pth       = fileparts(mpr);
             ctToMprT4 = fullfile(pth, this.buildVisitor.filenameT4(mybasename(ct), mybasename(mpr))); 
