@@ -335,12 +335,11 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         end
                         fqfps{ii} = mskt.fqfileprefix;
                     catch ME
-                        dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                        dispexcept(ME, 'mlfourdfp:RuntimeError', ...
                             'CompositeT4ResolveBuilder.lazyMaskForImages failed case Msktgen on %s; trying %s', ...
                             ipr.source{ii}, 'none');
-                        fqfps{ii} = 'none';
                     end
-                    return
+                    continue
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
                     try
@@ -349,11 +348,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         end
                         fqfps{ii} = [ipr.maskForImages{ii} '_mskt'];
                     catch ME
-                        dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                        dispexcept(ME, 'mlfourdfp:RuntimeError', ...
                             'CompositeT4ResolveBuilder.lazyMaskForImages failed case T1001; trying none');
-                        fqfps{ii} = 'none';
                     end
-                    return
+                    continue
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'msktgen_4dfp'))
                     try
@@ -362,16 +360,15 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         end
                         fqfps{ii} = [ipr.source{ii} '_mskt'];
                     catch ME
-                        dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                        dispexcept(ME, 'mlfourdfp:RuntimeError', ...
                             'CompositeT4ResolveBuilder.lazyMaskForImages failed case msktgen_4dfp on %s; trying %s', ...
                             ipr.source{ii}, 'none');
-                        fqfps{ii} = 'none';
                     end
-                    return
+                    continue
                 end
                 if (~isempty(ipr.maskForImages{ii}))
                     fqfps{ii} = ipr.maskForImages{ii};
-                    return
+                    continue
                 end
                 fqfps{ii} = 'none';
             end

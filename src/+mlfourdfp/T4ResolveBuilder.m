@@ -320,10 +320,9 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                     return
                 catch ME
-                    dispwarning(ME, 'mlfourdfp:RuntimeError', ...
+                    dispexcept(ME, 'mlfourdfp:RuntimeError', ...
                         'T4ResolveBuilder.lazyMaskForImages failed to build ipr.maskForImages->%s; trying %s', ...
-                        ipr.maskForImages, 'none');
-                    ipr.maskForImages = 'none';
+                        ipr.maskForImages, 'none');                                     
                 end
             end
             if (strcmp(ipr.maskForImages, 'wholehead2'))
@@ -334,10 +333,9 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                     return
                 catch ME
-                    dispwarning(ME, 'mlfourdfp:RuntimeError', ...
+                    dispexcept(ME, 'mlfourdfp:RuntimeError', ...
                         'T4ResolveBuilder.lazyMaskForImages failed to build ipr.maskForImages->%s; trying %s', ...
                         ipr.maskForImages, 'none');
-                    ipr.maskForImages = 'none';
                 end
             end
             if (strcmp(ipr.maskForImages, 'wholehead'))
@@ -352,10 +350,9 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     end
                     return
                 catch ME
-                    dispwarning(ME, 'mlfourdfp:RuntimeError', ...
+                    dispexcept(ME, 'mlfourdfp:RuntimeError', ...
                         'T4ResolveBuilder.lazyMaskForImages failed to build ipr.maskForImages->%s; trying %s', ...
                         ipr.maskForImages, 'none');
-                    ipr.maskForImages = 'none';
                 end
             end
             fqfps = cellfun(@(x) 'none', fqfps, 'UniformOutput', false);
