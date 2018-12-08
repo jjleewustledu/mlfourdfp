@@ -16,8 +16,8 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
 	properties
         ct_rescaleSlope = 1
         ct_rescaleIntercept = -1024
-        reuseCTMasked = false
-        reuseCTRescaled = false
+        reuseCTMasked = true
+        reuseCTRescaled = true
         sessionDataCache
     end
     

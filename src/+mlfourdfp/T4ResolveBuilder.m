@@ -210,6 +210,8 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             save([pffp.fqfileprefix '_indicesLogical.mat'], 'indicesLogical');
         end
         function                teardownResolve(this, ipr)
+            if (this.keepForensics); return; end
+            
             try
                 for r = 1:this.NRevisions                
                     fp0 = this.fileprefixRevision(ipr.dest, r);

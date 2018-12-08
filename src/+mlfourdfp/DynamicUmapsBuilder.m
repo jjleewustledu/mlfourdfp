@@ -146,7 +146,7 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
             umapsOpDyn = this.resolveUmapsOpDynamic(umapOpSumDyn, sumDyn);
             this.reconstituteImages(struct('fqfps', umapsOpDyn, 'dest1', this.umapsOpTracer));
             this.convertUmapsToE7Format(umapsOpDyn);
-            this.keepForensics = false;
+            %this.keepForensics = false;
             this.teardownBuildUmaps;
             popd(pwd0);
         end

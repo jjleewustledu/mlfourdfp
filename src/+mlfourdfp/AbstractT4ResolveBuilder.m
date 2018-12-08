@@ -769,14 +769,12 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             ip = inputParser;
             ip.KeepUnmatched = true;
             addParameter(ip, 'ipResults',     struct([]), @isstruct);
-            addParameter(ip, 'keepForensics', false,      @islogical);
             addParameter(ip, 'maskForImages', 'Msktgen',  @(x) ~isempty(x));
             addParameter(ip, 'NRevisions',    2,          @isnumeric);
             addParameter(ip, 'resolveTag',    this.sessionData.resolveTag, @ischar);
             addParameter(ip, 'theImages',     '',         @(x) iscell(x) || ischar(x));
             parse(ip, varargin{:});            
             this.ipResults_     = ip.Results.ipResults;
-            this.keepForensics  = ip.Results.keepForensics; % override mlpipeline.AbstractBuilder
             this.maskForImages_ = ip.Results.maskForImages;
             this.NRevisions     = ip.Results.NRevisions;
             this.resolveTag     = ip.Results.resolveTag;
