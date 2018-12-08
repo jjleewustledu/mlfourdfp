@@ -48,7 +48,7 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
         
         %%
         
-        function [this,em] = estimateErr(this, simgs, varargin)
+        function [this,em]      = estimateErr(this, simgs, varargin)
             %  @param simgs must be already screened by this.assessValidFrames.
             %  @param indicesLogical is optional.
             %  @return em, the norm-2 error of displacements & rotations.
@@ -56,13 +56,16 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
             ip = inputParser;
             addOptional(ip, 'indicesLogical', this.indicesLogical, @islogical);
             addParameter(ip, 'rnumber', this.sessionData.rnumber, @isnumeric);
+            addParameter(ip, 'logger', this.logger);
             parse(ip, varargin{:});
             this.indicesLogical = ip.Results.indicesLogical;
-            this.sessionData_.rnumber = ip.Results.rnumber;            
-            % simgs = this.ensureRNumberOfImgs(simgs); % SUSPECTED BUG
+            this.sessionData_.rnumber = ip.Results.rnumber;
             
-            this = this.updateLogging;
-            this.logger.add('estimateErr: working in %s', pwd);
+            if (~isempty(ip.Results.logger))
+                this = this.updateLogging;
+                this.logger.add('estimateErr: working in %s', pwd);
+            end
+            
             len = length(simgs);
             this.errMat_ = nan(len, len);
             for m = 1:length(simgs)
@@ -79,16 +82,17 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
                     end
                 end
             end 
-            em = this.errMat;
-            this.logger.add('AbstractT4ResolveError.estimateErr: stagedImgs->%s\n', ...
-                cell2str(simgs, 'AsRow', true));
-            this.logger.add('AbstractT4ResolveError.estimateErr: this.errMat->%s\n', ...
-                mat2str(this.errMat));  
-            this.logger.add('saving em to %s.mat\n', this.logger.fqfileprefix);
-            save([this.logger.fqfileprefix '.mat'], 'em');
-            this.logger.save;
+            
+            if (~isempty(ip.Results.logger))
+                em = this.errMat;
+                this.logger.add('estimateErr: stagedImgs->\n%s\n', cell2str(simgs, 'AsRow', true));
+                this.logger.add('estimateErr: this.errMat->\n%s\n', mat2str(this.errMat));  
+                this.logger.add('saving em to %s.mat\n', this.logger.fqfileprefix);
+                save([this.logger.fqfileprefix '.mat'], 'em');
+                this.logger.save;
+            end
         end
-        function imgs  = ensureRNumberOfImgs(this, imgs) %#ok<INUSL>
+        function imgs           = ensureRNumberOfImgs(this, imgs) %#ok<INUSL>
             %% imgs should end with r[0-9] to be compliant with mlfourdfp.CompositeT4ResolveBuilder,
             %  but T4ResolveBuilder has tags _framenn and no r[0-9] should follow these tags.  
             %  mlraichle.SubjectImages and other contexts.  
@@ -111,12 +115,12 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
                 imgs = [imgs rstr];
             end
         end
-        function err   = pairedErrParser(this, obj1, obj2)
+        function err            = pairedErrParser(this, obj1, obj2)
             [rmsdeg,rmsmm] = this.errParser(this.t4_resolvePair(obj1, obj2));
             err = this.errMetric(rmsdeg, rmsmm);
         end
         function [rmsdeg,rmsmm] = errParser(~, r)
-            %% T4_RESOLVE_PAIR
+            %% ERRPARSER
             %  @param r is the result from a call to mlbash.
             %  @return rmsdeg is numeric error found by t4_resolve for pair.
             %  @return rmsmm  is numeric error found by t4_resolve for pair.
@@ -206,18 +210,18 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
                 end
             end 
         end       
-        function em    = errMetric(this, rmsdeg, rmsmm)
+        function em             = errMetric(this, rmsdeg, rmsmm)
             err = [this.rmsarc(rmsdeg) rmsmm];
             em = sqrt(norm(err(~isnan(err))));
         end
-        function r     = t4_resolvePair(this, f1, f2)
+        function r              = t4_resolvePair(this, f1, f2)
             %  @param f1, f2:  filenames.
             %  @return verbose info from t4_resolve.
             
             [~,r] = this.buildVisitor.t4_resolve( ...
                 this.resolveTag, [f1 ' ' f2], 'options', '-v');
         end
-        function arc   = rmsarc(~, rmsdeg)
+        function arc            = rmsarc(~, rmsdeg)
             arc = 50*pi*rmsdeg/180; % arc at 50 mm from center of mass, per Avi Snyder
         end      
         

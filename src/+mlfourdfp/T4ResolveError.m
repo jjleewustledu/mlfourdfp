@@ -7,9 +7,39 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
  	%% It was developed on Matlab 9.4.0.813654 (R2018a) for MACI64.  Copyright 2018 John Joowon Lee.
  	    
     methods (Static)
-        function em    = errorMat(varargin)
+        function em = errorMat(varargin)
             this = mlfourdfp.T4ResolveError(varargin{:});
             [~,em] = this.estimateErr(this.theImages);
+        end
+        function emm = errorMatMonolith(varargin)            
+            this = mlfourdfp.T4ResolveError(varargin{:});
+            sess = this.sessionData;
+            Nt = length(sess.times);
+            Ne = sess.maxLengthEpoch;
+            emm = nan(Nt, Nt);
+            pwd0 = pushd(sess.tracerLocation);
+            for e = 1:sess.supEpoch-1
+                pwde = pushd(fullfile(sprintf('E%i', e), 'Log', ''));
+                emm((e-1)*Ne+1:e*Ne) = readBlockDiag(e);
+                popd(pwde);
+            end
+            popd(pwd0);
+            for c = 1:Nt
+                emm(c,c) = 0;
+            end
+            csvwrite(emm, fullfile(sess.vLocation, ...
+                [sess.tracerRevision('typ','fp') '_T4ResolveErr_errorMatMonolith.csv']));
+            
+            function em = readBlockDiag(e_) %#ok<STOUT>
+                try      
+                    dt = mlsystem.DirTool(sprintf('%se%ir*_T4ResolveErr_*.mat', lower(sess.tracer), e_));
+                    [~,idx] = max(dt.itsListing.datenum);
+                    load(dt.fns{idx}, 'em');              
+                catch ME
+                    dispexcept(ME, 'mlfourdfp:RuntimeError', ...
+                        'T4ResolveError.errorMatMonolith.readBlockDiag had trouble examining %s', pwd);
+                end
+            end
         end
     end
     
@@ -17,15 +47,22 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
         
         %%
         
-        function s     = summarizeFrames(this)
-            for e = 1:this.sessionData.supEpoch
-                this.sessionData.epoch = e;
-                pwd0 = pushd(this.sessionData.tracerLocation);
-                if (isempty(dir('*_t4'))); break; end
-                [simgs,this] = this.stagedImgs(this.sessionData);
-                [~,s{e}] = this.estimateErr(simgs); %#ok<AGROW>
-                popd(pwd0);
+        function idx         = assessValidFrames(this, ipr)
+            if (~lstrfind(ipr.dest, '.4dfp.hdr'))
+                ipr.dest = [ipr.dest '.4dfp.hdr'];
             end
+            d = mlfourd.ImagingContext(ipr.dest);
+            if (isa(d, 'mlfourd.ImagingContext'))
+                d = d.numericalNiftid;
+            end
+            if (isa(d, 'mlfourd.NIfTId'))
+                d = mlfourd.NumericalNIfTId(d);
+            end
+            
+            d   = d.volumeSummed;
+            idx = d.img > this.sessionData.fractionalImageFrameThresh * median(d.img) + this.noiseFloorOfActivity;
+            idx = ensureRowVector(idx);
+            this.logger.add('mlfourdfp.T4ResolveError.assessValidFrames.idx->%s\n', mat2str(idx));
         end
         function [imgs,this] = stagedImgs(this, sd)
             %% STAGEDIMGS will not replace any existing indicesLogical
@@ -43,22 +80,15 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             end
             assert(length(imgs) == sum(this.indicesLogical));
         end 
-        function idx   = assessValidFrames(this, ipr)
-            if (~lstrfind(ipr.dest, '.4dfp.hdr'))
-                ipr.dest = [ipr.dest '.4dfp.hdr'];
+        function s           = summarizeFrames(this)
+            for e = 1:this.sessionData.supEpoch
+                this.sessionData.epoch = e;
+                pwd0 = pushd(this.sessionData.tracerLocation);
+                if (isempty(dir('*_t4'))); break; end
+                [simgs,this] = this.stagedImgs(this.sessionData);
+                [~,s{e}] = this.estimateErr(simgs); %#ok<AGROW>
+                popd(pwd0);
             end
-            d = mlfourd.ImagingContext(ipr.dest);
-            if (isa(d, 'mlfourd.ImagingContext'))
-                d = d.numericalNiftid;
-            end
-            if (isa(d, 'mlfourd.NIfTId'))
-                d = mlfourd.NumericalNIfTId(d);
-            end
-            
-            d   = d.volumeSummed;
-            idx = d.img > this.sessionData.fractionalImageFrameThresh * median(d.img) + this.noiseFloorOfActivity;
-            idx = ensureRowVector(idx);
-            this.logger.add('mlfourdfp.T4ResolveError.assessValidFrames.idx->%s\n', mat2str(idx));
         end
 		  
  		function this = T4ResolveError(varargin)
