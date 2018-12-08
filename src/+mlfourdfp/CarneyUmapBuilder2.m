@@ -136,7 +136,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
                 case 140
                     a = 5.64e-5;
                 otherwise
-                    error('mlfourdfp:valueOutOfBounds', 'UMapResolveBuilder.ct_kVp->%g is not supported', this.ct_kVp);
+                    error('mlfourdfp:valueOutOfBounds', 'CarneyUmapBuilder2.ct_kVp->%g is not supported', this.ct_kVp);
             end
         end
         function b    = CarneyB(this)
@@ -154,7 +154,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
                 case 140
                     b = 4.08e-2;
                 otherwise
-                    error('mlfourdfp:valueOutOfBounds', 'UMapResolveBuilder.ct_kVp->%g is not supported', this.ct_kVp);
+                    error('mlfourdfp:valueOutOfBounds', 'CarneyUmapBuilder2.ct_kVp->%g is not supported', this.ct_kVp);
             end
         end
         function bp   = CarneyBP(this)
@@ -172,7 +172,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
                 case 140
                     bp = 30;
                 otherwise
-                    error('mlfourdfp:valueOutOfBounds', 'UMapResolveBuilder.ct_kVp->%g is not supported', this.ct_kVp);
+                    error('mlfourdfp:valueOutOfBounds', 'CarneyUmapBuilder2.ct_kVp->%g is not supported', this.ct_kVp);
             end
         end 
     end
