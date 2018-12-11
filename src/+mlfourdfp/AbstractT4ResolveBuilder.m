@@ -226,9 +226,11 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 bv.move_4dfp(fqfp_, fqfp1);
             end
             ic  = ImagingContext2([fqfp1 '.4dfp.hdr']);
-            ic  = ic.thresh(ic.dipmax*this.maskForImagesThreshFactor);
-            ic  = ic.binarized;
-            ic.saveas([ip.Results.fp '.4dfp.hdr']);
+            if (~bv.lexist_4dfp(ip.Results.fp))
+                ic  = ic.thresh(ic.dipmax*this.maskForImagesThreshFactor);
+                ic  = ic.binarized;
+                ic.saveas([ip.Results.fp '.4dfp.hdr']);
+            end
             fp  = ic.fqfileprefix;
         end
         function fp    = buildMaskForImages(this, varargin)
