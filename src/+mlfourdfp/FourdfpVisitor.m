@@ -59,75 +59,89 @@ classdef FourdfpVisitor
             mlbash(['ifh2hdr ' fqfp]);
             popd(pwd0);
         end
-        function         copyfile_4dfp(varargin)
+        function [s,m] = copyfile_4dfp(varargin)
+            fv = mlfourdfp.FourdfpVisitor;
+            [s,m] = fv.copy_4dfp(varargin{:});
+            return
+            
             v = varargin;
             xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
             v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
             assert(nargin < 3, 'mlfourdfp:unsupportedParams', 'FourdfpVisitor.copyfile_4dfp');
             if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
-                    copyfile([v{1} xs{ix}], v{2})
+                    [s,m,mid] = copyfile([v{1} xs{ix}], v{2});
                 end
                 return
             end
             if (nargin > 1)
                 for ix = 1:length(xs)
-                    copyfile([v{1} xs{ix}], [v{2} xs{ix}])
+                    [s,m,mid] = copyfile([v{1} xs{ix}], [v{2} xs{ix}]);
                 end
                 return
             end
             for ix = 1:length(xs)
-                copyfile([v{1} xs{ix}]);
+                [s,m,mid] = copyfile([v{1} xs{ix}]);
             end
         end
-        function         copyfilef_4dfp(varargin)
+        function [s,m] = copyfilef_4dfp(varargin)
+            [s,m] = mlfourdfp.FourdfpVisitor.copyfile_4dfp(varargin{:});
+            return
+            
             v = varargin;
             xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
             v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
             assert(nargin < 3, 'mlfourdfp:unsupportedParams', 'FourdfpVisitor.copyfile_4dfp');
             if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
-                    copyfile([v{1} xs{ix}], v{2}, 'f')
+                    [s,m,mid] = copyfile([v{1} xs{ix}], v{2}, 'f');
                 end
                 return
             end
             if (nargin > 1)                
                 for ix = 1:length(xs)
-                    copyfile([v{1} xs{ix}], [v{2} xs{ix}], 'f')
+                    [s,m,mid] = copyfile([v{1} xs{ix}], [v{2} xs{ix}], 'f');
                 end
                 return
             end
             error('mlfourdfp:unsupportedParamUsage', ...
                 'copyfilef_4dfp must specify both source and target to keep consistent syntax with Matlab''s copyfile');
         end
-        function         movefile_4dfp(varargin)
+        function [s,m] = movefile_4dfp(varargin)
+            fv = mlfourdfp.FourdfpVisitor;
+            [s,m] = fv.move_4dfp(varargin{:});
+            return
+            
             v = varargin;
             xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
             v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
             if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
-                    movefile([v{1} xs{ix}], v{2})
+                    [s,m,mid] = movefile([v{1} xs{ix}], v{2});
                 end
                 return
             end
             for ix = 1:length(xs)
                 fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
-                movefile(fns{:});
+                [s,m,mid] = movefile(fns{:});
             end
         end
-        function         movefilef_4dfp(varargin)
+        function [s,m] = movefilef_4dfp(varargin)
+            [s,m] = mlfourdfp.FourdfpVisitor.movefile_4dfp(varargin{:});
+            return
+            
             v = varargin;
             xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
             v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
             if (nargin > 1 && isdir(v{2}))
                 for ix = 1:length(xs)
-                    movefile([v{1} xs{ix}], v{2}, 'f')
+                    [s,m,mid] = movefile([v{1} xs{ix}], v{2}, 'f');
                 end
                 return
             end
             for ix = 1:length(xs)
                 fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
-                movefile(fns{:}, 'f');
+                [s,m,mid] = movefile(fns{:}, 'f');
             end
         end
         function pth   = ensureConsistentPwd(fqfp)

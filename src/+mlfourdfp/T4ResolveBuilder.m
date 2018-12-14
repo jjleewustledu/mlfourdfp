@@ -318,7 +318,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         'blurForMask', 10);
                     fqfps = cellfun(@(x) mskt.fqfileprefix, fqfps, 'UniformOutput', false);
                     if (~lexist_4dfp(mskt.fileprefix))
-                        this.buildVisitor.copyfile_4dfp(mskt.fqfileprefix);
+                        this.buildVisitor.copyfile_4dfp(mskt.fqfileprefix, mskt.fileprefix);
                     end
                     return
                 catch ME

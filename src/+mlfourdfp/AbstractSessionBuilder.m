@@ -153,7 +153,8 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             end
             if (lexist(sess.tracerResolvedFinalSumt))                
                 delete(                        [sess.tracerResolvedFinalSumt('typ','fp') '.4dfp.*']);
-                this.buildVisitor.copyfile_4dfp(sess.tracerResolvedFinalSumt('typ','fqfp'));
+                this.buildVisitor.copyfile_4dfp(sess.tracerResolvedFinalSumt('typ','fqfp'), ...
+                                                sess.tracerResolvedFinalSumt('typ','fp'));
                 return
             end
             error('mlfourdfp:pipelinePrerequisiteMissing', ...

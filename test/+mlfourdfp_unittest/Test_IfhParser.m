@@ -80,7 +80,7 @@ classdef Test_IfhParser < matlab.unittest.TestCase
             this.pwd0 = pushd(this.TmpDir);
             fv = mlfourdfp.FourdfpVisitor;
             if (~lexist_4dfp(this.fileprefix))
-                fv.copyfilef_4dfp(fullfile(this.dataroot, this.fileprefix), this.fileprefix);
+                fv.copyfile_4dfp(fullfile(this.dataroot, this.fileprefix), this.fileprefix);
             end
  			this.testObj = this.testObj_;
  			this.addTeardown(@this.cleanTestMethod);

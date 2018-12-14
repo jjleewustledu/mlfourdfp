@@ -146,7 +146,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             if (~any(this.indicesLogical))
                 dest_ = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
                 ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest_, 'UniformOutput', false);
-                cellfun(@(x) this.buildVisitor.copyfile_4dfp(x, ipr.resolved), dest_, 'UniformOutput', false);
+                cellfun(@(x,y) this.buildVisitor.copyfile_4dfp(x,y), dest_, ipr.resolved, 'UniformOutput', false);
                 imgFps = '';
                 this.rnumber = this.NRevisions;
                 return
@@ -331,7 +331,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             'sourceOfMask', fullfile(this.sessionData.vLocation, 'brainmask.4dfp.hdr'), ...
                             'blurForMask', 33);
                         if (~lexist_4dfp(mskt.fileprefix))
-                            this.buildVisitor.copyfile_4dfp(mskt.fqfileprefix);
+                            this.buildVisitor.copyfile_4dfp(mskt.fqfileprefix, mskt.fileprefix);
                         end
                         fqfps{ii} = mskt.fqfileprefix;
                     catch ME
