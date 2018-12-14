@@ -11,7 +11,7 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             this = mlfourdfp.T4ResolveError(varargin{:});
             [~,em] = this.estimateErr(this.theImages);
         end
-        function emm = errorMatMonolith(varargin)            
+        function emm = errorMatEpochs(varargin)
             this = mlfourdfp.T4ResolveError(varargin{:});
             sess = this.sessionData;
             Nt = length(sess.times);
@@ -28,7 +28,7 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
                 emm(c,c) = 0;
             end
             csvwrite(emm, fullfile(sess.vLocation, ...
-                [sess.tracerRevision('typ','fp') '_T4ResolveErr_errorMatMonolith.csv']));
+                [sess.tracerRevision('typ','fp') '_T4ResolveErr_errorMatEpochs.csv']));
             
             function em = readBlockDiag(e_) %#ok<STOUT>
                 try      
@@ -37,7 +37,7 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
                     load(dt.fns{idx}, 'em');              
                 catch ME
                     dispexcept(ME, 'mlfourdfp:RuntimeError', ...
-                        'T4ResolveError.errorMatMonolith.readBlockDiag had trouble examining %s', pwd);
+                        'T4ResolveError.errorMatEpochs.readBlockDiag had trouble examining %s', pwd);
                 end
             end
         end
