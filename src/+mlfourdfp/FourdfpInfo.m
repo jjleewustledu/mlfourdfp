@@ -445,6 +445,22 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             hdr = mlniftitools.extra_nii_hdr(hdr);
             hdr = this.adjustDime(hdr);
             hdr = this.adjustHist(hdr);
+        end        
+        function save(this)
+            assert(lstrfind(this.filesuffix, '.4dfp'));
+            try                
+                warning('off', 'MATLAB:structOnObject');            
+                this.ifh.fqfileprefix = this.fqfileprefix;
+                this.ifh.save(mlfourd.ImagingFormatContext(this));
+                this.imgrec.fqfileprefix = this.fqfileprefix;
+                this.imgrec.add('mlfourdfp.FourdfpInfo.save %s', this.fqfileprefix);
+                this.imgrec.save;
+                warning('on', 'MATLAB:structOnObject');
+            catch ME
+                dispexcept(ME, ...
+                    'mlfourdfp:IOError', ...
+                    'FourdfpInfo.save erred while attempting to save %s', this.fqfilename);
+            end
         end
         
  		function this = FourdfpInfo(varargin)
