@@ -184,7 +184,7 @@ classdef FourdfpVisitor
                 if (~this.isLocalFourdfp(obj_))
                     try
                         if (lexist_4dfp(fullfile(pth, fp)))
-                            this.copyfile_4dfp(fullfile(pth, fp));
+                            this.copyfile_4dfp(fullfile(pth, fp), fp);
                             obj = [fp '.4dfp.hdr'];
                             return
                         end
