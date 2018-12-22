@@ -10,10 +10,10 @@ classdef DicomSorter < mlpipeline.DicomSorter
  	%% It was developed on Matlab 9.0.0.341360 (R2016a) for MACI64.
  	
     methods (Static)
-        function this  = Create(varargin)
+        function this  = create(varargin)
             this = mlfourdfp.DicomSorter(varargin{:});
         end  
-        function this  = CreateSorted(varargin)
+        function this  = createSorted(varargin)
             this = mlfourdfp.DicomSorter(varargin{:});
             this = this.sessionSort(varargin{:});
         end        
