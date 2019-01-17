@@ -11,7 +11,6 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         census
         dbgTag
         filetypeExt
-        freesurfersDir
         rawdataDir
         sessionData
         sessionFolder
@@ -55,9 +54,6 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         end
         function g    = get.filetypeExt(this)
             g = this.sessionData.filetypeExt;
-        end
-        function g    = get.freesurfersDir(this)
-            g = this.sessionData.freesurfersDir;
         end
         function g    = get.rawdataDir(this)
             g = this.sessionData_.rawdataDir;
