@@ -127,20 +127,6 @@ classdef RawDataSorter
             this        = this.copyUTE( ...
                           RawDataSorter.sourceScansPath(ip.Results.rawdataFolder));
         end
-        function this = copyConverted(varargin)
-            
-            import mlfourdfp.* mlraichle.*;
-            
-            ip = inputParser;
-            addParameter(ip, 'session', '', @ischar); % e.g., $PPG/jjlee/HYGLY15, HYGLY15
-            parse(ip, varargin{:});
-            
-            studyData = StudyData;
-            sessPath  = RawDataSorter.destSessionPath(ip.Results.session);
-            sessData  = SessionData('studyData', studyData, 'sessionPath', sessPath);
- 			this      = RawDataSorter('sessionData', sessData);
-            this      = this.copyRawDataConverted('sessionData', sessData, 'sessionPath', sessPath);
-        end
         function this = move(varargin)
             %% MOVE is a convenience static function for moveRawData, copyUTE
             %  @param rawdataFolder from /path/to/rawdata.
@@ -230,31 +216,6 @@ classdef RawDataSorter
             %  @returns this.
             
             this = this.operationOnData(@mlfourdfp.RawDataSorter.bash_copyfile, @this.rawDataMatch, varargin{:});
-        end
-        function this = copyRawDataConverted(this, varargin)
-            %% COPYRAWDATACONVERTED copies legacy converted data from Lars Couture
-            
-            ip = inputParser;
-            addParameter(ip, 'sessionData', this.sessionData, @(x) isa(x, 'mlpipeline.SessionData'));
-            parse(ip, varargin{:});
-                     
-            this.sessionData_ = ip.Results.sessionData;
-            [~,sfold] = fileparts(this.sessionData.sessionPath);
-
-            for iv = 1:2
-                vfold = sprintf('V%i', iv);
-                vpath = fullfile(this.sessionData.sessionPath, vfold, '');
-                cpath = fullfile(getenv('PPG'), 'converted', sfold, vfold, '');
-                tracers = {'FDG_V' 'HO1_V' 'HO2_V' 'OC1_V' 'OC2_V' 'OO1_V' 'OO2_V'};
-                for it = 1:length(tracers)
-                    tfold = sprintf('%s%i', tracers{it}, iv);
-                    oldName = fullfile(cpath, tfold, '');
-                    newName = fullfile(vpath, tfold, '');
-                    if (~isempty(newName))
-                        this.binaryFilesystemOperation0(oldName, newName, @copyfile);
-                    end
-                end
-            end
         end
         function this = dcm_sort(this, rawDataDir)
             assert(isdir(rawDataDir));
