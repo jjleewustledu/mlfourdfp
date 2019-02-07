@@ -143,20 +143,6 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             end
             this.product_ = t4;
         end
-        function sess = refreshTracerResolvedFinalSumt(this, sess)
-            while (~lexist(sess.tracerResolvedFinalSumt) && sess.supEpoch > 0)
-                sess.supEpoch = sess.supEpoch - 1;
-            end
-            if (lexist(sess.tracerResolvedFinalSumt))                
-                delete(                        [sess.tracerResolvedFinalSumt('typ','fp') '.4dfp.*']);
-                this.buildVisitor.copyfile_4dfp(sess.tracerResolvedFinalSumt('typ','fqfp'), ...
-                                                sess.tracerResolvedFinalSumt('typ','fp'));
-                return
-            end
-            error('mlfourdfp:pipelinePrerequisiteMissing', ...
-                '%s may be missing; consider running constructResolved(''tracer'', ''%s'') and retry', ...
-                sess.tracerResolvedFinalSumt('typ','fqfp'), sess.tracer);
-        end
         function obj  = sessionLocation(this, varargin)
             obj = this.sessionData.sessionLocation(varargin{:});
         end
