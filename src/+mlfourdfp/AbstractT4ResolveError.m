@@ -200,13 +200,13 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
             if (contains(r(ir + 2), 'pairs total rotation error'))
                 toknames = regexp(r(ir + 2), '(?<rmsdeg>\d+.\d+) \(rms deg\)', 'names');
                 if (~isempty(toknames))
-                    rmsdeg = str2double(toknames.rmsdeg);
+                    rmsdeg = str2double(toknames{1}.rmsdeg);
                 end
             end
             if (contains(r(ir + 3), 'pairs total translation error'))
                 toknames = regexp(r(ir + 3), '(?<rmsmm>\d+.\d+) \(rms mm\)', 'names');
                 if (~isempty(toknames))
-                    rmsmm = str2double(toknames.rmsmm);
+                    rmsmm = str2double(toknames{1}.rmsmm);
                 end
             end 
         end       
