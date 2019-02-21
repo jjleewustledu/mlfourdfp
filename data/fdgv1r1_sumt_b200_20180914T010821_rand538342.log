@@ -1,6 +1,0 @@
-Fri Sep 14 01:08:20 2018:  mlfourdfp.InnerFourdfp from jjlee at ophthalmic.local initialized /Users/jjlee/MATLAB-Drive/mlfourdfp/data/fdgv1r1_sumt.log
-Fri Sep 14 01:08:21:407 2018:  InnerNIfTIIO.set.fileprefix<-fdgv1r1_sumt_b200
-Fri Sep 14 01:08:21:424 2018:  BlurringTool:  blur->[1 10 20]
-Fri Sep 14 01:08:21:451 2018:  InnerNIfTIIO.set.filepath<-/Users/jjlee/MATLAB-Drive/mlfourdfp/data
-Fri Sep 14 01:08:21:453 2018:  InnerNIfTIIO.set.fileprefix<-fdgv1r1_sumt_b200_20180914T010821_rand538342
-Fri Sep 14 01:08:21:458 2018:  InnerNIfTIIO.set.filesuffix<-.4dfp.hdr
