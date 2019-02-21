@@ -11,15 +11,31 @@ classdef (Abstract) AbstractBuilder < mlpipeline.AbstractBuilder
  	end
 
     methods (Static)
-        function fn    = fslchfiletype(varargin)
-            fn = mlfsl.FslVisitor.fslchfiletype(varargin{:});
+        function fn    = fslchfiletype(fn, varargin)
+            ip = inputParser;
+            addRequired(ip, 'fn', @(x) lexist(x, 'file'));
+            addOptional(ip, 'type', 'NIFTI_GZ', @ischar);
+            parse(ip, fn, varargin{:});
+            
+            fprintf('mlfourdfp.AbstractBuilder.fslchfiletype is working on %s\n', ip.Results.fn);
+            mlbash(sprintf('fslchfiletype %s %s', 'NIFTI_GZ', ip.Results.fn));
+            [p,f] = myfileparts(fn);
+            fn = fullfile(p, [f mlfourd.NIfTIInfo.FILETYPE_EXT]);
         end
-        function fn    = mri_convert(varargin)
+        function fn    = mri_convert(fn, varargin)
             %% MRI_CONVERT
             %  @param fn is the source possessing a filename extension recognized by mri_convert
             %  @param fn is the destination, also recognized by mri_convert.  Optional.  Default is [fileprefix(fn) '.nii.gz'] 
             
-            fn = mlsurfer.SurferVisitor.mri_convert(varargin{:});
+            import mlfourdfp.AbstractBuilder.niigzFilename;
+            ip = inputParser;
+            addRequired(ip, 'fn',  @(x) lexist(x, 'file'));
+            addOptional(ip, 'fn2', niigzFilename(fn), @ischar);
+            parse(ip, fn, varargin{:});            
+            
+            fprintf('mlfourdfp.AbstractBuilder.mri_convert is working on %s\n', ip.Results.fn);
+            mlbash(sprintf('mri_convert %s %s', ip.Results.fn, ip.Results.fn2));
+            fn = ip.Results.fn2;
         end
         function [s,r] = nifti_4dfp_4(varargin)
             vtor = mlfourdfp.FourdfpVisitor;

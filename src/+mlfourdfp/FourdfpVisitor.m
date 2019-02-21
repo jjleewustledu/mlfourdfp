@@ -332,7 +332,7 @@ classdef FourdfpVisitor
             end
         end
         function fn    = mri_convert(varargin)
-            fn = mlsurfer.SurferVisitor.mri_convert(varargin{:});
+            fn = mlfourdfp.AbstractBuilder.mri_convert(varargin{:});
         end
         function [s,r] = mkdir(pth)
             s = 0; r = '';
@@ -518,9 +518,6 @@ classdef FourdfpVisitor
             %% ALIGN_COMMONMODAL calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] + 256 and writes a log.
             %  See also mlfourdfp.FourdfpVisitor.align_modes6, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
             
-            %assert(~lstrfind(varargin, 'useCommonModal'), ...
-            %    'mlfourdfp:ambiguousVargin', ...
-            %    'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
             [t4,fqfp,s,r] = this.align_modes6('useCommonModal', true, varargin{:});
         end
         function [t4,fqfp,s,r] = ...
@@ -528,9 +525,6 @@ classdef FourdfpVisitor
             %% ALIGN_COMMONMODAL7 calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] + 256 and writes a log.
             %  See also mlfourdfp.FourdfpVisitor.align_modes7, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
             
-            %assert(~lstrfind(varargin, 'useCommonModal'), ...
-            %    'mlfourdfp:ambiguousVargin', ...
-            %    'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
             [t4,fqfp,s,r] = this.align_modes7('useCommonModal', true, varargin{:});
         end
         function [t4,fqfp,s,r] = ...
@@ -538,9 +532,6 @@ classdef FourdfpVisitor
             %% ALIGN_CROSSMODAL calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] and writes a log.
             %  See also mlfourdfp.FourdfpVisitor.align_modes6, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
             
-            %assert(~lstrfind(varargin, 'useCommonModal'), ...
-            %    'mlfourdfp:ambiguousVargin', ...
-            %    'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
             [t4,fqfp,s,r] = this.align_modes6('useCommonModal', false, varargin{:});
         end
         function [t4,fqfp,s,r] = ...
@@ -548,9 +539,6 @@ classdef FourdfpVisitor
             %% ALIGN_CROSSMODAL7 calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] and writes a log.
             %  See also mlfourdfp.FourdfpVisitor.align_modes7, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
             
-            %assert(~lstrfind(varargin, 'useCommonModal'), ...
-            %    'mlfourdfp:ambiguousVargin', ...
-            %    'FourdfpVisitor.align_multiSpectral.varagin.useCommonModal:multiplyAssigned');
             [t4,fqfp,s,r] = this.align_modes7('useCommonModal', false, varargin{:});
         end
         function [t4,fqfp,s,r] = ...
@@ -634,7 +622,7 @@ classdef FourdfpVisitor
             %% CONVERTIMAGETOLOCAL4DFP
             %  @param required fqfn is char.
             %  @param optional fqfn1 is char and may be lacking a file extension.
-            %  @return ic is an mlfourd.ImagingContext for 4dfp data created in the the cwd.
+            %  @return ic is an mlfourd.ImagingContext2 for 4dfp data created in the the cwd.
             
             ip = inputParser;
             addRequired(ip, 'fqfn', @(x) lexist(x, 'file'));
@@ -656,10 +644,10 @@ classdef FourdfpVisitor
             nii    = [locfp '.nii'];
             ifh    = [locfp '.4dfp.hdr'];
             if (~lexist_4dfp(ifh))
-                mlsurfer.SurferVisitor.mri_convert(ipr.fqfn, nii);
+                mlfourdfp.FourdfpVisitor.mri_convert(ipr.fqfn, nii);
                 this.nifti_4dfp_4(locfp);
             end
-            ic = mlfourd.ImagingContext(ifh);
+            ic = mlfourd.ImagingContext2(ifh);
         end
         function ic         = convertImageToLocal4dfp_2arg2(this, ipr)
             % See also:  convertImageToLocal4dfp
@@ -672,11 +660,11 @@ classdef FourdfpVisitor
             ifh     = [locfp '.4dfp.hdr'];
             ifh1    = [locfp1 '.4dfp.hdr'];
             if (~lexist_4dfp(ifh1))
-                mlsurfer.SurferVisitor.mri_convert(ipr.fqfn, nii);
+                mlfourdfp.FourdfpVisitor.mri_convert(ipr.fqfn, nii);
                 this.nifti_4dfp_4(locfp);
                 this.move_4dfp(locfp, locfp1);
             end
-            ic = mlfourd.ImagingContext(ifh1);
+            ic = mlfourd.ImagingContext2(ifh1);
         end        
         function      [s,r] = copy_4dfp(this, varargin)
             ip = inputParser;
@@ -1146,10 +1134,10 @@ classdef FourdfpVisitor
             this.move_4dfp(fqfp, tmp);            
             
             this.nifti_4dfp_n(tmp);
-            ic = mlfourd.ImagingContext(tmp);
-            nii = ic.niftid;
+            ic = mlfourd.ImagingContext2(tmp);
+            nii = ic.nifti;
             nii.img = this.normalizeFramesBySums(nii.img);            
-            ic = mlfourd.ImagingContext(nii);
+            ic = mlfourd.ImagingContext2(nii);
             ic.saveas(fqfp);
             this.nifti_4dfp_4(fqfp);
             delete([fqfp '.nii*']);
