@@ -37,7 +37,7 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
             g = this.errMat_;
         end
         function g = get.noiseFloorOfActivity(~)
-            g = mplet.Resources.instance.noiseFloorOfActivity;
+            g = mlpet.Resources.instance.noiseFloorOfActivity;
         end
         function g = get.theImages(this)
             g = this.theImages_;

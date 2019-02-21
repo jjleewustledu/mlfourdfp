@@ -128,7 +128,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             umap = ip.Results.umap;
             
             flipped = this.buildVisitor.flip_4dfp('z', umap);
-            ic = mlfourd.ImagingContext([flipped '.4dfp.hdr']);
+            ic = mlfourd.ImagingContext2([flipped '.4dfp.hdr']);
             ic = ic.zoomed(ip.Results.zoom);
             ic.noclobber = false;
             ic.saveas([flipped '.4dfp.hdr']);
@@ -141,7 +141,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
                 delete(sprintf('%s*.log', umap));
             end
             
-            this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
+            this.product_ = mlfourd.ImagingContext2(sprintf('%s.v', umap));
         end
         function this  = convertUmapsToE7Format(this, umaps)
             assert(iscell(umaps));
@@ -178,7 +178,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             umap = ip.Results.umap;
             
             flipped = this.buildVisitor.flip_4dfp('z', umap);
-            ic = mlfourd.ImagingContext([flipped '.4dfp.hdr']);
+            ic = mlfourd.ImagingContext2([flipped '.4dfp.hdr']);
             ic = ic.zoomed(ip.Results.zoom);
             ic.noclobber = false;
             ic.saveas([flipped '.4dfp.hdr']);
@@ -191,7 +191,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
                 delete(sprintf('%s*.log', umap));
             end
             
-            this.product_ = mlfourd.ImagingContext(sprintf('%s.v', umap));
+            this.product_ = mlfourd.ImagingContext2(sprintf('%s.v', umap));
         end 
         function         reconvertUmapsToE7Format(this)
             pwd0 = pushd(this.sessionData.fdgNACLocation);
@@ -263,15 +263,15 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
         function umap = CarneyImagingContext(this, varargin)
             %% CARNEYIMAGINGCONTEXT follows Carney, et al. Med. Phys. 33(4) 2006 976-983.
             %  @param ct   is the (fully-qualified) fileprefix of the rescaled CT.
-            %  @returns umap ImagingContext.
+            %  @returns umap ImagingContext2.
             
             import mlfourdfp.*;
             ip = inputParser;
             addOptional(ip, 'ctRescaled', '', @FourdfpVisitor.lexist_4dfp); % this.buildCTMasked
             parse(ip, varargin{:});
             
-            ct  = mlfourd.ImagingContext([ip.Results.ctRescaled '.4dfp.hdr']);
-            ct  = ct.numericalNiftid;
+            ct  = mlfourd.ImagingContext2([ip.Results.ctRescaled '.4dfp.hdr']);
+            ct  = ct.selectNumericalTool;
             
             lowHU    = ct.uthresh(this.CarneyBP); 
             lowMask  = lowHU.binarized;

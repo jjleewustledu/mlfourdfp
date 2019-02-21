@@ -32,37 +32,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             deleteExisting([umap '.log']);
             ic = this.CarneyImagingContext(ip.Results.rescaledCT);
             ic.saveas([umap '.4dfp.hdr']);
-        end
-        function [ctm,ic] = buildCTMasked3(this, mprmsk)
-            %% BUILDCTMASKED3 uses CompositeT4ResolveBuilder.
-            %  @param mprmsk is char.
-            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
-            %  @return ic  := ctMasked as ImagingContext on MPR-space
-                   
-            import mlfourd.*;
-            assert(lexist_4dfp(mprmsk));     
-            mpr  = this.sessionData.mpr('typ', 'fqfp');
-            ct   = this.sessionData.ct('typ', 'fqfp');
-            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
-            if (lexist(this.fourdfpImg(ctm)) && this.reuseCTMasked)
-                ic = ImagingContext(ctm);
-                return
-            end
-            
-            % actions from CompositeT4ResolveBuilder
-            this.blurArg = 1.5;
-            this.NRevisions = 1;
-            this.resolveTag = '_CarneyUmapBuilder2_buildCTMasked3';
-            this = this.resolve('source', {mpr, ct}, 'maskForImages', {mprmsk 'none'}, 'logPath', this.getLogPath);            
-            
-            % masking out extra-cranial
-            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);            
-            ct_  = this.product.fqfileprefix;
-            this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
-            this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
-            ic = ImagingContext(ctm);
-            delete([ct_ '.4dfp.*']); % ct__ in mpr-space has best registration
-        end     
+        end   
         function fqfp = prepareBrainmaskMskt(this)
             fqfp = fullfile(this.sessionData.vLocation, 'brainmask_mskt');
             if (~lexist_4dfp(fqfp))
@@ -97,7 +67,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
         function umap = CarneyImagingContext(this, varargin)
             %% CARNEYIMAGINGCONTEXT follows Carney, et al. Med. Phys. 33(4) 2006 976-983.
             %  @param ct   is the (fully-qualified) fileprefix of the rescaled CT.
-            %  @returns umap ImagingContext.
+            %  @returns umap ImagingContext2.
             
             import mlfourdfp.*;
             ip = inputParser;

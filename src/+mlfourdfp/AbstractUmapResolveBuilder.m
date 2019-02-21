@@ -25,14 +25,14 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
         function [ctm,ic] = buildCTMasked(this)
             %% BUILDCTMASKED calls CT2mpr_4dfp
             %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
-            %  @return ic  := ctMasked as ImagingContext on CT-space
+            %  @return ic  := ctMasked as ImagingContext2 on CT-space
             
             import mlfourd.*;
             mpr  = this.sessionData.mpr('typ', 'fqfp');
             ct   = this.sessionData.ct('typ', 'fqfp');
             ctm  = this.sessionData.ctMasked('typ', 'fqfp');
             if (lexist(this.fourdfpImg(ctm)) && this.reuseCTMasked)
-                ic = ImagingContext(ctm);
+                ic = ImagingContext2(ctm);
                 return
             end
             
@@ -46,7 +46,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             ct__ = sprintf('%s%s', ct_, 'a');
             ct__ = this.buildVisitor.maskimg_4dfp(ct_, ct_, ct__, 'options', '-t50');
             ctm  = this.buildVisitor.t4img_4dfp(mprToCtT4, ct__, 'out', ctm, 'options', ['-O' ct]); % back to ct-space
-            ic = ImagingContext(ctm);
+            ic = ImagingContext2(ctm);
             delete([ct_ '.4dfp.*']);
             %delete([ct__ '.4dfp.*']); ct__ in mpr-space has best
             %registration
@@ -54,7 +54,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
         function [ctm,ic,ctToMprT4] = buildCTMasked2(this)
             %% BUILDCTMASKED2 calls CT2mpr_4dfp
             %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
-            %  @return ic  := ctMasked as ImagingContext on MPR-space
+            %  @return ic  := ctMasked as ImagingContext2 on MPR-space
             
             import mlfourd.*;
             mpr  = this.sessionData.mpr('typ', 'fqfp');

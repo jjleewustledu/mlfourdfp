@@ -51,16 +51,10 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             if (~lstrfind(ipr.dest, '.4dfp.hdr'))
                 ipr.dest = [ipr.dest '.4dfp.hdr'];
             end
-            d = mlfourd.ImagingContext(ipr.dest);
-            if (isa(d, 'mlfourd.ImagingContext'))
-                d = d.numericalNiftid;
-            end
-            if (isa(d, 'mlfourd.NIfTId'))
-                d = mlfourd.NumericalNIfTId(d);
-            end
-            
+            d   = mlfourd.ImagingContext2(ipr.dest);            
             d   = d.volumeSummed;
-            idx = d.img > this.sessionData.fractionalImageFrameThresh * median(d.img) + this.noiseFloorOfActivity;
+            n   = d.nifti;
+            idx = n.img > this.sessionData.fractionalImageFrameThresh * median(n.img) + this.noiseFloorOfActivity;
             idx = ensureRowVector(idx);
             this.logger.add('mlfourdfp.T4ResolveError.assessValidFrames.idx->%s\n', mat2str(idx));
         end

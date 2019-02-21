@@ -78,7 +78,17 @@ classdef Viewer < mlfourd.Viewer
                     interp = targ;
                     todel = false;
                 otherwise
-                    if (isa(targ, 'mlfourd.ImagingContext') || isa(targ, 'mlfourd.ImagingContext2'))
+                    if false % (~isdeployed)
+                        if (isa(targ, 'mlfourd.ImagingContext'))
+                            if (~lexist(targ.fqfilename))
+                                targ.filesuffix = '.4dfp.hdr';
+                                targ.save;
+                            end
+                            [interp,todel] = this.interpretTarget(targ.fqfilename);
+                            return                        
+                        end
+                    end
+                    if (isa(targ, 'mlfourd.ImagingContext2'))
                         if (~lexist(targ.fqfilename))
                             targ.filesuffix = '.4dfp.hdr';
                             targ.save;

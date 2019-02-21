@@ -365,7 +365,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function fqfp  = buildSourceTimeSummed(~, ipr)
             %  @param ipr.source is a f.-q.-fileprefix.
             %  @return fqfp := [ipr.source '_sumt'] generated on the filesystem.  
-            %  See also mlfourd.ImagingContext.timeSummed.            
+            %  See also mlfourd.ImagingContext2.timeSummed.            
             if (lexist_4dfp([ipr.source '_sumt']))
                 fqfp = [ipr.source '_sumt'];
                 return

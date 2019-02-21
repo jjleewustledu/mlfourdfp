@@ -51,7 +51,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             end
         end
         function obj = ensureSumtSaved(obj, varargin)
-            %  @param named typ; see also mlfourd.ImagingContext.imagingType.
+            %  @param named typ; see also mlfourd.ImagingContext2.imagingType.
             %  @return fqfp of sumt after saving (default).
             
             ip = inputParser;
@@ -546,7 +546,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             %  @param named out is the filename of the affine transformed image; filepath := fileparts(source).
             %  @param named ref is the filename of the image that specifies voxel metrics.
             %  @param named options explicitly sends options to mlfourdfp.FourdfpVisitor.t4img_4dfp.  
-            %  @returns this with this.product := mlfourd.ImagingContext(out).
+            %  @returns this with this.product := mlfourd.ImagingContext2(out).
             %  N.B.:  t4fn and source may both be cell-arrays.
             
             % recursive
@@ -579,7 +579,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             %  @param named out is the filename of the affine transformed image.
             %  @param named ref is the filename of the image that specifies voxel metrics.
             %  @param named options explicitly sends options to mlfourdfp.FourdfpVisitor.t4img_4dfp.  
-            %  @returns this with this.product := mlfourd.ImagingContext(out)
+            %  @returns this with this.product := mlfourd.ImagingContext2(out)
             
             ip = inputParser;
             addRequired( ip, 't4fn', @ischar);
@@ -621,7 +621,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             %  @param named out is the filename of the affine transformed image; filepath := fileparts(source).
             %  @param named ref is the filename of the image that specifies voxel metrics.
             %  @param named options explicitly sends options to mlfourdfp.FourdfpVisitor.t4img_4dfp.  
-            %  @returns this with this.product := mlfourd.ImagingContext(out)
+            %  @returns this with this.product := mlfourd.ImagingContext2(out)
             
             ip = inputParser;
             addRequired( ip, 't4fn', @ischar);
