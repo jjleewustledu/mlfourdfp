@@ -117,6 +117,24 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
                         'InnerNIfTI.filesuffix->%s', this.filesuffix);
             end
         end
+        function this = saveas(this, fn)
+            %% SAVEAS
+            %  @param fn updates internal filename
+            %  @return this updates internal filename; sets this.untouch to false; serializes object to filename
+            %  @return this may have mutated by this.save.mutateInnerImagingFormatByFilesuffix.
+            %  See also:  mlfourd.InnerNIfTI.save
+            
+            [p,f,e] = myfileparts(fn);
+            if (isempty(e))
+                e = this.imagingInfo.defaultFilesuffix;
+            end
+            this.imagingInfo.fqfilename = fullfile(p, [f e]);
+            this.imagingInfo.untouch = false;
+            this.imagingInfo.ifh.fqfileprefix = fullfile(p, f);
+            this.imagingInfo.imgrec.fqfileprefix = fullfile(p, f);
+            this.logger.fqfileprefix = fullfile(p, f);
+            this.save;
+        end
         
         function this = InnerFourdfp(varargin)
  			%  @param imagingInfo is an mlfourd.ImagingInfo object and is required; it may be an aufbau object.
@@ -167,6 +185,7 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
                 that.imagingInfo_.ifh.fqfileprefix = that.fqfileprefix;
                 that.imagingInfo_.ifh.save(that);
                 that.imagingInfo_.imgrec.fqfileprefix = that.fqfileprefix;
+                %that.imagingInfo_.imgrec.filesuffix = '.img.rec';
                 that.imagingInfo_.imgrec.save;
                 warning('on', 'MATLAB:structOnObject');
             catch ME
