@@ -51,7 +51,7 @@ classdef Test_T4ResolveError < matlab.unittest.TestCase
 		function setupT4ResolveError(this)         
  			import mlraichle.*;
             this.sessd = SessionData( ...
-                'studyData', StudyData, 'sessionFolder', this.sessf, 'tracer', 'FDG', 'ac', true, 'rnumber', 2, 'vnumber', 2); % referenceTracer
+                'studyData', StudyData, 'sessionFolder', this.sessf, 'tracer', 'FDG', 'ac', true, 'rnumber', 2); % referenceTracer
  			this.testObj_ = mlfourdfp.T4ResolveError('sessionData', this.sessd, 'logPath', this.sessd.tracerLocation);
             this.viewer = mlfourdfp.Viewer;
  		end
