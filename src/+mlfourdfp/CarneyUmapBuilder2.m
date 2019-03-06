@@ -34,7 +34,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             ic.saveas([umap '.4dfp.hdr']);
         end   
         function fqfp = prepareBrainmaskMskt(this)
-            fqfp = fullfile(this.sessionData.vLocation, 'brainmask_mskt');
+            fqfp = fullfile(this.sessionData.sessionPath, 'brainmask_mskt');
             if (~lexist_4dfp(fqfp))
                 ic2 = mlfourd.ImagingContext2('brainmask.4dfp.hdr');
                 ic2 = ic2.binarizeBlended(2*mlpet.Resources.instance.pointSpread);
@@ -46,8 +46,8 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
         function        teardownBuildUmaps(this)
             this.teardownLogs;
             this.teardownT4s;
-            deleteExisting(fullfile(this.sessionData.vLocation, 'ctRescaled*.4dfp.*'));
-            deleteExisting(fullfile(this.sessionData.vLocation, 'ct_on_*.4dfp.*'));
+            deleteExisting(fullfile(this.sessionData.sessionPath, 'ctRescaled*.4dfp.*'));
+            deleteExisting(fullfile(this.sessionData.sessionPath, 'ct_on_*.4dfp.*'));
             this.finished.markAsFinished( ...
                 'path', this.logger.filepath, 'tag', [this.finished.tag '_' myclass(this) '_teardownBuildUmaps']); 
         end

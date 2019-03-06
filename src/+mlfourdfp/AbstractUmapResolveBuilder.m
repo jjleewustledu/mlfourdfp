@@ -169,10 +169,10 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
         function fp    = resolveSequenceTag(this)
             sessd = this.sessionData;
             if (isempty(sessd.tracer))
-                fp = sprintf('umapResolveSequencev%i', sessd.vnumber);
+                fp = 'umapResolveSequence';
                 return
             end
-            fp = sprintf('%sUmapResolveSequencev%i', sessd.tracer, sessd.vnumber);
+            fp = sprintf('%sUmapResolveSequence', sessd.tracer);
         end
         function         teardownBuildUmaps(this)
             this.teardownLogs;
@@ -181,8 +181,8 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
                 'path', this.logger.filepath, 'tag', [this.finished.tag '_' myclass(this) '_teardownBuildUmaps']);           
         end
         function umaps = umapsOpTracer(this)
-            umaps = sprintf('umapsOp%sv%ir%i', ...
-                upperFirst(this.sessionData.tracer), this.sessionData.vnumber, this.sessionData.rnumber);
+            umaps = sprintf('umapsOp%sr%i', ...
+                upperFirst(this.sessionData.tracer), this.sessionData.rnumber);
         end
         function fp    = umapsOpTracerFrame(this, fr)
             ipr = struct( ...
@@ -336,7 +336,7 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             tr = sprintf('%sForNAC', lower(this.sessionData.tracer));
         end 
         function fp                = tracerNACRevision_fp_r(this, r)
-            fp = sprintf('%sv%ir%i', lower(this.sessionData.tracer), this.sessionData.vnumber, r);
+            fp = sprintf('%sr%i', lower(this.sessionData.tracer), r);
         end
     end
     

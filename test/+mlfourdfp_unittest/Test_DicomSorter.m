@@ -24,7 +24,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
 
 	methods (Test)
         function test_dcmInfos(this)
-            cd(fullfile(this.studyData.rawdataDir, 'HYGLY28_VISIT_1', ''));
+            cd(fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, 'HYGLY28_VISIT_1', ''));
             [infos,fqdns] = this.testObj.dcmInfos;
             for idx = 1:5
                 this.verifyEqual(fullfile(pwd, num2str(infos{idx}.SeriesNumber)), fqdns{idx});
@@ -32,7 +32,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
             end
         end
         function test_findDcmInfos(this)
-            cd(fullfile(this.studyData.rawdataDir, 'HYGLY28_VISIT_1', ''));
+            cd(fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, 'HYGLY28_VISIT_1', ''));
             infos = this.testObj.findDcmInfos('UMAP');
             for idx = 1:length(infos)
                 fprintf('%g\t%s\t%s\t%s\t%s\n', ...
@@ -41,7 +41,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
             end
         end
         function test_findDcmInfos2(this)
-            cd(fullfile(this.studyData.rawdataDir, 'HYGLY28_VISIT_1', ''));
+            cd(fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, 'HYGLY28_VISIT_1', ''));
             infos = this.testObj.findDcmInfos({'UMAP' 't2_spc_sag'});
             for idx = 1:length(infos)
                 fprintf('%g\t%s\t%s\t%s\t%s\n', ...
@@ -50,7 +50,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
             end
         end
         function test_destPath(this)
-            cd(this.testObj.studyData.rawdataDir);
+            cd(mlraichle.RaichleRegistry.instance.rawdataDir);
             dt = mlsystem.DirTools('HYGLY*', 'NP*', 'hygly*', 'TW*', 'DT*');
             for idns = 1:length(dt.dns)
                 fprintf('dns-> %s\ndestPath -> %s\n\n', dt.dns{idns}, this.testObj.destPath(dt.dns{idns}));

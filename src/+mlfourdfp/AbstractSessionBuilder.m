@@ -17,14 +17,12 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         sessionPath
         subjectsDir
         subjectsFolder
-        vfolder
         
         attenuationCorrected
         pnumber
         rnumber
         snumber
         tracer
-        vnumber
     end
     
     methods (Static)        
@@ -101,12 +99,6 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function this = set.tracer(this, s)
             this.sessionData_.tracer = s;
         end  
-        function g    = get.vfolder(this)
-            g = this.sessionData_.vfolder;
-        end
-        function g    = get.vnumber(this)
-            g = this.sessionData.vnumber;
-        end
         
         %%        
         
@@ -212,9 +204,6 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         end    
         function obj  = vallLocation(this, varargin)
             obj = this.sessionData.vallLocation(varargin{:});
-        end
-        function obj  = vLocation(this, varargin)
-            obj = this.sessionData.vLocation(varargin{:});
         end
         
  		function this = AbstractSessionBuilder(varargin)

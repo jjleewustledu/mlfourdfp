@@ -314,7 +314,7 @@ classdef RawDataSorter
                 [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fileparts(loc0));
             catch ME %#ok<NASGU>
                 try                    
-                    [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fullfile(this.sessionData.rawdataDir, fileparts(loc0), ''));
+                    [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, fileparts(loc0), ''));
                 catch ME1 %#ok<NASGU>
                     fprintf('RawDataSorter.umapMatch:  no match for %s\n', dcmInfoTag);
                     info = [];
@@ -396,7 +396,7 @@ classdef RawDataSorter
             addRequired(ip, 'oper',  @(x) isa(x, 'function_handle'))
             addRequired(ip, 'match', @(x) isa(x, 'function_handle'))
             addRequired(ip, 'srcLoc', @isdir);
-            addOptional(ip, 'destLoc', this.sessionData.vLocation, @isdir);
+            addOptional(ip, 'destLoc', this.sessionData.sessionPath, @isdir);
             parse(ip, varargin{:});
 
             [destLocs,srcLocs] = ip.Results.match(ip.Results.srcLoc, ip.Results.destLoc);

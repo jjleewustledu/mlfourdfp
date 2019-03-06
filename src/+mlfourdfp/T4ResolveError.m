@@ -27,10 +27,10 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             for c = 1:Nt
                 emm(c,c) = 0;
             end
-            csvwrite(emm, fullfile(sess.vLocation, ...
+            csvwrite(emm, fullfile(sess.sessionPath, ...
                 [sess.tracerRevision('typ','fp') '_T4ResolveErr_errorMatEpochs.csv']));
             
-            function em = readBlockDiag(e_) %#ok<STOUT>
+            function em = readBlockDiag(e_) 
                 try      
                     dt = mlsystem.DirTool(sprintf('%se%ir*_T4ResolveErr_*.mat', lower(sess.tracer), e_));
                     [~,idx] = max(dt.itsListing.datenum);

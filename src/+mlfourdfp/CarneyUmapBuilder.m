@@ -32,29 +32,24 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             eSess = DirTool(fullfile(studyd.subjectsDir, tagString));
             for iSess = 1:length(eSess.fqdns)
 
-                eVisit = DirTool(fullfile(eSess.fqdns{iSess}, 'V*'));
-                for iVisit = 1:length(eVisit.fqdns)
-
-                    try
-                        pth = fullfile(eVisit.fqdns{iVisit}, '');
-                        pwd0 = pushd(pth);
-                        mlfourdfp.CarneyUmapBuilder.printv('buildUmapAll:  try pwd->%s\n', pwd);
-                        sessd = SessionData( ...
-                            'studyData',   studyd, ...
-                            'sessionPath', eSess.fqdns{iSess}, ...
-                            'ac',          false, ...
-                            'tracer',      '', ...
-                            'vnumber',     T4ResolveUtilities.visitNumber(eVisit.dns{iVisit}));
-                        if (mlfourdfp.FourdfpVisitor.lexist_4dfp(sessd.umapSynth('typ', 'fqfp')))
-                            continue
-                        end
-                        this = mlfourdfp.CarneyUmapBuilder('sessionData', sessd);                        
-                        this.keepForensics = true;
-                        this.buildUmap;                        
-                        popd(pwd0);
-                    catch ME
-                        handwarning(ME);
+                try
+                    pth = fullfile(eSess.fqdns{iSess}, '');
+                    pwd0 = pushd(pth);
+                    mlfourdfp.CarneyUmapBuilder.printv('buildUmapAll:  try pwd->%s\n', pwd);
+                    sessd = SessionData( ...
+                        'studyData',   studyd, ...
+                        'sessionPath', eSess.fqdns{iSess}, ...
+                        'ac',          false, ...
+                        'tracer',      '');
+                    if (mlfourdfp.FourdfpVisitor.lexist_4dfp(sessd.umapSynth('typ', 'fqfp')))
+                        continue
                     end
+                    this = mlfourdfp.CarneyUmapBuilder('sessionData', sessd);                        
+                    this.keepForensics = true;
+                    this.buildUmap;                        
+                    popd(pwd0);
+                catch ME
+                    handwarning(ME);
                 end
             end            
         end
@@ -69,7 +64,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             if (this.isfinished)
                 return
             end            
-            pwd0 = pushd(this.sessionData.vLocation);
+            pwd0 = pushd(this.sessionData.sessionPath);
             tracer0 = this.sessionData.tracer;
             this.sessionData_.tracer = 'FDG';
             this.convertUmapTo4dfp; % convert FDG_V*-Converted-NAC/FDG_V*-LM-00/FDG_V*-LM-00-umap.v
