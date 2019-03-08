@@ -8,19 +8,18 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
  	
 
     properties (Dependent)
-        census
-        dbgTag
-        filetypeExt
-        rawdataDir
-        sessionData
+        rawdataPath
         sessionFolder
         sessionPath
         subjectsDir
-        subjectsFolder
         
         attenuationCorrected
+        census
+        dbgTag
+        filetypeExt
         pnumber
         rnumber
+        sessionData
         snumber
         tracer
     end
@@ -53,8 +52,8 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function g    = get.filetypeExt(this)
             g = this.sessionData.filetypeExt;
         end
-        function g    = get.rawdataDir(this)
-            g = this.sessionData_.rawdataDir;
+        function g    = get.rawdataPath(this)
+            g = this.sessionData_.rawdataPath;
         end
         function g    = get.sessionData(this)
             g = this.sessionData_;
@@ -71,9 +70,6 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         end
         function g    = get.subjectsDir(this)
             g = this.sessionData.subjectsDir;
-        end
-        function g    = get.subjectsFolder(this)
-            g = this.sessionData.subjectsFolder;
         end
         function g    = get.attenuationCorrected(this)
             g = this.sessionData.attenuationCorrected;
