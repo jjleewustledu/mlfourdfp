@@ -150,7 +150,7 @@ classdef RawDataSorter
         end
         function pth  = sourceRawDataPath(str)
             assert(ischar(str));
-            pth = fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, str, 'RESOURCES', 'RawData', '');            
+            pth = fullfile(mlraichle.RaichleRegistry.instance.ppgRawdataDir, str, 'RESOURCES', 'RawData', '');            
             if(~isdir(pth))
                 pth = ''; 
             end
@@ -314,7 +314,7 @@ classdef RawDataSorter
                 [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fileparts(loc0));
             catch ME %#ok<NASGU>
                 try                    
-                    [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, fileparts(loc0), ''));
+                    [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fullfile(mlraichle.RaichleRegistry.instance.ppgRawdataDir, fileparts(loc0), ''));
                 catch ME1 %#ok<NASGU>
                     fprintf('RawDataSorter.umapMatch:  no match for %s\n', dcmInfoTag);
                     info = [];
