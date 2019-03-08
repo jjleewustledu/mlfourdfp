@@ -126,7 +126,7 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             ensuredir(logpth);            
             this.logger_ = Logger( ... ...
                 fullfile(logpth, ...
-                sprintf('%s_T4ResolveErr_D%s', fp, datestr(now,'yyyymmddTHHMMSSFFF'))));
+                sprintf('%s_T4ResolveErr_D%s', fp, mdatetimestr(now))));
         end
     end
 

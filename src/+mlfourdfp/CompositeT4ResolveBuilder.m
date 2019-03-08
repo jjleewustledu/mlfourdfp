@@ -171,8 +171,8 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             this.t4imgAll(ipr, this.resolveTag); % transform ipr.dest on this.resolveTag
             dest_ = cellfun(@(x) mybasename(x), ipr.dest, 'UniformOutput', false);
             ipr.resolved = cellfun(@(x) sprintf('%s_%s', x, this.resolveTag), dest_, 'UniformOutput', false); 
-            movefile([this.resolveTag '.mat0'], [ipr.resolved{this.indexOfReference} '_' datestr(now, 30) '.mat0']);
-            movefile([this.resolveTag '.sub'],  [ipr.resolved{this.indexOfReference} '_' datestr(now, 30) '.sub']);
+            movefile([this.resolveTag '.mat0'], [ipr.resolved{this.indexOfReference} '_' mydatetimestr(now) '.mat0']);
+            movefile([this.resolveTag '.sub'],  [ipr.resolved{this.indexOfReference} '_' mydatetimestr(now) '.sub']);
             popd(pwd0);
         end
         function t4           = t4_to_resolveTag(this, varargin)
@@ -260,7 +260,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             if (~this.buildVisitor.lexist_4dfp(ipr.dest{s}) && ...
                                 ~strcmp(ipr.dest{s}, ipr.source{s}))
                                 this.buildVisitor.copy_4dfp(ipr.source{s}, ipr.dest{s});
-                                %ipr.dest{s} = sprintf('%s_%s', ipr.dest{s}, datestr(now, 30));
+                                %ipr.dest{s} = sprintf('%s_%s', ipr.dest{s}, mydatetimestr(now));
                             end
                         end
                     end

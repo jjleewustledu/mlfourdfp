@@ -85,7 +85,7 @@ classdef ImgRecLogger < handle & mlpipeline.AbstractLogger
     
     methods (Access = protected)
         function fn   = defaultFqfileprefix(this)
-            fn = fullfile(this.filepath, ['ImgRecLogger_' datestr(now,30)]);
+            fn = fullfile(this.filepath, ['ImgRecLogger_' mydatetimestr(now)]);
         end
         function txt  = header(this)
             txt = sprintf('rec %s.4dfp.img %s %s@%s %s', ...

@@ -102,7 +102,7 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
                                 'tracer',      mlfourdfp.T4ResolveUtilities.tracerPrefix(eTracer.dns{iTracer}));
                             this = DynamicUmapsBuilder('sessionData', sessd);
                             this = this.buildUmaps;                                     
-                            save(sprintf('mlfourdfp_UmapResolveBuilder_serialBuildUmaps_this_%s.mat', datestr(now, 30)), 'this');
+                            save(sprintf('mlfourdfp_UmapResolveBuilder_serialBuildUmaps_this_%s.mat', mydatetimestr(now)), 'this');
                         catch ME
                             handwarning(ME);
                         end

@@ -37,11 +37,11 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             end
             
             [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
-                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', datestr(now,30)));
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', mydatetimestr(now)));
             mprToCtT4 = this.buildVisitor.t4_inv(ctToMprT4);
             mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
             
-            ct_  = sprintf('%s_%s', ct, datestr(now, 30));
+            ct_  = sprintf('%s_%s', ct, mydatetimestr(now));
             ct_  = this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
             ct__ = sprintf('%s%s', ct_, 'a');
             ct__ = this.buildVisitor.maskimg_4dfp(ct_, ct_, ct__, 'options', '-t50');
@@ -62,10 +62,10 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             ctm  = this.sessionData.ctMasked('typ', 'fqfp');
             
             [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
-                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', datestr(now,30)));
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', mydatetimestr(now)));
             mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
             
-            ct_  = sprintf('%s_%s', ct, datestr(now, 30));
+            ct_  = sprintf('%s_%s', ct, mydatetimestr(now));
             this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
             this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
             ic = ImagingContext2(ctm);

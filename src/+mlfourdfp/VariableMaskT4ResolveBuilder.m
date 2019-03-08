@@ -34,21 +34,21 @@ classdef VariableMaskT4ResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
             this.purgeT4s(ipr);
             
             ipr.cacheLoc = ensuredir( ...
-                fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' datestr(now, 30)]));
+                fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' mydatetimestr(now)]));
             ipr.maskForImages = 'none';
             ipr.useMetricGradient = true;
             this = this.imageReg(ipr);  
             [ipr,~,this] = this.resolveAndPaste(ipr); 
             
             ipr.cacheLoc = ensuredir( ...
-                fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' datestr(now, 30)]));
+                fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' mydatetimestr(now)]));
             ipr.maskForImages = 'Msktgen';
             ipr.useMetricGradient = true;
             this = this.imageReg(ipr);  
             [ipr,~,this] = this.resolveAndPaste(ipr); 
             
             ipr.cacheLoc = ensuredir( ...
-                fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' datestr(now, 30)]));
+                fullfile(this.sessionData.vallLocation, ['VarMaskT4RBCache_' mydatetimestr(now)]));
             ipr.maskForImages = 'Msktgen';
             ipr.useMetricGradient = true;
             this = this.imageReg(ipr);            

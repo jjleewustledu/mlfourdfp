@@ -41,7 +41,7 @@ classdef FourdfpVisitor
             dt = mlsystem.DirTool([ip.Results.fqfp ip.Results.tag '*.4dfp.img']);
             if (length(dt.fqfns) < ip.Results.n)
                 this = FourdfpVisitor;
-                fqfp = sprintf('%s%sD%s', ip.Results.fqfp, ip.Results.tag, datestr(now, 30));
+                fqfp = sprintf('%s%sD%s', ip.Results.fqfp, ip.Results.tag, mydatetimestr(now));
                 this.copy_4dfp(ip.Results.fqfp, fqfp);
                 return
             end
@@ -730,7 +730,7 @@ classdef FourdfpVisitor
             addRequired(ip, 'source', @this.lexist_4dfp);
             addOptional(ip, 't4',     ['_' this.filenameT4(varargin{1}, varargin{2})], @ischar);
             addOptional(ip, 'mode',   2051, @isnumeric);
-            addOptional(ip, 'log',    sprintf('_FourdfpVisitor_eta_D%s', datestr(now, 'yyyymmddTHHMMSSFFF')), @ischar);
+            addOptional(ip, 'log',    sprintf('_FourdfpVisitor_eta_D%s', mydatetimestr(now)), @ischar);
             parse(ip, varargin{:});
             
             this.imgreg_4dfp__(sprintf('%s none %s none %s %i >> %s', ...
@@ -1073,7 +1073,7 @@ classdef FourdfpVisitor
             fqfp = ip.Results.fqfp;
             atl  = ip.Results.atl;
             
-            log = sprintf('msktgenMprage_%s.log', datestr(now, 30));
+            log = sprintf('msktgenMprage_%s.log', mydatetimestr(now));
             this.mpr2atl_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
             this.msktgen_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
         end   

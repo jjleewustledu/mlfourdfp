@@ -98,7 +98,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             func = strrep(mybasename(ip.Results.func), '.', '_');
 
             fqfp = fullfile(ip.Results.path, ...
-                 sprintf('%s_%s_D%s', tag, func, datestr(now,'yyyymmddTHHMMSSFFF')));
+                 sprintf('%s_%s_D%s', tag, func, mydatetimestr(now)));
         end
         function       printv(varargin)
             if (~isempty(getenv('PRINTV')))
@@ -408,7 +408,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             fqfp = ip.Results.fqfp;
             atl  = ip.Results.atl;
             
-            log = sprintf('msktgenImg_%s.log', datestr(now, 30));
+            log = sprintf('msktgenImg_%s.log', mydatetimestr(now));
             this.buildVisitor.mpr2atl_4dfp(fqfp, 'options', ['-crossmodal -T' atl], 'log', log);
             this.buildVisitor.msktgen_4dfp(fqfp, 'options', ['-T' atl], 'log', log);
         end 
