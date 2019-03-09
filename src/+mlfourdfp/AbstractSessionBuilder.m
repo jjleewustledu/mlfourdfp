@@ -7,10 +7,17 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
  	%% It was developed on Matlab 9.3.0.713579 (R2017b) for MACI64.  Copyright 2017 John Joowon Lee.
  	
 
-    properties (Dependent)
+    properties (Dependent)        
         rawdataPath
-        sessionFolder
+        rawdataFolder
+        tracerPath
+        tracerFolder
         sessionPath
+        sessionFolder
+        projectPath
+        projectFolder
+        
+        projectsDir
         subjectsDir
         
         attenuationCorrected
@@ -24,25 +31,74 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         tracer
     end
     
-    methods (Static)        
-        function fn    = fslchfiletype(varargin)
-            fn = mlfourdfp.AbstractBuilder.fslchfiletype(varargin{:});
-        end
-        function fn    = mri_convert(varargin)   
-            fn = mlfourdfp.AbstractBuilder.mri_convert(varargin{:});
-        end
-        function [s,r] = nifti_4dfp_4(varargin)
-            [s,r] = mlfourdfp.AbstractBuilder.nifti_4dfp_4(varargin{:});
-        end
-        function [s,r] = nifti_4dfp_n(varargin)
-            [s,r] = mlfourdfp.AbstractBuilder.nifti_4dfp_n(varargin{:});
-        end
-    end
-    
 	methods
         
-        %% GET
+        %% GET/SET
+                
+        function g    = get.rawdataPath(this)
+            g = this.sessionData.rawdataPath;
+        end
+        function this = set.rawdataPath(this, s)
+            this.sessionData.rawdataPath = s;
+        end
+        function g    = get.rawdataFolder(this)
+            g = this.sessionData.rawdataFolder;
+        end
+        function this = set.rawdataFolder(this, s)
+            this.sessionData.rawdataFolder = s;
+        end
+        function g    = get.tracerPath(this)
+            g = this.sessionData.tracerPath;
+        end
+        function this = set.tracerPath(this, s)
+            this.sessionData.tracerPath = s;
+        end
+        function g    = get.tracerFolder(this)
+            g = this.sessionData.tracerFolder;
+        end
+        function this = set.tracerFolder(this, s)
+            this.sessionData.tracerFolder = s;
+        end
+        function g    = get.sessionPath(this)
+            g = this.sessionData.sessionPath;
+        end
+        function this = set.sessionPath(this, s)
+            this.sessionData.sessionPath = s;
+        end 
+        function g    = get.sessionFolder(this)
+            g = this.sessionData.sessionFolder;
+        end
+        function this = set.sessionFolder(this, s)
+            this.sessionData.sessionFolder = s;
+        end   
+        function g    = get.projectPath(this)
+            g = this.sessionData.projectPath;
+        end
+        function this = set.projectPath(this, s)
+            this.sessionData.projectPath = s;
+        end
+        function g    = get.projectFolder(this)
+            g = this.sessionData.projectFolder;
+        end
+        function this = set.projectFolder(this, s)
+            this.sessionData.projectFolder = s;
+        end    
         
+        function g    = get.projectsDir(this)
+            g = this.sessionData.projectsDir;
+        end
+        function g    = get.subjectsDir(this)
+            g = this.sessionData.subjectsDir;
+        end
+        
+        %% GET/SET
+        
+        function g    = get.attenuationCorrected(this)
+            g = this.sessionData.attenuationCorrected;
+        end
+        function this = set.attenuationCorrected(this, s)
+            this.sessionData.attenuationCorrected = s;
+        end
         function g    = get.census(this)
             g = this.census_;
         end
@@ -52,8 +108,14 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function g    = get.filetypeExt(this)
             g = this.sessionData.filetypeExt;
         end
-        function g    = get.rawdataPath(this)
-            g = this.sessionData_.rawdataPath;
+        function g    = get.pnumber(this)
+            g = this.sessionData.pnumber;
+        end
+        function g    = get.rnumber(this)
+            g = this.sessionData.rnumber;
+        end
+        function this = set.rnumber(this, s)
+            this.sessionData.rnumber = s;
         end
         function g    = get.sessionData(this)
             g = this.sessionData_;
@@ -62,41 +124,20 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             assert(isa(s, 'mlpipeline.ISessionData'));
             this.sessionData_ = s;
         end
-        function g    = get.sessionFolder(this)
-            g = this.sessionData.sessionFolder;
-        end
-        function g    = get.sessionPath(this)
-            g = this.sessionData.sessionPath;
-        end
-        function g    = get.subjectsDir(this)
-            g = this.sessionData.subjectsDir;
-        end
-        function g    = get.attenuationCorrected(this)
-            g = this.sessionData.attenuationCorrected;
-        end
-        function g    = get.pnumber(this)
-            g = this.sessionData.pnumber;
-        end
-        function g    = get.rnumber(this)
-            g = this.sessionData.rnumber;
-        end
-        function this = set.rnumber(this, s)
-            this.sessionData_.rnumber = s;
-        end
         function g    = get.snumber(this)
             g = this.sessionData.snumber;
         end
         function this = set.snumber(this, s)
-            this.sessionData_.snumber = s;
+            this.sessionData.snumber = s;
         end  
         function g    = get.tracer(this)
             g = this.sessionData.tracer;
         end
         function this = set.tracer(this, s)
-            this.sessionData_.tracer = s;
+            this.sessionData.tracer = s;
         end  
         
-        %%        
+        %%
         
         function a    = atlas(this, varargin) 
             a = this.sessionData.atlas(varargin{:});
