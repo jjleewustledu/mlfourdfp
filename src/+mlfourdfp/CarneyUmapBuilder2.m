@@ -89,7 +89,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             highHU =  highHU .* highMask;
 
             umap = lowHU + highHU;
-            umap = umap .* (umap > 0);
+            umap = umap .* (umap.numgt(0));
         end  
         function a    = CarneyA(this)
             switch (this.ct_kVp)
