@@ -98,7 +98,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             func = strrep(mybasename(ip.Results.func), '.', '_');
 
             fqfp = fullfile(ip.Results.path, ...
-                 sprintf('%s_%s_D%s', tag, func, mydatetimestr(now)));
+                 sprintf('%s_%s_%s', tag, func, mydatetimestr(now)));
         end
         function       printv(varargin)
             if (~isempty(getenv('PRINTV')))

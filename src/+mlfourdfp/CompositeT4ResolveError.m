@@ -63,7 +63,7 @@ classdef CompositeT4ResolveError < mlfourdfp.AbstractT4ResolveError
             ensuredir(this.getLogPath);
             this.logger_ = Logger( ...
                 fullfile(this.getLogPath, ...
-                sprintf('%s_CompositeT4ResolveErr_D%s', this.representativeImgs, mydatetimestr(now))));
+                sprintf('%s_CompositeT4ResolveErr_%s', this.representativeImgs, mydatetimestr(now))));
         end
     end
 

@@ -730,7 +730,7 @@ classdef FourdfpVisitor
             addRequired(ip, 'source', @this.lexist_4dfp);
             addOptional(ip, 't4',     ['_' this.filenameT4(varargin{1}, varargin{2})], @ischar);
             addOptional(ip, 'mode',   2051, @isnumeric);
-            addOptional(ip, 'log',    sprintf('_FourdfpVisitor_eta_D%s', mydatetimestr(now)), @ischar);
+            addOptional(ip, 'log',    sprintf('_FourdfpVisitor_eta_%s', mydatetimestr(now)), @ischar);
             parse(ip, varargin{:});
             
             this.imgreg_4dfp__(sprintf('%s none %s none %s %i >> %s', ...
