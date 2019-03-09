@@ -54,7 +54,8 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             d   = mlfourd.ImagingContext2(ipr.dest);            
             d   = d.volumeSummed;
             n   = d.nifti;
-            idx = n.img > this.sessionData.fractionalImageFrameThresh * median(n.img) + this.noiseFloorOfActivity;
+            idx = n.img > this.sessionData.fractionalImageFrameThresh * median(n.img) + ...
+                          mlpet.Resources.instance.noiseFloorOfActivity;
             idx = ensureRowVector(idx);
             this.logger.add('mlfourdfp.T4ResolveError.assessValidFrames.idx->%s\n', mat2str(idx));
         end
@@ -126,7 +127,7 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             ensuredir(logpth);            
             this.logger_ = Logger( ... ...
                 fullfile(logpth, ...
-                sprintf('%s_T4ResolveErr_D%s', fp, mdatetimestr(now))));
+                sprintf('%s_T4ResolveErr_%s', fp, mydatetimestr(now))));
         end
     end
 
