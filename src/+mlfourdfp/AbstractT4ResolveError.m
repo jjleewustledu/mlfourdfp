@@ -12,7 +12,6 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
     
     properties (Dependent)
         errMat
-        noiseFloorOfActivity
         resolveTag
         theImages
     end
@@ -35,9 +34,6 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
         
         function g = get.errMat(this)
             g = this.errMat_;
-        end
-        function g = get.noiseFloorOfActivity(~)
-            g = mlpet.Resources.instance.noiseFloorOfActivity;
         end
         function g = get.theImages(this)
             g = this.theImages_;
