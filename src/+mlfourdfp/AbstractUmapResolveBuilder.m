@@ -60,6 +60,14 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             mpr  = this.sessionData.mpr('typ', 'fqfp');
             ct   = this.sessionData.ct('typ', 'fqfp');
             ctm  = this.sessionData.ctMasked('typ', 'fqfp');
+            ctd  = fullfile(this.sessionData.sessionPath, 'ct', '');
+            
+            assert(isdir(ctd));            
+            pwd0 = pushd(fileparts(ctd));
+            
+            if (~lexist([ct '.4dfp.img'])) % disambiguate ctd and ct
+                this.buildVisitor.dcm_to_4dfp(fullfile(ctd, '*.dcm'), 'base', 'ct', 'options', '-g');
+            end
             
             [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
                 'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', mydatetimestr(now)));
@@ -70,6 +78,8 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
             ic = ImagingContext2(ctm);
             delete([ct_ '.4dfp.*']); % ct__ in mpr-space has best registration
+            
+            popd(pwd0);
         end       
         function dest  = buildTracerNAC(this, varargin)
             %% BUILDTRACERNAC builds 4dfp formatted NAC images.
