@@ -312,7 +312,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         'logPath', fullfile(pwd, 'Log', ''));
                     sd   = this.sessionData; sd.epoch = []; sd.rnumber = 1;
                     mskt = mg.constructMskt( ...
-                        'source', this.ensureSumtSaved(sd.tracerRevision), ...
+                        'source', this.ensureAvgtSaved(sd.tracerRevision), ...
                         'intermediaryForMask', sd.T1001, ...
                         'sourceOfMask', fullfile(sd.sessionPath, 'brainmask.4dfp.hdr'), ...
                         'blurForMask', 10);
@@ -343,11 +343,11 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             if (strcmp(ipr.maskForImages, 'wholehead'))
                 try
                     % build masks for each frame
-                    sourceSumt = this.buildSourceTimeSummed(ipr);
+                    sourceAvgt = this.buildSourceTimeAveraged(ipr);
                     for b = 1:length(blurredImgs)
                         fqfps{b} = sprintf('%s_%i', ipr.maskForImages, b);
                         if (~lexist_4dfp(fqfps{b}))
-                            this.buildMaskAdjustedForImage(fqfps{b}, blurredImgs{b}, ipr.sourceMask{b}, sourceSumt);
+                            this.buildMaskAdjustedForImage(fqfps{b}, blurredImgs{b}, ipr.sourceMask{b}, sourceAvgt);
                         end
                     end
                     return
@@ -361,6 +361,20 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         end
         function fqfps = lazyStageImages(this, ipr)
             fqfps = this.imageComposite.lazyExtractImages(ipr);
+        end
+        function fqfp  = buildSourceTimeAveraged(~, ipr)
+            %  @param ipr.source is a f.-q.-fileprefix.
+            %  @return fqfp := [ipr.source '_sumt'] generated on the filesystem.  
+            %  See also mlfourd.ImagingContext2.timeAveraged.            
+            if (lexist_4dfp([ipr.source '_avgt']))
+                fqfp = [ipr.source '_avgt'];
+                return
+            end
+            
+            ic = mlfourd.ImagingContext2(ipr.source);
+            ic = ic.timeAveraged;
+            ic.save;
+            fqfp = ic.fqfileprefix;
         end
         function fqfp  = buildSourceTimeSummed(~, ipr)
             %  @param ipr.source is a f.-q.-fileprefix.

@@ -50,6 +50,20 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 en = ensureCell(en);
             end
         end
+        function obj = ensureAvgtSaved(obj, varargin)
+            %  @param named typ; see also mlfourd.ImagingContext2.imagingType.
+            %  @return fqfp of sumt after saving (default).
+            
+            ip = inputParser;
+            addParameter(ip, 'typ', 'fqfp', @ischar);
+            parse(ip, varargin{:});
+            
+            ic = mlfourd.ImagingContext2(obj);
+            ic = ic.timeAveraged;
+            ffp = ic.fourdfp;
+            ffp.save;
+            obj = ic.imagingType(ip.Results.typ, ic);
+        end
         function obj = ensureSumtSaved(obj, varargin)
             %  @param named typ; see also mlfourd.ImagingContext2.imagingType.
             %  @return fqfp of sumt after saving (default).

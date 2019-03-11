@@ -266,6 +266,24 @@ classdef (Abstract) ImagingState < mlfourdfp.FourdfpIO
                 NumericalNIfTIdState(this.concreteObj_, this.contexth_));
             s = this.contexth_.timeSummed(varargin{:});
         end
+        function s    = timeAveraged(this, varargin)
+            %% TIMEAVERAGED
+            %  @param [varargin] are passed to NumericalNIfTIdState after a state-change
+            
+            import mlfourd.*;
+            this.contexth_.changeState( ...
+                NumericalNIfTIdState(this.concreteObj_, this.contexth_));
+            s = this.contexth_.timeAveraged(varargin{:});
+        end
+        function s    = timeContracted(this, varargin)
+            %% TIMECONTRACTED
+            %  @param [varargin] are passed to NumericalNIfTIdState after a state-change
+            
+            import mlfourd.*;
+            this.contexth_.changeState( ...
+                NumericalNIfTIdState(this.concreteObj_, this.contexth_));
+            s = this.contexth_.timeContracted(varargin{:});
+        end
         function u    = uthresh(this, varargin)
             %% UTHRESH
             %  @param [varargin] are passed to NumericalNIfTIdState after a state-change

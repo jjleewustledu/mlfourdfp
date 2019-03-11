@@ -19,10 +19,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 end
                 ic = mlfourd.ImagingContext2([fqfp{i} '.4dfp.hdr']);
                 if (4 == length(size(ic)) && size(ic,4) > 1) % short-circuit
-                    if (lexist([ic.fqfileprefix '_sumt.4dfp.hdr']))
-                        ic = mlfourd.ImagingContext2([ic.fqfileprefix '_sumt.4dfp.hdr']);
+                    if (lexist([ic.fqfileprefix '_avgt.4dfp.hdr']))
+                        ic = mlfourd.ImagingContext2([ic.fqfileprefix '_avgt.4dfp.hdr']);
                     else                        
-                        ic = ic.timeSummed;
+                        ic = ic.timeAveraged;
                         ic.save;
                         fprintf('mlfourdfp.CompositeT4ResolveBuilder.embedInEuclideanR3 saved %s\n', ...
                             ic.fqfilename);
