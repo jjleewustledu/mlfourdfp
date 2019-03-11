@@ -187,17 +187,26 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function obj  = tracerResolvedFinal(this, varargin)
             obj = this.sessionData.tracerResolvedFinal(varargin{:});
         end
+        function obj  = tracerResolvedFinalAvgt(this, varargin)
+            obj = this.sessionData.tracerResolvedFinalAvgt(varargin{:});
+        end
         function obj  = tracerResolvedFinalSumt(this, varargin)
             obj = this.sessionData.tracerResolvedFinalSumt(varargin{:});
         end
         function obj  = tracerResolvedSubj(this, varargin)
             obj = this.sessionData.tracerResolvedSubj(varargin{:});
         end
+        function obj  = tracerResolvedAvgt(this, varargin)
+            obj = this.sessionData.tracerResolvedAvgt(varargin{:});
+        end
         function obj  = tracerResolvedSumt(this, varargin)
             obj = this.sessionData.tracerResolvedSumt(varargin{:});
         end
         function obj  = tracerRevision(this, varargin)
             obj = this.sessionData.tracerRevision(varargin{:});
+        end
+        function obj  = tracerRevisionAvgt(this, varargin)
+            obj = this.sessionData.tracerRevisionAvgt(varargin{:});
         end
         function obj  = tracerRevisionSumt(this, varargin)
             obj = this.sessionData.tracerRevisionSumt(varargin{:});
