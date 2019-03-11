@@ -232,6 +232,12 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function fqfp = umapSynth(this, varargin)
             fqfp = this.sessionData.umapSynth(varargin{:});
         end
+        function fqfp = umapSynthOpT1001(this, varargin)
+            fqfp = this.sessionData.umapSynthOpT1001(varargin{:});
+        end
+        function fqfp = umapSynthOpTracer(this, varargin)
+            fqfp = this.sessionData.umapSynthOpTracer(varargin{:});
+        end
         function this = updateFinished(this, varargin)
             %% UPDATEFINISHED, the protected superclass property which is an mlpipeline.Finished;
             %  overrides mlpipeline.AbstractBuilder.updateFinished.
