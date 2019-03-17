@@ -23,10 +23,13 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             import mlfourdfp.*;
             ip = inputParser;
             addRequired(ip, 'rescaledCT', @FourdfpVisitor.lexist_4dfp);
-            addOptional(ip, 'umap', this.sessionData.umapSynth('tracer', '', 'blurTag', '', 'typ', 'fqfp'), @ischar);
+            addOptional(ip, 'umap', this.umapSynth, @ischar);
             parse(ip, varargin{:});            
             umap = ip.Results.umap;
             
+            if (lexist_4dfp(umap) && this.reuseCarneyUmap)
+                return
+            end
             deleteExisting([umap '.4dfp.*']);
             deleteExisting([umap '_b*.4dfp.*']);
             deleteExisting([umap '.log']);
@@ -50,6 +53,10 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             deleteExisting(fullfile(this.sessionData.sessionPath, 'ct_on_*.4dfp.*'));
             this.finished.markAsFinished( ...
                 'path', this.logger.filepath, 'tag', [this.finished.tag '_' myclass(this) '_teardownBuildUmaps']); 
+        end
+        function umap = umapSynth(this, varargin)
+            %% is this class' naming convention for mlpipeline.ISessionData.umapSynth.
+            umap = this.sessionData.umapSynth('tracer', '', 'blurTag', '', 'typ', 'fqfp', varargin{:});
         end
 		  
  		function this = CarneyUmapBuilder2(varargin)
