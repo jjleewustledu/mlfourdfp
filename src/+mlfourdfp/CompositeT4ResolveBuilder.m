@@ -22,7 +22,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                     if (lexist([ic.fqfileprefix '_avgt.4dfp.hdr']))
                         ic = mlfourd.ImagingContext2([ic.fqfileprefix '_avgt.4dfp.hdr']);
                     else                        
-                        ic = ic.timeAveraged;
+                        ic = ic.timeAveraged('taus', this.taus);
                         ic.save;
                         fprintf('mlfourdfp.CompositeT4ResolveBuilder.embedInEuclideanR3 saved %s\n', ...
                             ic.fqfilename);
