@@ -312,7 +312,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         'logPath', fullfile(pwd, 'Log', ''));
                     sd   = this.sessionData; sd.epoch = []; sd.rnumber = 1;
                     mskt = mg.constructMskt( ...
-                        'source', this.ensureAvgtSaved(sd.tracerRevision), ...
+                        'source', this.ensureAvgtSaved(sd.tracerRevision, 'taus', this.taus), ...
                         'intermediaryForMask', sd.T1001, ...
                         'sourceOfMask', fullfile(sd.sessionPath, 'brainmask.4dfp.hdr'), ...
                         'blurForMask', 10);
@@ -362,7 +362,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function fqfps = lazyStageImages(this, ipr)
             fqfps = this.imageComposite.lazyExtractImages(ipr);
         end
-        function fqfp  = buildSourceTimeAveraged(~, ipr)
+        function fqfp  = buildSourceTimeAveraged(this, ipr)
             %  @param ipr.source is a f.-q.-fileprefix.
             %  @return fqfp := [ipr.source '_sumt'] generated on the filesystem.  
             %  See also mlfourd.ImagingContext2.timeAveraged.            
@@ -372,7 +372,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end
             
             ic = mlfourd.ImagingContext2(ipr.source);
-            ic = ic.timeAveraged;
+            ic = ic.timeAveraged('taus', this.taus);
             ic.save;
             fqfp = ic.fqfileprefix;
         end

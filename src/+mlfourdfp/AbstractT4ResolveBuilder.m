@@ -56,10 +56,15 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             
             ip = inputParser;
             addParameter(ip, 'typ', 'fqfp', @ischar);
+            addParameter(ip, 'taus', [], @isnumeric);
             parse(ip, varargin{:});
             
             ic = mlfourd.ImagingContext2(obj);
-            ic = ic.timeAveraged;
+            if (~isempty(ip.Results.taus))
+                ic = ic.timeAveraged('taus', ip.Results.taus);
+            else
+                ic = ic.timeAveraged;
+            end
             ffp = ic.fourdfp;
             ffp.save;
             obj = ic.imagingType(ip.Results.typ, ic);

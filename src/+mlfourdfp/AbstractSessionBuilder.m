@@ -28,6 +28,8 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         rnumber
         sessionData
         snumber
+        taus
+        times
         tracer
     end
     
@@ -130,6 +132,12 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function this = set.snumber(this, s)
             this.sessionData.snumber = s;
         end  
+        function g    = get.taus(this)
+            g = this.sessionData.taus;
+        end
+        function g    = get.times(this)
+            g = this.sessionData.times;
+        end
         function g    = get.tracer(this)
             g = this.sessionData.tracer;
         end
