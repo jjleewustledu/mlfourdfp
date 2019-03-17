@@ -1763,8 +1763,7 @@ classdef FourdfpVisitor
                 return
             end            
             assert(strcmp(computer, 'GLNXA64'));
-            [~,hn] = mlbash('hostname -f');
-            assert(lstrfind(hn, this.FOURDFP_HOSTS));
+            %assert(lstrfind(hostname, this.FOURDFP_HOSTS));
         end        
         function img = normalizeFramesBySums(~, img)
             assert(length(size(img)) == 4);
