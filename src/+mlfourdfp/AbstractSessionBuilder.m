@@ -275,7 +275,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             parse(ip, varargin{:});            
             this.census_ = ip.Results.census;
             this.sessionData_ = ip.Results.sessionData;
-            this = this.setLogPath(fullfile(this.sessionData_.tracerLocation, 'Log', ''));
+            this = this.setLogPath(this.sessionData_.logLocation);
  		end
     end 
     
@@ -293,6 +293,10 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
     
     methods (Access = private)
         function t    = sessionTag(this)
+            if (~this.sessionData.hasTracer)
+                t = myclass(this);
+                return
+            end
             t = [myclass(this) '_' this.sessionData.tracerRevision('typ','fp')];            
             p = this.product_;
             if (isempty(p))

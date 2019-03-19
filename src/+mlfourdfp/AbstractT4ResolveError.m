@@ -228,7 +228,7 @@ classdef (Abstract) AbstractT4ResolveError < mlfourdfp.AbstractSessionBuilder
  			this = this@mlfourdfp.AbstractSessionBuilder(varargin{:});
             ip = inputParser;
             ip.KeepUnmatched = true;
-            addParameter(ip, 'theImages', this.sessionData.tracerRevision('typ','fqfp')); % alternative cell-array composite
+            addParameter(ip, 'theImages', ''); % alternative cell-array composite
             addParameter(ip, 'indicesLogical', true, @islogical);
             parse(ip, varargin{:});     
             this.theImages_ = ip.Results.theImages;       

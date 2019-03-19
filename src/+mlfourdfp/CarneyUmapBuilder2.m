@@ -64,7 +64,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             this.sessionData.attenuationCorrected = false;
             this.NRevisions = 2;
             this.finished_ = mlpipeline.Finished(this, ...
-                'path', this.getLogPath, 'tag', lower(this.sessionData.tracer));
+                'path', this.getLogPath, 'tag', lower(this.sessionFolder));
  		end
  	end 
 
