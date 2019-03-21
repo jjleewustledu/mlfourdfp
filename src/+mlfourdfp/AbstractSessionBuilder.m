@@ -293,11 +293,13 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
     
     methods (Access = private)
         function t    = sessionTag(this)
-            if (~this.sessionData.hasTracer)
+            % asking forgiveness not permission
+            try
+                t = [myclass(this) '_' this.sessionData.tracerRevision('typ','fp')];
+            catch ME
+                handwarning(ME);
                 t = myclass(this);
-                return
             end
-            t = [myclass(this) '_' this.sessionData.tracerRevision('typ','fp')];            
             p = this.product_;
             if (isempty(p))
                 return
