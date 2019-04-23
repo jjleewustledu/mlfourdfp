@@ -206,7 +206,6 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
  			%  Usage:  this = CarneyUmapBuilder()
 
  			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
-            this.NRevisions = 2;
             this.finished_ = mlpipeline.Finished(this, ...
                 'path', this.getLogPath, 'tag', lower(this.sessionData.tracer));
         end        
