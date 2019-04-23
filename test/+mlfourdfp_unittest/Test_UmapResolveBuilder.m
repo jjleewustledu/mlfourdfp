@@ -34,17 +34,6 @@ classdef Test_UmapResolveBuilder < matlab.unittest.TestCase
             this.verifyEqual(ctm, this.sessd.ctMasked('typ', 'fqfp'));
             this.checkImg(ctm, this.sessd.ct('typ', 'fqfp'));
         end
-        function test_rescaleCT(this)
-            ct = this.testObj.rescaleCT;
-            this.verifyEqual(ct, this.sessd.ctRescaled('typ', 'fqfp'));
-            this.checkImg(ct, this.sessd.ct('typ', 'fqfp'));
-        end
-        function test_alignCTToSumtResolved(this) 
-            ct = this.sessd.ct('typ', 'fqfp');
-            [~,ct] = this.testObj.alignCTToSumtResolved(ct);
-            this.verifyEqual(ct, 'ct_on_fdgv1r1_resolved_sumt');
-            this.checkImg(ct, 'fdgv1r1_resolved_sumt');
-        end
         function test_buildCarneyUmap(this)
             umap = this.testObj.buildCarneyUmap(this.sessd.ctRescaled('typ', 'fqfp'));
             this.verifyTrue(lexist([umap '.4dfp.hdr'], 'file'));
@@ -65,16 +54,7 @@ classdef Test_UmapResolveBuilder < matlab.unittest.TestCase
                 t4, ...
                 this.sessd.mpr('typ', 'fqfp'), ...
                 this.sessd.atlas('typ', 'fqfp'));
-        end
-        function test_petSumt2mpr(this)
-            [~,t4] = this.testObj.petSumt2mpr('fdgv1r1_resolved_sumt');
-            this.verifyEqual(t4, 'fdgv1r1_resolved_sumt_to_mpr_t4');
-            this.verifyTrue(lexist(t4, 'file'));            
-            this.checkT4( ...
-                t4, ...
-                'fdgv1r1_resolved_sumt', ...
-                this.sessd.mpr('typ', 'fqfp'));
-        end  
+        end 
         function test_CT2mpr_4dfp(this)
             [~,t4] = this.testObj.CT2mpr_4dfp(this.sessd.ct);
             this.verifyEqual(t4, 'ct_to_mpr_t4');
@@ -83,16 +63,6 @@ classdef Test_UmapResolveBuilder < matlab.unittest.TestCase
                 t4, ...
                 this.sessd.ct('typ', 'fqfp'), ...
                 this.sessd.mpr('typ', 'fqfp'));
-        end        
-        function test_mprOnPetSumt(this)
-            fp = this.testObj.mprOnPetSumt(this.sessd.mpr('typ', 'fqfp'), 'fdgv1r1_resolved_sumt');
-            this.verifyTrue(lexist([fp '.4dfp.hdr'], 'file'));
-            this.checkImg(fp, 'fdgv1r1_resolved_sumt');
-        end
-        function test_ctOnPetSumt(this)
-            fp = this.testObj.ctOnPetSumt(this.sessd.ctMasked('typ', 'fqfp'), 'fdgv1r1_resolved_sumt');
-            this.verifyTrue(lexist([fp '.4dfp.hdr'], 'file'));
-            this.checkImg(fp, 'fdgv1r1_resolved_sumt');
         end
         
         function test_buildUmaps(this)

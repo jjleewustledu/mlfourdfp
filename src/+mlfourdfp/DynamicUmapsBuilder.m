@@ -1,4 +1,4 @@
-classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
+classdef DynamicUmapsBuilder < mlfourdfp.CTUmapBuilder
 	%% DynamicUmapsBuilder builds umaps for Siemens e7tools, one umap for every dynamic frame of NAC PET data. 
     %  TODO:  replace magic numbers in get.framesDynamic with invariant variables.
     %  TODO:  verify this class is obsolete and delete.
@@ -8,8 +8,7 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
  	%  by jjlee,
  	%  last modified $LastChangedDate$
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
- 	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64.
- 	
+ 	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64. 	
 
     properties (Dependent)
         framesDynamic
@@ -119,21 +118,11 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
         end
     end
     
-	methods
-        
- 		function this = DynamicUmapsBuilder(varargin)
- 			%% DynamicUmapsBuilder
- 			%  Usage:  this = DynamicUmapsBuilder()
-
- 			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
-            assert(~isempty(this.sessionData.tracer));
-            this = this.updateFinished;
-        end  
-        
-        function [this,umaps]      = buildUmaps(this, varargin)
+	methods        
+        function [this,umaps]          = buildUmaps(this, varargin)
             [this,umaps] = this.buildDynamicUmaps(varargin{:});
         end
-        function [this,umapsOpDyn] = buildDynamicUmaps(this, varargin)
+        function [this,umapsOpDyn]     = buildDynamicUmaps(this, varargin)
             ip = inputParser;
             addParameter(ip, 'indicesLogical', this.framesDynamic, @isnumeric);
             parse(ip, varargin{:});
@@ -149,13 +138,39 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
             this.teardownBuildUmaps;
             popd(pwd0);
         end
+        function loc                   = resolveSequenceLocation(this, varargin)
+            %  @param named tracer is a string identifier.
+            %  @param named snumber is the scan number; is numeric.
+            %  @param named typ is string identifier:  folder path, fn, fqfn, ...  
+            %  See also:  imagingType.
+            %  @param named frame is numeric.
+            %  @param named rnumber is the revision number; is numeric.
+            %  @returns ipr, the struct ip.Results obtained by parse.            
+            %  @returns schr, the s-number as a string.
+            
+            ipr = this.sessionData.iprLocation(varargin{:});
+            tag = this.resolveSequenceTag;
+            loc = locationType(ipr.typ, ...
+                    fullfile(this.sessionData.tracerNACLocation( ...
+                        'tracer', this.sessionData.tracer, ...
+                        'snumber', this.sessionData.snumber), ...
+                    sprintf('%s%s', upper(tag(1)), tag(2:end)), '')); 
+        end
+        function fp                    = resolveSequenceTag(this)
+            sessd = this.sessionData;
+            if (isempty(sessd.tracer))
+                fp = 'umapResolveSequence';
+                return
+            end
+            fp = sprintf('%sUmapResolveSequence', sessd.tracer);
+        end
         function [umapOpSumDyn,sumDyn] = resolveUmapOpSumDynamic(this, umap)
             sumDyn = this.sumTimes(this.sessionData.tracerNACRevision('typ','fqfp'));
             this.resolveTag = ['op_' mybasename(sumDyn)];
             this = this.resolveSequence(sumDyn, this.sessionData.T1('typ','fqfp'), umap);
             umapOpSumDyn = this.product{end}.fqfp;
         end   
-        function umapsOpDyn        = resolveUmapsOpDynamic(this, umapOpSumDyn, sumDyn)
+        function umapsOpDyn            = resolveUmapsOpDynamic(this, umapOpSumDyn, sumDyn)
             umapsOpDyn = cell(1, length(this.indicesLogical));
             dynFrames = this.lazyStageImages( ...
                 struct('indicesLogical', true(1,length(this.indicesLogical)), 'dest', this.sessionData.tracerNACRevision('typ','fp')));
@@ -174,29 +189,47 @@ classdef DynamicUmapsBuilder < mlfourdfp.AbstractUmapResolveBuilder
                     umapsOpDyn{f} = umapOpInit;
                 end
             end
+        end 
+        function umaps                 = umapsOpTracer(this)
+            umaps = sprintf('umapsOp%sr%i', ...
+                upperFirst(this.sessionData.tracer), this.sessionData.rnumber);
+        end
+        function [s,r]                 = viewUmaps(this)
+            [s,r] = mlbash(sprintf( ...
+                'fslview %s.4dfp.hdr %s.4dfp.hdr', ...
+                this.sessionData.tracerNACRevision, ...
+                this.umapsOpTracer));
         end
         
-        function                     teardownBuildUmaps(this)
-            this.teardownLogs;
-            this.teardownT4s;
-            
-            %ensuredir(this.onAtlasPath);
-            %movefiles(sprintf('*%s*', this.atlas('typ', 'fp')), this.onAtlasPath);
-            %ensuredir(this.resolveSequenceLocation);
-            %movefiles(sprintf('%s*', this.resolveSequenceTag), this.resolveSequenceLocation);            
-            %delete([this.resolveSequenceTag '*_frame*4dfp*']);
-            
-            this.finished.markAsFinished( ...
-                'path', this.logger.filepath, 'tag', [this.finished.tag '_' class(this) '_teardownBuildUmaps']); 
-        end
+ 		function this = DynamicUmapsBuilder(varargin)
+ 			%% DynamicUmapsBuilder
+ 			%  Usage:  this = DynamicUmapsBuilder()
+
+ 			this = this@mlfourdfp.CTUmapBuilder(varargin{:});
+            assert(~isempty(this.sessionData.tracer));
+            this = this.updateFinished;
+        end  
     end
     
     %% PROTECTED
     
-    properties (Access = protected)
-    end
-    
     methods (Access = protected)
+        function this = resolveSequence(this, varargin)
+            import mlfourdfp.*;
+            basenames = cellfun(@(x) mybasename(x), varargin, 'UniformOutput', false);
+            for b = 1:length(basenames)
+                if (~FourdfpVisitor.lexist_4dfp(basenames{b}))
+                    FourdfpVisitor.lns_4dfp(varargin{b});
+                end
+            end
+            this.imageComposite = ImageComposite( ...
+                this.imageComposite.it4ResolveBuilder, ...
+                'theImages', basenames, ...
+                'indicesLogical', true(size(basenames)));
+            this = this.resolve( ...
+                'source', basenames, ...
+                'indicesLogical', true(1, length(basenames)));
+        end
     end
     
     %% PRIVATE

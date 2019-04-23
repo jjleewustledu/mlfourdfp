@@ -1,4 +1,4 @@
-classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
+classdef CarneyUmapBuilder < mlfourdfp.CTUmapBuilder
 	%% CARNEYUMAPBUILDER  
 
 	%  $Revision$
@@ -7,13 +7,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
  	%  last modified $LastChangedDate$
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64.  Copyright 2017 John Joowon Lee.
- 	
-
-    properties 
-        ct_kVp = 120
-        reuseCarneyUmap = true
-    end
-    
+ 	   
     methods (Static)
         function buildUmapAll(varargin)
             ip = inputParser;
@@ -70,12 +64,41 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             this.convertUmapTo4dfp; % convert FDG_V*-Converted-NAC/FDG_V*-LM-00/FDG_V*-LM-00-umap.v
             this.sessionData_.tracer = tracer0;
             this.ensureSymlinkCTForms;
-            ctm  = this.buildCTMasked2; % ct_on_T1001 has excellent alignment
-            % [this,ctm] = this.alignCTToMpr(ctm); % wrecks alignment
+            ctm  = this.buildCTMasked; % ct_on_T1001 has excellent alignment
             ctm  = this.rescaleCT(ctm);
             umap = this.assembleCarneyUmap(ctm);
             umap = this.buildVisitor.imgblur_4dfp(umap, 4);
             %this.teardownBuildUmaps;
+            popd(pwd0);
+        end
+        function [ctm,ic,ctToMprT4] = buildCTMasked(this)
+            %% BUILDCTMASKED2 calls CT2mpr_4dfp
+            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
+            %  @return ic  := ctMasked as ImagingContext2 on MPR-space
+            
+            import mlfourd.*;
+            mpr  = this.sessionData.mpr('typ', 'fqfp');
+            ct   = this.sessionData.ct('typ', 'fqfp');
+            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
+            ctd  = fullfile(this.sessionData.sessionPath, 'ct', '');
+            
+            assert(isdir(ctd));            
+            pwd0 = pushd(fileparts(ctd));
+            
+            if (~lexist([ct '.4dfp.img'])) % disambiguate ctd and ct
+                this.buildVisitor.dcm_to_4dfp(fullfile(ctd, '*.dcm'), 'base', 'ct', 'options', '-g');
+            end
+            
+            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', mydatetimestr(now)));
+            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
+            
+            ct_  = sprintf('%s_%s', ct, mydatetimestr(now));
+            this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
+            this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
+            ic = ImagingContext2(ctm);
+            delete([ct_ '.4dfp.*']); % ct__ in mpr-space has best registration
+            
             popd(pwd0);
         end
         function [this,umap] = buildPhantomUmap(this, varargin)
@@ -96,10 +119,20 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             umap = this.assembleCarneyUmap(ct, [ct '_umap']);
             umap = this.buildVisitor.imgblur_4dfp(umap, 4);
         end
+        function umaps       = umapsOpTracer(this)
+            umaps = sprintf('umapsOp%sr%i', ...
+                upperFirst(this.sessionData.tracer), this.sessionData.rnumber);
+        end
+        function fp          = umapsOpTracerFrame(this, fr)
+            ipr = struct( ...
+                'dest', this.umapsOpTracer, ...
+                'currentIndex', fr);
+            fp = this.fileprefixIndexed(ipr);
+        end
 		  
         %% E7 Utilities
         
-        function this  = convertUmapTo4dfp(this)
+        function this = convertUmapTo4dfp(this)
             pwd0 = pwd;
             if (~lexist(this.sessionData.tracerListmodeUmap('typ', '4dfp.img')))
                 cd( this.sessionData.tracerListmodeUmap('typ', 'path'));
@@ -108,7 +141,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
                 cd(pwd0);
             end
         end
-        function this  = convertUmapToE7Format(this, varargin)
+        function this = convertUmapToE7Format(this, varargin)
             sessd = this.sessionData;
             sessd.rnumber = 1;
             this.mmrBuilder_ = mlsiemens.MMRBuilder('sessionData', this.sessionData);
@@ -138,7 +171,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             
             this.product_ = mlfourd.ImagingContext2(sprintf('%s.v', umap));
         end
-        function this  = convertUmapsToE7Format(this, umaps)
+        function this = convertUmapsToE7Format(this, umaps)
             assert(iscell(umaps));
             prodCell = {};
             for fr = 1:length(umaps)
@@ -148,7 +181,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             
             this.product_ = prodCell;
         end  
-        function this  = repUmapToE7Format(this, umaps)
+        function this = repUmapToE7Format(this, umaps)
             assert(iscell(umaps));
             prodCell = {};
             for fr = 1:length(umaps)
@@ -158,7 +191,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             
             this.product_ = prodCell;
         end 
-        function this  = repUmapToE7Format__(this, varargin)
+        function this = repUmapToE7Format__(this, varargin)
             sessd = this.sessionData;
             sessd.rnumber = 1;
             this.mmrBuilder_ = mlsiemens.MMRBuilder('sessionData', this.sessionData);
@@ -188,7 +221,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             
             this.product_ = mlfourd.ImagingContext2(sprintf('%s.v', umap));
         end 
-        function         reconvertUmapsToE7Format(this)
+        function        reconvertUmapsToE7Format(this)
             pwd0 = pushd(this.sessionData.fdgNACLocation);
             for fr = 1:length(this.indicesLogical)
                 this.buildVisitor.extract_frame_4dfp(this.umapsOpTracer, fr);
@@ -205,7 +238,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
  			%% CARNEYUMAPBUILDER
  			%  Usage:  this = CarneyUmapBuilder()
 
- 			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
+ 			this = this@mlfourdfp.CTUmapBuilder(varargin{:});
             this.finished_ = mlpipeline.Finished(this, ...
                 'path', this.getLogPath, 'tag', lower(this.sessionData.tracer));
         end        
@@ -261,7 +294,7 @@ classdef CarneyUmapBuilder < mlfourdfp.AbstractUmapResolveBuilder
             
             import mlfourdfp.*;
             ip = inputParser;
-            addOptional(ip, 'ctRescaled', '', @FourdfpVisitor.lexist_4dfp); % this.buildCTMasked
+            addOptional(ip, 'ctRescaled', '', @FourdfpVisitor.lexist_4dfp);
             parse(ip, varargin{:});
             
             ct  = mlfourd.ImagingContext2([ip.Results.ctRescaled '.4dfp.hdr']);

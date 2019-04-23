@@ -1,18 +1,13 @@
-classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
+classdef CarneyUmapBuilder2 < mlfourdfp.CTUmapBuilder & mlfourdfp.IUmapBuilder
 	%% CARNEYUMAPBUILDER2  
     %  N.B. CarneyImagingContext which requires flip.
-    %  Refactoring:  pull up methods from AbstractUmapResolveBuilder and isolate from CompositeT4ResolveBuilder.
+    %  Refactoring:  pull up methods from CTUmapBuilder and isolate from CompositeT4ResolveBuilder.
 
 	%  $Revision$
  	%  was created 15-Nov-2018 15:49:50 by jjlee,
  	%  last modified $LastChangedDate$ and placed into repository /Users/jjlee/MATLAB-Drive/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.4.0.813654 (R2018a) for MACI64.  Copyright 2018 John Joowon Lee.
  	
-	properties
-        ct_kVp = 120
-        reuseCarneyUmap = true
- 	end
-
 	methods 
         function umap = assembleCarneyUmap(this, varargin)
             %% ASSEMBLECARNEYUMAP follows Carney, et al. Med. Phys. 33(4) 2006 976-983.
@@ -35,7 +30,75 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             deleteExisting([umap '.log']);
             ic = this.CarneyImagingContext(ip.Results.rescaledCT);
             ic.saveas([umap '.4dfp.hdr']);
-        end   
+        end
+        function [ctm,ic,ctToMprT4] = buildCTMasked2(this)
+            %% BUILDCTMASKED2 calls CT2mpr_4dfp
+            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
+            %  @return ic  := ctMasked as ImagingContext2 on MPR-space
+            
+            if (~isdir(fullfile(this.sessionData.sessionPath, 'ct', '')))
+                [ctm,ic,ctToMprT4] = this.buildCTMasked3;
+                return
+            end
+            
+            import mlfourd.*;
+            mpr  = this.sessionData.mpr('typ', 'fqfp');
+            ct   = this.sessionData.ct('typ', 'fqfp');
+            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
+            ctd  = fullfile(this.sessionData.sessionPath, 'ct', '');
+            
+            assert(isdir(ctd));            
+            pwd0 = pushd(fileparts(ctd));
+            
+            if (~lexist([ct '.4dfp.img'])) % disambiguate ctd and ct
+                this.buildVisitor.dcm_to_4dfp(fullfile(ctd, '*.dcm'), 'base', 'ct', 'options', '-g');
+            end
+            
+            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', mydatetimestr(now)));
+            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
+            
+            ct_  = sprintf('%s_%s', ct, mydatetimestr(now));
+            this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
+            this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
+            ic = ImagingContext2(ctm);
+            delete([ct_ '.4dfp.*']); % ct__ in mpr-space has best registration
+            
+            popd(pwd0);
+        end
+        function [ctm,ic,ctToMprT4] = buildCTMasked3(this)
+            %% BUILDCTMASKED3 calls CT2mpr_4dfp
+            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
+            %  @return ic  := ctMasked as ImagingContext2 on MPR-space
+            
+            import mlfourd.*;
+            mpr  = this.sessionData.mpr('typ', 'fqfp');
+            ct   = this.sessionData.ct('typ', 'fqfp');
+            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
+            sesd = fullfile(this.sessionData.sessionPath, '');
+            
+            assert(isdir(sesd));            
+            pwd0 = pushd(sesd);
+            
+            assert(lexist([ct '.4dfp.img']))
+            
+            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', mydatetimestr(now)));
+            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
+            
+            ct_  = sprintf('%s_%s', ct, mydatetimestr(now));
+            this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
+            this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
+            ic = ImagingContext2(ctm);
+            delete([ct_ '.4dfp.*']); % ct__ in mpr-space has best registration
+            
+            popd(pwd0);
+        end 
+        function umap = buildUmap(this)
+            ctm  = this.buildCTMasked2;
+            ctm  = this.rescaleCT(ctm);
+            umap = this.assembleCarneyUmap(ctm);
+        end
         function fqfp = prepareBrainmaskMskt(this)
             fqfp = fullfile(this.sessionData.sessionPath, 'brainmask_mskt');
             if (~lexist_4dfp(fqfp))
@@ -60,9 +123,8 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
         end
 		  
  		function this = CarneyUmapBuilder2(varargin)
- 			this = this@mlfourdfp.AbstractUmapResolveBuilder(varargin{:});
+ 			this = this@mlfourdfp.CTUmapBuilder(varargin{:});
             this.sessionData.attenuationCorrected = false;
-            this.NRevisions = 2;
             this.finished_ = mlpipeline.Finished(this, ...
                 'path', this.getLogPath, 'tag', lower(this.sessionFolder));
  		end
@@ -78,7 +140,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.AbstractUmapResolveBuilder
             
             import mlfourdfp.*;
             ip = inputParser;
-            addOptional(ip, 'ctRescaled', '', @FourdfpVisitor.lexist_4dfp); % this.buildCTMasked
+            addOptional(ip, 'ctRescaled', '', @FourdfpVisitor.lexist_4dfp);
             parse(ip, varargin{:});
             
             ct  = mlfourd.ImagingContext2([ip.Results.ctRescaled '.4dfp.hdr']);
