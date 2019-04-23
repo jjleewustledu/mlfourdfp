@@ -1,5 +1,7 @@
 classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBuilder
 	%% ABSTRACTUMAPRESOLVEBUILDER  
+    %  TO DO:  refactor class inheritance to composition.
+    %  N.B.:   methods resolveSequence*, teardown*, most protected methods.
 
 	%  $Revision$
  	%  was created 14-Nov-2016 22:37:22
@@ -56,6 +58,11 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
             %  @return ic  := ctMasked as ImagingContext2 on MPR-space
             
+            if (~isdir(fullfile(this.sessionData.sessionPath, 'ct', '')))
+                [ctm,ic,ctToMprT4] = this.buildCTMasked3;
+                return
+            end
+            
             import mlfourd.*;
             mpr  = this.sessionData.mpr('typ', 'fqfp');
             ct   = this.sessionData.ct('typ', 'fqfp');
@@ -80,7 +87,35 @@ classdef (Abstract) AbstractUmapResolveBuilder < mlfourdfp.CompositeT4ResolveBui
             delete([ct_ '.4dfp.*']); % ct__ in mpr-space has best registration
             
             popd(pwd0);
-        end       
+        end
+        function [ctm,ic,ctToMprT4] = buildCTMasked3(this)
+            %% BUILDCTMASKED3 calls CT2mpr_4dfp
+            %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
+            %  @return ic  := ctMasked as ImagingContext2 on MPR-space
+            
+            import mlfourd.*;
+            mpr  = this.sessionData.mpr('typ', 'fqfp');
+            ct   = this.sessionData.ct('typ', 'fqfp');
+            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
+            sesd = fullfile(this.sessionData.sessionPath, '');
+            
+            assert(isdir(sesd));            
+            pwd0 = pushd(sesd);
+            
+            assert(lexist([ct '.4dfp.img']))
+            
+            [ctOnMpr,ctToMprT4] = this.CT2mpr_4dfp(ct, ...
+                'log', sprintf('CarneyUmapBuilder_CT2mpr_4dfp_%s.log', mydatetimestr(now)));
+            mprb = this.buildVisitor.imgblur_4dfp(mpr, 10);
+            
+            ct_  = sprintf('%s_%s', ct, mydatetimestr(now));
+            this.buildVisitor.maskimg_4dfp(ctOnMpr, mprb, ct_, 'options', '-t5'); % in mpr-space
+            this.buildVisitor.maskimg_4dfp(ct_, ct_, ctm, 'options', '-t50');
+            ic = ImagingContext2(ctm);
+            delete([ct_ '.4dfp.*']); % ct__ in mpr-space has best registration
+            
+            popd(pwd0);
+        end 
         function dest  = buildTracerNAC(this, varargin)
             %% BUILDTRACERNAC builds 4dfp formatted NAC images.
             %  See also:  mlfourdfp.FourdfpVisitor.sif_4dfp.
