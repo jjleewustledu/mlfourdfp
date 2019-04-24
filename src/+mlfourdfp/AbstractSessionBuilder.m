@@ -276,6 +276,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             this.census_ = ip.Results.census;
             this.sessionData_ = ip.Results.sessionData;
             this = this.setLogPath(this.sessionData_.logLocation);
+            this = this.setFinishMark;
  		end
     end 
     
@@ -292,7 +293,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
     end
     
     methods (Access = private)
-        function t    = sessionTag(this)
+        function t = sessionTag(this)
             % asking forgiveness not permission
             try
                 t = [myclass(this) '_' this.sessionData.tracerRevision('typ','fp')];
@@ -309,6 +310,11 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
                 return
             end
             t = [t '_' p.fileprefix];
+        end
+        function this = setFinishMark(this)
+            if (isprop(this.sessionData, 'ignoreFinishMark'))
+                this.finished.ignoreFinishMark = this.sessionData.ignoreFinishMark;
+            end
         end
     end
     
