@@ -261,6 +261,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             this.finished_ = mlpipeline.Finished(this, ...
                 'path', ip.Results.path, ...
                 'tag',  ip.Results.tag);
+            this = this.setFinishMark;
         end    
         function obj  = vallLocation(this, varargin)
             obj = this.sessionData.vallLocation(varargin{:});
