@@ -1,4 +1,4 @@
-classdef CarneyUmapBuilder < mlfourdfp.CTUmapBuilder
+classdef CarneyUmapBuilder < mlfourdfp.CTBuilder
 	%% CARNEYUMAPBUILDER  
 
 	%  $Revision$
@@ -8,6 +8,10 @@ classdef CarneyUmapBuilder < mlfourdfp.CTUmapBuilder
  	%  and checked into repository /Users/jjlee/Local/src/mlcvl/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.1.0.441655 (R2016b) for MACI64.  Copyright 2017 John Joowon Lee.
  	   
+    properties         
+        reuseCarneyUmap = true
+    end
+    
     methods (Static)
         function buildUmapAll(varargin)
             ip = inputParser;
@@ -238,7 +242,7 @@ classdef CarneyUmapBuilder < mlfourdfp.CTUmapBuilder
  			%% CARNEYUMAPBUILDER
  			%  Usage:  this = CarneyUmapBuilder()
 
- 			this = this@mlfourdfp.CTUmapBuilder(varargin{:});
+ 			this = this@mlfourdfp.CTBuilder(varargin{:});
             this.finished_ = mlpipeline.Finished(this, ...
                 'path', this.getLogPath, 'tag', lower(this.sessionData.tracer));
         end        

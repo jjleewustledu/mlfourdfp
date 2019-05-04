@@ -1,5 +1,5 @@
-classdef (Abstract) CTUmapBuilder < mlfourdfp.CompositeT4ResolveBuilder
-	%% CTUMAPBUILDER  
+classdef CTBuilder < mlfourdfp.CompositeT4ResolveBuilder
+	%% CTBUILDER  
     %  TO DO:  refactor class inheritance to composition.
 
 	%  $Revision$
@@ -13,7 +13,6 @@ classdef (Abstract) CTUmapBuilder < mlfourdfp.CompositeT4ResolveBuilder
         ct_kVp = 120
         ct_rescaleSlope = 1
         ct_rescaleIntercept = -1024
-        reuseCarneyUmap = true
         reuseCTMasked = true
         reuseCTRescaled = true
     end
@@ -22,14 +21,14 @@ classdef (Abstract) CTUmapBuilder < mlfourdfp.CompositeT4ResolveBuilder
         function [ctOnMpr,ctToMprT4] = CT2mpr_4dfp(this, ct, varargin)
             assert(lexist(this.fourdfpImg(ct), 'file'), ...
                 'mlfourdfp:RuntimeError', ...
-                'CTUmapBuilder.CT2mpr_4dfp could not find %s', this.fourdfpImg(ct)); % not necessarily in pwd            
+                'CTBuilder.CT2mpr_4dfp could not find %s', this.fourdfpImg(ct)); % not necessarily in pwd            
             mpr       = this.sessionData.mpr('typ', 'fqfp');
             pth       = fileparts(mpr);
             ctToMprT4 = fullfile(pth, this.buildVisitor.filenameT4(mybasename(ct), mybasename(mpr))); 
-            ctOnMpr   = fullfile(pth, [mybasename(ct) '_on_' mybasename(mpr)]);
-            
+            ctOnMpr   = fullfile(pth, [mybasename(ct) '_on_' mybasename(mpr)]);            
             if (~lexist(this.fourdfpImg(ctOnMpr)))
-                ctOnMpr = this.buildVisitor.CT2mpr_4dfp(mpr, ct, 'options', ['-T' this.atlas('typ', 'fqfp')], varargin{:});
+                ctOnMpr = this.buildVisitor.CT2mpr_4dfp(mpr, ct, ...
+                    'options', ['-T' this.atlas('typ', 'fqfp')], varargin{:});
             end
             assert(lexist(ctToMprT4, 'file'));        
         end
@@ -48,16 +47,32 @@ classdef (Abstract) CTUmapBuilder < mlfourdfp.CompositeT4ResolveBuilder
             ic.noclobber = false;
             ic.saveas([ctOut '.4dfp.hdr']);
         end  
-        function teardownBuildUmaps(this)
+        function         teardownBuildUmaps(this)
             this.teardownLogs;
             this.teardownT4s;  
             this.finished.markAsFinished( ...
                 'path', this.logger.filepath, 'tag', [this.finished.tag '_' myclass(this) '_teardownBuildUmaps']);           
+        end        
+        function         teardownLogs(this)
+            ensuredir(this.getLogPath);
+            try
+                movefiles('*.log', this.getLogPath); 
+                movefiles('*.txt', this.getLogPath);   
+                movefiles('*.lst', this.getLogPath);    
+                movefiles('*.mat0', this.getLogPath);   
+                movefiles('*.sub', this.getLogPath); 
+            catch ME
+                dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                    'PseudoCTBuilder.teardownLogs failed to move files into %s', this.getLogPath);
+            end
+        end
+        function         teardownT4s(this)
+            if (this.keepForensics); return; end
         end
         
- 		function this  = CTUmapBuilder(varargin)
- 			%% CTUmapBuilder
- 			%  Usage:  this = CTUmapBuilder()
+ 		function this  = CTBuilder(varargin)
+ 			%% CTBuilder
+ 			%  Usage:  this = CTBuilder()
 
  			this = this@mlfourdfp.CompositeT4ResolveBuilder(varargin{:});
             this.NRevisions = 2;
@@ -66,11 +81,14 @@ classdef (Abstract) CTUmapBuilder < mlfourdfp.CompositeT4ResolveBuilder
         
     end 
     
-    %% PRIVATE
+    %% PROTECTED
     
-    methods (Access = private)
-        function fn = fourdfpImg(~, fp)
-            fn = [fp '.4dfp.img'];
+    methods (Access = protected)
+        function tf = ctdir_exists(this)
+            tf = isdir(fullfile(this.sessionData.sessionPath, 'ct', ''));
+        end
+        function tf = ct4dfp_exists(this)
+            tf = lexist(this.sessionData.ct('typ', '.4dfp.img'));
         end
     end
     

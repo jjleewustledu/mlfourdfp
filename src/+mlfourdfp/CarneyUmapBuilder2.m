@@ -1,14 +1,24 @@
-classdef CarneyUmapBuilder2 < mlfourdfp.CTUmapBuilder & mlfourdfp.IUmapBuilder
+classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
 	%% CARNEYUMAPBUILDER2  
     %  N.B. CarneyImagingContext which requires flip.
-    %  Refactoring:  pull up methods from CTUmapBuilder and isolate from CompositeT4ResolveBuilder.
+    %  Refactoring:  pull up methods from CTBuilder and isolate from CompositeT4ResolveBuilder.
 
 	%  $Revision$
  	%  was created 15-Nov-2018 15:49:50 by jjlee,
  	%  last modified $LastChangedDate$ and placed into repository /Users/jjlee/MATLAB-Drive/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.4.0.813654 (R2018a) for MACI64.  Copyright 2018 John Joowon Lee.
  	
+    properties         
+        reuseCarneyUmap = true
+    end
+    
 	methods 
+        function umap = buildUmap(this)
+            ctm  = this.buildCTMasked2;
+            ctm  = this.rescaleCT(ctm);
+            umap = this.assembleCarneyUmap(ctm);
+        end
+        
         function umap = assembleCarneyUmap(this, varargin)
             %% ASSEMBLECARNEYUMAP follows Carney, et al. Med. Phys. 33(4) 2006 976-983.
             %  @param rescaledCT is the (fully-qualified) fileprefix of the rescaled CT.
@@ -44,7 +54,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTUmapBuilder & mlfourdfp.IUmapBuilder
             import mlfourd.*;
             mpr  = this.sessionData.mpr('typ', 'fqfp');
             ct   = this.sessionData.ct('typ', 'fqfp');
-            ctm  = this.sessionData.ctMasked('typ', 'fqfp');
+            ctm  = this.sessionData.ctMasked('typ', 'fqfp');            
             ctd  = fullfile(this.sessionData.sessionPath, 'ct', '');
             
             assert(isdir(ctd));            
@@ -94,11 +104,6 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTUmapBuilder & mlfourdfp.IUmapBuilder
             
             popd(pwd0);
         end 
-        function umap = buildUmap(this)
-            ctm  = this.buildCTMasked2;
-            ctm  = this.rescaleCT(ctm);
-            umap = this.assembleCarneyUmap(ctm);
-        end
         function fqfp = prepareBrainmaskMskt(this)
             fqfp = fullfile(this.sessionData.sessionPath, 'brainmask_mskt');
             if (~lexist_4dfp(fqfp))
@@ -123,7 +128,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTUmapBuilder & mlfourdfp.IUmapBuilder
         end
 		  
  		function this = CarneyUmapBuilder2(varargin)
- 			this = this@mlfourdfp.CTUmapBuilder(varargin{:});
+ 			this = this@mlfourdfp.CTBuilder(varargin{:});
             this.sessionData.attenuationCorrected = false;
             this.finished_ = mlpipeline.Finished(this, ...
                 'path', this.getLogPath, 'tag', lower(this.sessionFolder));

@@ -47,10 +47,10 @@ classdef FourdfpVisitor
             end
             error('mlfourdfp:backupRejected', 'FourdfpVisitor.backupn.ip.Results.n -> %i', ip.Results.n);
         end
-        function         clearIfhMmppixCenter(fqfp, N)
+        function         clearIfhMmppixCenter(fqfp, N) %#ok<INUSD>
             return
             
-            import mlfourdfp.*;
+            import mlfourdfp.*; 
             ifh = IfhParser.load([fqfp '.4dfp.ifh'], 'N', N);
             deleteExisting([fqfp '.4dfp.ifh']);
             deleteExisting([fqfp '.4dfp.hdr']);

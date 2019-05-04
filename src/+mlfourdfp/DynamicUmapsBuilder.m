@@ -1,4 +1,4 @@
-classdef DynamicUmapsBuilder < mlfourdfp.CTUmapBuilder
+classdef DynamicUmapsBuilder < mlfourdfp.CTBuilder
 	%% DynamicUmapsBuilder builds umaps for Siemens e7tools, one umap for every dynamic frame of NAC PET data. 
     %  TODO:  replace magic numbers in get.framesDynamic with invariant variables.
     %  TODO:  verify this class is obsolete and delete.
@@ -205,7 +205,7 @@ classdef DynamicUmapsBuilder < mlfourdfp.CTUmapBuilder
  			%% DynamicUmapsBuilder
  			%  Usage:  this = DynamicUmapsBuilder()
 
- 			this = this@mlfourdfp.CTUmapBuilder(varargin{:});
+ 			this = this@mlfourdfp.CTBuilder(varargin{:});
             assert(~isempty(this.sessionData.tracer));
             this = this.updateFinished;
         end  

@@ -11,6 +11,18 @@ classdef (Abstract) AbstractBuilder < mlpipeline.AbstractBuilder
  	end
 
     methods (Static)
+        function fn    = fourdfpHdr(~, fp)
+            fn = [myfileprefix(fp) '.4dfp.hdr'];
+        end 
+        function fn    = fourdfpIfh(~, fp)
+            fn = [myfileprefix(fp) '.4dfp.ifh'];
+        end 
+        function fn    = fourdfpImg(~, fp)
+            fn = [myfileprefix(fp) '.4dfp.img'];
+        end 
+        function fn    = fourdfpImgRec(~, fp)
+            fn = [myfileprefix(fp) '.4dfp.img.rec'];
+        end
         function fn    = fslchfiletype(fn, varargin)
             ip = inputParser;
             addRequired(ip, 'fn', @(x) lexist(x, 'file'));
@@ -147,7 +159,7 @@ classdef (Abstract) AbstractBuilder < mlpipeline.AbstractBuilder
         end
         function fps   = ensureSafeFileprefix(this, varargin)
             fps = this.buildVisitor.ensureSafeFileprefix(varargin{:});
-        end
+        end        
 		  
  		function this = AbstractBuilder(varargin)
  			%% ABSTRACTBUILDER
