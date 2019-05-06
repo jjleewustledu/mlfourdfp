@@ -24,13 +24,13 @@ classdef DicomSorter < mlpipeline.DicomSorter
             assert(isa(sessd, 'mlpipeline.SessionData'));
             
             import mlsystem.* mlfourdfp.*;
-            dt    = DirTool(fullfile(mlraichle.RaichleRegistry.instance.ppgRawdataDir, '*')); 
+            dt    = DirTool(fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, '*')); 
             res   = cellfun(@(x) DicomSorter.folderRegexp(x),          dt.dns, 'UniformOutput', false);
             keys  = cellfun(@(x) sprintf('%s_V%s', x.subjid, x.visit), res,    'UniformOutput', false);
             keys  = cellfun(@DicomSorter.fillEmpty, keys,                      'UniformOutput', false);
             m     = containers.Map(keys, dt.dns);            
             pth   = m(sprintf('%s_V%i', sessd.sessionLocation('typ', 'folder'), sessd.vnumber));
-            pth   = fullfile(mlraichle.RaichleRegistry.instance.ppgRawdataDir, pth, '');
+            pth   = fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, pth, '');
         end
         function re    = folderRegexp(str)
             %% FOLDERREGEXP
@@ -53,7 +53,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
             dt = DirTools(ip.Results.sessionFilter);
             for idns = 1:length(dt.dns)
                 try
-                    cd(mlraichle.RaichleRegistry.instance.ppgRawdataDir);
+                    cd(mlraichle.RaichleRegistry.instance.rawdataDir);
                     srcPth = dt.dns{idns};
                     this = this.sessionDcmConvert( ...
                         srcPth, ...
