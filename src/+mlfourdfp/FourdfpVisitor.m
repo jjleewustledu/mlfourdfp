@@ -316,19 +316,78 @@ classdef FourdfpVisitor
             addOptional(ip, 'fqfn1', '', @ischar);
             parse(ip, varargin{:});
             
-            [s,r] = mlbash(sprintf('ln -s %s %s', ip.Results.fqfn, ip.Results.fqfn1));
+            s = 0; r = '';
+            try
+                [s,r] = mlbash(sprintf('ln -s %s %s', ip.Results.fqfn, ip.Results.fqfn1));
+            catch ME
+                handwarning(ME)
+            end
         end
         function [s,r] = lns_4dfp(varargin)
+            import mlfourdfp.FourdfpVisitor;
             ip = inputParser;
             addRequired(ip, 'fqfp', @(x) lexist_4dfp(myfileprefix(x)));
             addOptional(ip, 'fqfp1', '', @ischar);
             parse(ip, varargin{:});            
             fqfp  = myfileprefix(ip.Results.fqfp);
             fqfp1 = myfileprefix(ip.Results.fqfp1);
+            if isempty(fqfp1)
+                fqfp1 = mybasename(fqfp);
+            end
             
-            ext = { '.4dfp.hdr' '.4dfp.ifh' '.4dfp.img' '.4dfp.img.rec' };         
+            s = 0; r = '';
+            ext = {'.4dfp.hdr' '.4dfp.img'};         
             for e = 1:length(ext)
                 [s,r] = mlfourdfp.FourdfpVisitor.lns([fqfp ext{e}], [fqfp1 ext{e}]);
+            end
+            FourdfpVisitor.copy_ifh(fqfp, fqfp1);
+            FourdfpVisitor.copy_imgrec(fqfp, fqfp1);
+        end
+        function copy_ifh(fqfp, fqfp1)
+            if (isempty(fqfp1))
+                fqfp1 = mybasename(fqfp);
+            end
+            x = '.4dfp.ifh';
+            fid = fopen([fqfp x],'rt');
+            X = fread(fid);
+            fclose(fid);
+            
+            Y = strrep(char(X.'), mybasename(fqfp), mybasename(fqfp1));
+            
+            fid1 = fopen([fqfp1 x],'wt');
+            fwrite(fid1, Y);
+            fclose (fid1);
+        end
+        function copy_imgrec(fqfp, fqfp1)
+            %% e.g.:
+            %  rec test_ifh.4dfp.img Fri Feb 22 18:43:06 2019 jjlee@ophthalmic.wucon.wustl.edu Darwin 18.2.0 x86_64
+            %  endrec Fri Feb 22 18:43:06 2019 jjlee
+            
+            if (isempty(fqfp1))
+                fqfp1 = mybasename(fqfp);
+            end
+            x = '.4dfp.img.rec';
+            fid = fopen([fqfp x],'rt');
+            X = fread(fid);
+            fclose(fid);     
+            
+            ds = datestr(now, 'ddd mmm dd HH:MM:SS yyyy');
+            [~,id_] = mlbash('id -u -n'); id_ = strtrim(id_);
+            Y = sprintf('%s\n%s%s\n', head(), char(X.'), tail());
+            
+            fid1 = fopen([fqfp1 x],'wt');
+            fwrite(fid1, Y);
+            fclose (fid1);
+            
+            %% internal 
+            
+            function h = head()
+                [~,uname_] = mlbash('uname -srm'); uname_ = strtrim(uname_);                
+                h = sprintf('rec %s.4dfp.img %s %s %s', ...
+                    mybasename(fqfp1), ds, id_, uname_);
+            end
+            function t = tail()
+                t = sprintf('endrec %s %s', ds, id_);
             end
         end
         function fn    = mri_convert(varargin)
