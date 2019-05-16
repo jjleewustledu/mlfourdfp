@@ -446,6 +446,20 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 end
             end            
         end
+        function this = cacheT4s(this, imgFpsc)
+            %  @return this.t4s_{r}{1} for r-number r is the reference; size(this.t4s_) == this.NRevisions;
+            %  size(this.t4s_{r}) == size(this.indicesLogical).
+            
+            this.t4s_{this.rnumber} = cell(size(imgFpsc));
+            for f = 1:length(imgFpsc)
+                try
+                    this.t4s_{this.rnumber}{f} = sprintf('%s_to_%s_t4', imgFpsc{f}, this.resolveTag);
+                catch ME
+                    dispwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                        'AbstractT4ResolveBuilder.cacheT4s could not assign %s', this.t4s_{this.rnumber}{f});
+                end                
+            end
+        end
     end
 
     %% PRIVATE
