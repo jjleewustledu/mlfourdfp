@@ -10,8 +10,8 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
     properties (Dependent)        
         rawdataPath
         rawdataFolder
-        tracerPath
-        tracerFolder
+        scanPath
+        scanFolder
         sessionPath
         sessionFolder
         projectPath
@@ -49,17 +49,17 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function this = set.rawdataFolder(this, s)
             this.sessionData.rawdataFolder = s;
         end
-        function g    = get.tracerPath(this)
-            g = this.sessionData.tracerPath;
+        function g    = get.scanPath(this)
+            g = this.sessionData.scanPath;
         end
-        function this = set.tracerPath(this, s)
-            this.sessionData.tracerPath = s;
+        function this = set.scanPath(this, s)
+            this.sessionData.scanPath = s;
         end
-        function g    = get.tracerFolder(this)
-            g = this.sessionData.tracerFolder;
+        function g    = get.scanFolder(this)
+            g = this.sessionData.scanFolder;
         end
-        function this = set.tracerFolder(this, s)
-            this.sessionData.tracerFolder = s;
+        function this = set.scanFolder(this, s)
+            this.sessionData.scanFolder = s;
         end
         function g    = get.sessionPath(this)
             g = this.sessionData.sessionPath;
@@ -92,8 +92,6 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function g    = get.subjectsDir(this)
             g = this.sessionData.subjectsDir;
         end
-        
-        %% GET/SET
         
         function g    = get.attenuationCorrected(this)
             g = this.sessionData.attenuationCorrected;
@@ -271,7 +269,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
  			this = this@mlfourdfp.AbstractBuilder(varargin{:});            
             ip = inputParser;
             ip.KeepUnmatched = true;            
-            addParameter(ip, 'census', [], @(x) isa(x, 'mlpipeline.IStudyCensus') || isempty(x));
+            addParameter(ip, 'census', []);
             addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.ISessionData'));
             parse(ip, varargin{:});            
             this.census_ = ip.Results.census;
