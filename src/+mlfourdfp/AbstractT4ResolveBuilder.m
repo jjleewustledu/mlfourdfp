@@ -582,13 +582,58 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             % base-case
             switch (this.NRevisions)
                 case 1
-                    this = this.t4img_4dfpr1(t4fn, source, varargin{:});
+                    if (~lstrfind(source, 'r1') && ~lstrfind(source, 'r2'))
+                        this = this.t4img_4dfpr0(t4fn, source, varargin{:});
+                    else
+                        this = this.t4img_4dfpr1(t4fn, source, varargin{:});
+                    end
                 case 2
                     this = this.t4img_4dfpr2(t4fn, source, varargin{:});
                 otherwise
                     error('mlfourdfp:unsupportedSwitchCase', ...
                           'AbstractT4ResolveBuilder.t4img_4dfp.NRevisions->%i', this.NRevisions);
             end
+        end
+        function this  = t4img_4dfpr0(this, varargin)
+            %% T4IMG_4DFPR0 supplies transformations for NRevisions = 1 without source suffixes 'r1' or 'r2'.
+            %  @param t4fn is proposed filename structure of the t4 file, e.g., t4source[r2]_to_t4dest_t4.  
+            %  @param source is the filename of the new source to be affine transformed according to t4fn;
+            %  the present working directory is extracted from source.
+            %  @param named out is the filename of the affine transformed image.
+            %  @param named ref is the filename of the image that specifies voxel metrics.
+            %  @param named options explicitly sends options to mlfourdfp.FourdfpVisitor.t4img_4dfp.  
+            %  @returns this with this.product := mlfourd.ImagingContext2(out)
+            
+            ip = inputParser;
+            addRequired( ip, 't4fn', @ischar);
+            addRequired( ip, 'source', @lexist_4dfp);
+            addParameter(ip, 'out', '', @ischar);
+            addParameter(ip, 'ref', '', @ischar); % fed to options -Oreference
+            addParameter(ip, 'options', '', @ischar); % supplies -Oreference
+            parse(ip, varargin{:});  
+            
+            [t4source,t4dest] = this.buildVisitor.parseFilenameT4(ip.Results.t4fn);  
+            sourceFqfp = ip.Results.source;
+            outFqfp = myfileprefix(ip.Results.out);
+            if (isempty(outFqfp))
+                outFqfp = sprintf('%s_op_%s', sourceFqfp, this.resolveDest(t4dest));
+            end
+            refFqfp = myfileprefix(ip.Results.ref);
+            if (isempty(refFqfp))
+                refFqfp = fullfile(fileparts(t4source), this.resolveDest(t4dest));
+            end
+            options = ip.Results.options;
+            if (isempty(options))
+                assert(~isempty(refFqfp));
+                options = ['-O' refFqfp];
+            end
+            
+            this.buildVisitor.t4img_4dfp( ...
+                sprintf('%s_to_%s_t4', t4source, t4dest), ...
+                sourceFqfp, ...
+                'out', outFqfp, ...
+                'options', options); 
+            this.product_ = mlfourd.ImagingContext2([outFqfp '.4dfp.hdr']);
         end
         function this  = t4img_4dfpr1(this, varargin)
             %% T4IMG_4DFPR1 supplies transformations for NRevisions = 1.
