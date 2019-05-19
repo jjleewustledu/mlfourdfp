@@ -1834,9 +1834,6 @@ classdef FourdfpVisitor
 
     %% PRIVATE
     
-    methods (Static, Access = private)
-    end
-    
     methods (Access = private)
         function [s,r] = CT2mpr_4dfp__(~, args)
             %% CT2MPR_4DFP
@@ -1854,7 +1851,7 @@ classdef FourdfpVisitor
             % 	exists and is in the current working directory     
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('CT2mpr_4dfp %s', args));       
+            [s,r] = dbbash(sprintf('%s/CT2mpr_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = C2T_4dfp__(~, args)
             %% C2T_4dfp__
@@ -1867,7 +1864,7 @@ classdef FourdfpVisitor
             % N.B.:	default output root = <imgroot>"T"
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('C2T_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/C2T_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = S2T_4dfp__(~, args)
             %% S2T_4dfp__
@@ -1880,7 +1877,7 @@ classdef FourdfpVisitor
             % N.B.:	default output root = <imgroot>"T"
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('S2T_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/S2T_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = T2C_4dfp__(~, args)
             %% T2C_4dfp__
@@ -1893,7 +1890,7 @@ classdef FourdfpVisitor
             % N.B.:	default output root = <imgroot>"T"
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('T2C_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/T2C_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = T2S_4dfp__(~, args)
             %% T2S_4dfp__
@@ -1906,7 +1903,7 @@ classdef FourdfpVisitor
             % N.B.:	default output root = <imgroot>"T"
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('T2S_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/T2S_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = IFhdr_to_4dfp__(~, args)
             %% IFHDR_TO_4DFP__
@@ -1936,7 +1933,7 @@ classdef FourdfpVisitor
             % N.B.:	    relative modulation images are zeroed where mean intensity < 0.5*whole_image_mode
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('actmapf_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/actmapf_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = compute_defined_4dfp__(~, args)
             %% COMPUTE_DEFINED_4DFP__
@@ -1948,7 +1945,7 @@ classdef FourdfpVisitor
             % 	-F<str>	read frames-to-count format from specified file
 
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('compute_defined_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/compute_defined_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = copy_4dfp__(~, args)
             %% COPY_4DFP__
@@ -1983,7 +1980,7 @@ classdef FourdfpVisitor
             % N.B.:	    default (4dfp) output root is <(4dfp) inroot>"_crop"
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('crop_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/crop_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = dcm_sort__(~, args)
             %% DCM_SORT__
@@ -2003,7 +2000,7 @@ classdef FourdfpVisitor
             % N.B.:	dcm_sort puts unclassifiable DICOMs into subdirectory study0
 
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('dcm_sort %s', args));
+            [s,r] = dbbash(sprintf('%s/dcm_sort %s', getenv('RELEASE'), args));
         end
         function [s,r] = dcm_sort_PPG__(~, args)
             %% DCM_SORT_PPG__
@@ -2045,7 +2042,7 @@ classdef FourdfpVisitor
             % 	[-@ <b|l>]	output big or little endian (default CPU endian)
 
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('dcm_to_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/dcm_to_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = delete_4dfp__(~, args)
             %% DELETE_4DFP__
@@ -2079,7 +2076,7 @@ classdef FourdfpVisitor
             % 	        -o<str>	specifiy output 4dfp fileroot (default = <stack>_frame<frame>)
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('extract_frame_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/extract_frame_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = freesurfer2mpr_4dfp__(~, args)
             %% FREESURFER2MPR_4DFP__
@@ -2098,7 +2095,7 @@ classdef FourdfpVisitor
             % N.B.:   the default "apply" list includes (4dfp format) images named *parc* and *aseg*
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('freesurfer2mpr_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/freesurfer2mpr_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = flip_4dfp__(~, args)
             %% FLIP_4DFP__
@@ -2113,7 +2110,7 @@ classdef FourdfpVisitor
             % N.B.:	default output fileroot = <image>_flip[xyz]
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('flip_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/flip_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = gauss_4dfp__(~, args)
             %% GAUSS_4DFP__
@@ -2132,7 +2129,7 @@ classdef FourdfpVisitor
             % N.B.:	    user outroot specification not possible with conc files
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('gauss_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/gauss_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = imgblur_4dfp__(~, args)
             %% IMGBLUR_4DFP__
@@ -2147,7 +2144,7 @@ classdef FourdfpVisitor
             % N.B.:	    default blur is 3D isotropic
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('imgblur_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/imgblur_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = imgopr_4dfp__(~, args)
             %% IMGOPR_4DFP__
@@ -2179,7 +2176,7 @@ classdef FourdfpVisitor
             % 	a 1 volume second image may be paired with a multi-volume first image
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('imgopr_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/imgopr_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = imgreg_4dfp__(~, args)
             %% IMGREG_4DFP__
@@ -2189,11 +2186,7 @@ classdef FourdfpVisitor
             % or:	    imgreg_4dfp target_imag        none source_imag        none t4file mode
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('imgreg_4dfp %s', args));
-            if (0 ~= s)
-                error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.imgreg_4dfp__:\n    s->%i\n    r->%s', s, r);
-            end
+            [s,r] = dbbash(sprintf('%s/imgreg_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = maskimg_4dfp__(~, args)
             %% MASKIMG_4DFP
@@ -2213,7 +2206,7 @@ classdef FourdfpVisitor
             % N.B.:	<imgfile> and <mskfile> may be the same
 
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('maskimg_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/maskimg_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = move_4dfp__(~, args)
             %% MOVE_4DFP__
@@ -2226,7 +2219,18 @@ classdef FourdfpVisitor
             [s,r] = dbbash(sprintf('move_4dfp %s', args));
         end
         function [s,r] = mpr2atl_4dfp__(~, args)
-            %% MPR2ATL_4DFP__
+            %% MPR2ATL_4DFP__ reroutes to mpr2atl1_4dfp.
+            % $Id: mpr2atl1_4dfp,v 1.3 2018/08/17 05:50:20 avi Exp $
+            % Usage:	mpr2atl1_4dfp <mpr_anat> [options]
+            % e.g.,	    mpr2atl1_4dfp vc1234_654-3[.4dfp.img]
+            % e.g.,	    mpr2atl1_4dfp vc1234_654-3[.4dfp.img] -T/data/petsun23/data1/atlas/NP345[.4dfp.img]
+            % options
+            %	        -T<target including path>	specify arbitrary atlas representative target image
+            %	        crossmodal	use cross-modal mpr->target registration
+            %	        useold		suppress recomputation of existing t4 file
+            %	        redo		suppress t4 file initialization
+            %	        setecho		set echo
+            %
             % $Id: mpr2atl_4dfp,v 1.27 2014/02/16 02:46:17 avi Exp $
             % Usage:	mpr2atl_4dfp <mpr_anat> [options]
             % e.g.,	    mpr2atl_4dfp vc1234_654-3[.4dfp.img]
@@ -2241,9 +2245,10 @@ classdef FourdfpVisitor
             % 	        setecho		set echo
             % N.B.:	    <mpr_anat> may include a path, e.g., /data/petmr1/data7/stem9/scout/654-3
             % N.B.:	    <mpr_anat> must be in either ANALYZE short int or 4dfp format; ANALYZE will be converted to 4dfp
+            %%
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('mpr2atl_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/mpr2atl1_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = msktgen_4dfp__(~, args)
             %% MSKTGEN_4DFP__
@@ -2259,7 +2264,7 @@ classdef FourdfpVisitor
             % N.B.:	-S specifies the atlas space to use. Atlas supported currently is 711-2B. -S must be used with -T option
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('msktgen_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/msktgen_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = msktgen_b110_4dfp__(~, args)
             %% MSKTGEN_B110_4DFP__
@@ -2326,11 +2331,11 @@ classdef FourdfpVisitor
             % N.B.:	option -T has effect only on converting 4dfp->nii
             
             assert(ischar(args));
-            if (lstrcmp(computer, 'MACI64'))
+            if lstrcmp(computer, 'MACI64')
                 [s,r] = dbbash(sprintf('%s/Local/bin/nifti_4dfp %s', getenv('HOME'), args));
                 return
             end
-            [s,r] = dbbash(sprintf('nifti_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/nifti_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = niftigz_4dfp__(~, args)
             % NIFTIGZ_4DFP__
@@ -2343,11 +2348,11 @@ classdef FourdfpVisitor
             % N.B.:	niftigz_4dfp always gzips NIfTI output but unzipped NIfTI input is left unchanged
             
             assert(ischar(args));
-            if (lstrcmp(computer, 'MACI64'))
+            if lstrcmp(computer, 'MACI64')
                 [s,r] = dbbash(sprintf('%s/Local/bin/niftigz_4dfp %s', getenv('HOME'), args));
                 return
             end
-            [s,r] = dbbash(sprintf('niftigz_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/niftigz_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = paste_4dfp__(~, args)
             %% PASTE_4DFP__
@@ -2359,7 +2364,7 @@ classdef FourdfpVisitor
             % 	        -@<b|l>	output big or little endian (default initial input endian)
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('paste_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/paste_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = pseudo_dcm_sort__(~, args)
             %% PSEUDO_DCM_SORT__
@@ -2376,7 +2381,7 @@ classdef FourdfpVisitor
             % N.B.:	default subdirectory of numeric subdirectory is 'DICOM'
 
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('pseudo_dcm_sort.csh %s', args));
+            [s,r] = dbbash(sprintf('%s/pseudo_dcm_sort.csh %s', getenv('RELEASE'), args));
         end
         function [s,r] = scale_4dfp__(~, args)
             %% SCALE_4DFP__
@@ -2393,7 +2398,7 @@ classdef FourdfpVisitor
             % N.B.:	<scale_factor> must be specified for proper operation
 
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('scale_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/scale_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = sqrt_4dfp__(~, args)
             %% SQRT_4DFP__
@@ -2405,7 +2410,7 @@ classdef FourdfpVisitor
             % N.B.:	default output filename = <image>_sqrt	
 
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('sqrt_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/sqrt_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = sif_4dfp__(~, args)
             %% SIF_4DFP__
@@ -2422,11 +2427,7 @@ classdef FourdfpVisitor
             % e.g.,   t4_ident vm11b_mpr1_to_711-2B_t4
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('t4_ident %s', args));
-            if (0 ~= s)
-                error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4_ident__:\n    s->%i\n    r->%s', s, r);
-            end
+            [s,r] = dbbash(sprintf('%s/t4_ident %s', getenv('RELEASE'), args));
         end
         function [s,r] = t4_inv__(~, args)
             %% T4_INV__
@@ -2437,11 +2438,7 @@ classdef FourdfpVisitor
             % 	        -u	suppress (intensity) scale field in output
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('t4_inv %s', args));
-            if (0 ~= s)
-                error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4_inv__:\n    s->%i\n    r->%s', s, r);
-            end
+            [s,r] = dbbash(sprintf('%s/t4_inv %s', getenv('RELEASE'), args));
         end
         function [s,r] = t4_mul__(~, args)
             %% T4_MUL__
@@ -2451,11 +2448,7 @@ classdef FourdfpVisitor
             % 	        option
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('t4_mul %s', args));
-            if (0 ~= s)
-                error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4_mul__:\n    s->%i\n    r->%s', s, r);
-            end
+            [s,r] = dbbash(sprintf('%s/t4_mul %s', getenv('RELEASE'), args));
         end
         function [s,r] = t4img_4dfp__(~, args)
             %% T4IMG_4DFP__
@@ -2470,11 +2463,7 @@ classdef FourdfpVisitor
             % N.B.:	    option -n causes fidl ROI names to be copied to the output ifh
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('t4img_4dfp %s', args));
-            if (0 ~= s)
-                error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4img_4dfp__:\n    s->%i\n    r->%s', s, r);
-            end
+            [s,r] = dbbash(sprintf('%s/t4img_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = t4imgs_4dfp__(~, args)
             %% T4IMGS_4DFP__
@@ -2495,11 +2484,7 @@ classdef FourdfpVisitor
             % N.B.:	t4file intensity scale ingnored with option -n
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('t4imgs_4dfp %s', args));
-            if (0 ~= s)
-                error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4imgs_4dfp__:\n    s->%i\n    r->%s', s, r);
-            end
+            [s,r] = dbbash(sprintf('%s/t4imgs_4dfp %s', getenv('RELEASE'), args));
         end
         function [s,r] = t4_resolve__(~, args)
             %% T4_RESOLVE__
@@ -2517,11 +2502,7 @@ classdef FourdfpVisitor
             % N.B.:	    t4_resolve automatically strips filename extensions when constructing t4 filenames
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('t4_resolve %s', args));
-            if (0 ~= s)
-                error('mlfourdfp:abnormalExit', ...
-                    'FourdfpVisitor.t4_resolve__:\n    s->%i\n    r->%s', s, r);
-            end
+            [s,r] = dbbash(sprintf('%s/t4_resolve %s', getenv('RELEASE'), args));
         end
         function [s,r] = zero_slice_4dfp__(~, args)
             %% ZERO_SLICE_4DFP__
@@ -2538,7 +2519,7 @@ classdef FourdfpVisitor
             % N.B.:	two usages are supported: 1 or 4 required arguments
             
             assert(ischar(args));
-            [s,r] = dbbash(sprintf('zero_slice_4dfp %s', args));
+            [s,r] = dbbash(sprintf('%s/zero_slice_4dfp %s', getenv('RELEASE'), args));
         end
     end
     
