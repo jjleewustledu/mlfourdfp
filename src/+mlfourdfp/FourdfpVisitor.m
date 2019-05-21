@@ -62,87 +62,16 @@ classdef FourdfpVisitor
         function [s,m] = copyfile_4dfp(varargin)
             fv = mlfourdfp.FourdfpVisitor;
             [s,m] = fv.copy_4dfp(varargin{:});
-            return
-            
-            v = varargin;
-            xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
-            v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
-            assert(nargin < 3, 'mlfourdfp:unsupportedParams', 'FourdfpVisitor.copyfile_4dfp');
-            if (nargin > 1 && isdir(v{2}))
-                for ix = 1:length(xs)
-                    [s,m,mid] = copyfile([v{1} xs{ix}], v{2});
-                end
-                return
-            end
-            if (nargin > 1)
-                for ix = 1:length(xs)
-                    [s,m,mid] = copyfile([v{1} xs{ix}], [v{2} xs{ix}]);
-                end
-                return
-            end
-            for ix = 1:length(xs)
-                [s,m,mid] = copyfile([v{1} xs{ix}]);
-            end
         end
         function [s,m] = copyfilef_4dfp(varargin)
             [s,m] = mlfourdfp.FourdfpVisitor.copyfile_4dfp(varargin{:});
-            return
-            
-            v = varargin;
-            xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
-            v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
-            assert(nargin < 3, 'mlfourdfp:unsupportedParams', 'FourdfpVisitor.copyfile_4dfp');
-            if (nargin > 1 && isdir(v{2}))
-                for ix = 1:length(xs)
-                    [s,m,mid] = copyfile([v{1} xs{ix}], v{2}, 'f');
-                end
-                return
-            end
-            if (nargin > 1)                
-                for ix = 1:length(xs)
-                    [s,m,mid] = copyfile([v{1} xs{ix}], [v{2} xs{ix}], 'f');
-                end
-                return
-            end
-            error('mlfourdfp:unsupportedParamUsage', ...
-                'copyfilef_4dfp must specify both source and target to keep consistent syntax with Matlab''s copyfile');
         end
         function [s,m] = movefile_4dfp(varargin)
             fv = mlfourdfp.FourdfpVisitor;
             [s,m] = fv.move_4dfp(varargin{:});
-            return
-            
-            v = varargin;
-            xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
-            v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
-            if (nargin > 1 && isdir(v{2}))
-                for ix = 1:length(xs)
-                    [s,m,mid] = movefile([v{1} xs{ix}], v{2});
-                end
-                return
-            end
-            for ix = 1:length(xs)
-                fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
-                [s,m,mid] = movefile(fns{:});
-            end
         end
         function [s,m] = movefilef_4dfp(varargin)
             [s,m] = mlfourdfp.FourdfpVisitor.movefile_4dfp(varargin{:});
-            return
-            
-            v = varargin;
-            xs = mlfourdfp.FourdfpVisitor.SUPPORTED_EXT;
-            v = cellfun(@(x) myfileprefix(x), v, 'UniformOutput', false);
-            if (nargin > 1 && isdir(v{2}))
-                for ix = 1:length(xs)
-                    [s,m,mid] = movefile([v{1} xs{ix}], v{2}, 'f');
-                end
-                return
-            end
-            for ix = 1:length(xs)
-                fns = cellfun(@(x) [x xs{ix}], v, 'UniformOutput', false);
-                [s,m,mid] = movefile(fns{:}, 'f');
-            end
         end
         function pth   = ensureConsistentPwd(fqfp)
             %% ENSURECONSISTENTPWD
@@ -716,7 +645,7 @@ classdef FourdfpVisitor
             locfp   = fullfile(pwd, fp);
             locfp1  = fullfile(pwd, fp1);
             nii     = [locfp '.nii'];
-            ifh     = [locfp '.4dfp.hdr'];
+            ifh     = [locfp '.4dfp.hdr']; %#ok<NASGU>
             ifh1    = [locfp1 '.4dfp.hdr'];
             if (~lexist_4dfp(ifh1))
                 mlfourdfp.FourdfpVisitor.mri_convert(ipr.fqfn, nii);
@@ -1481,7 +1410,7 @@ classdef FourdfpVisitor
                 [s,r] = copyfile(ip.Results.t40, t4, 'f'); %#ok<ASGLU>
             end
             [s,r] = dbbash(sprintf('chmod 777 %s', t4)); %#ok<ASGLU>
-            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, ip.Results.mode, log);
+            [s,r] = this.imgreg_4dfp(dest, destMask, source, sourceMask, t4, ip.Results.mode, log); %#ok<ASGLU>
             if (ip.Results.t4img_4dfp)
                 [fqfp,s,r] = this.t4img_4dfp(t4, ip.Results.source, 'options', ['-O' ip.Results.dest]);
             else                
@@ -1817,8 +1746,8 @@ classdef FourdfpVisitor
                 fqfp = ''; 
             end            
         end
-        function       assertPlatform(this)
-            if (lgetenv('DEBUG'))
+        function       assertPlatform(this) %#ok<MANU>
+            if lgetenv('DEBUG')
                 return
             end            
             assert(strcmp(computer, 'GLNXA64'));
