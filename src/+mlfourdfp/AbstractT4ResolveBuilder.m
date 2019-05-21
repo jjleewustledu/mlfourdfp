@@ -126,6 +126,18 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
                 fprintf('\n');
             end
         end
+        function tf  = valid_t4(t4)
+            if ~isfile(t4)
+                tf = false;
+                return
+            end
+            d = dir(t4);
+            if 0 == d.bytes
+                tf = false;
+                return
+            end
+            tf = true;
+        end
     end
     
     methods 
