@@ -7,9 +7,7 @@ classdef (Abstract) MRUmapBuilder < mlfourdfp.AbstractSessionBuilder & mlfourdfp
  	%% It was developed on Matlab 9.5.0.1067069 (R2018b) Update 4 for MACI64.  Copyright 2019 John Joowon Lee.
  	
 	methods (Abstract)
-        fqfn = CT2mpr_4dfp(this)
-        fqfn = dcm_to_pseudoct(this)
- 		s    = mrSeriesLabel(this)
+ 		s = mrSeriesLabel(this)
  	end
 
 	methods 
@@ -40,6 +38,7 @@ classdef (Abstract) MRUmapBuilder < mlfourdfp.AbstractSessionBuilder & mlfourdfp
         end
         function umap = umapSynth(this, varargin)
             %% is this class' naming convention for mlpipeline.ISessionData.umapSynth.
+            
             umap = this.sessionData.umapSynth('tracer', '', 'blurTag', '', 'typ', 'fqfp', varargin{:});
         end
 		  

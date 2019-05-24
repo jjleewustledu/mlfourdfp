@@ -1,4 +1,4 @@
-classdef MRACHiresUmapBuilder < mlfourdfp.MRUmapBuider
+classdef MRACHiresUmapBuilder < mlfourdfp.MRUmapBuilder
 	%% MRACHIRESUMAPBUILDER 
     
     %  [jjlee@pascal umaps] history
@@ -29,46 +29,97 @@ classdef MRACHiresUmapBuilder < mlfourdfp.MRUmapBuider
  	%  last modified $LastChangedDate$ and placed into repository /Users/jjlee/MATLAB-Drive/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.5.0.1067069 (R2018b) Update 4 for MACI64.  Copyright 2019 John Joowon Lee.
  	
-	properties
- 		
- 	end
+	properties (Constant)
+ 		PREFIX = 'UMAP'
+        REUSE_UMAP = true
+    end
+    
+    methods (Static)
+        function out = flirt(varargin)
+            ip = inputParser;
+            addParameter(ip, 'in', [], @ischar)
+            addParameter(ip, 'ref', [], @ischar)
+            addParameter(ip, 'out', '', @ischar)
+            addParameter(ip, 'omat', '', @ischar)
+            addParameter(ip, 'bins', 255, @isnumeric)
+            addParameter(ip, 'cost', 'corratio', @ischar)
+            addParameter(ip, 'dof', 12, @isnumeric)
+            addParameter(ip, 'interp', 'trilinear', @ischar)
+            parse(ip, varargin{:})
+            ipr = ip.Results;
+            
+            assert(isfile([ipr.in '.nii']) || isfile([ipr.in '.nii.gz']))
+            if isempty(ipr.out)
+                ipr.out = [mybasename(ipr.in) '_on_' mybasename(ipr.ref)];
+            end
+            if isempty(ipr.omat)
+                ipr.omat = [mybasename(ipr.in) '_on_' mybasename(ipr.ref) '.mat'];
+            end
+            system(sprintf(['/usr/local/fsl/bin/flirt -in %s -ref %s -out %s -omat %s ' ...
+                            '-bins %i -cost %s -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof %i  -interp %s'], ...
+                ipr.in, ipr.ref, ipr.out, ipr.omat, ipr.bins, ipr.cost, ipr.dof, ipr.interp))            
+            if isfile([ipr.out '.nii.gz'])
+                gunzip([ipr.out '.nii.gz'])
+            end   
+            out = ipr.out;
+        end
+    end
 
 	methods
-        function umap = buildUmap(this)
-            pct = this.dcm_to_pseudoct; 
-            pct = this.rescale_pseudoct(pct);
-            pct_on_mpr = this.CT2mpr_4dfp(this, pct);
-            carneyBuilder = mlfourdfp.CarneyUmapBuilder2('sessionData', this.sessionData);
-            umap = carneyBuilder.assembleCarneyUmap(pct_on_mpr);
+        function out = buildUmap(this)
+            umap = this.dcm_to_UMAP; % e.g., sessionPath/umaps/UMAP_DT20180822112042.600000.nii
+            sesp = this.sessionData.sessionPath;
+            out = this.flirt( ...
+                'in', umap, ...
+                'ref', fullfile(sesp, 'T1'), ...
+                'out', fullfile(sesp, this.umapSynthOpT1001('blurTag', '', 'typ', 'fp')));
+            this.buildVisitor.nifti_4dfp_4(out)
         end        
         
-        function fqfn = CT2mpr_4dfp(this, pct)
-            ctBuilder = mlfourdfp.PseudoCTBuilder('sessionData', this.sessionData);
-            fqfp = ctBuilder.CT2mpr_4dfp(pct);
-            fqfn = this.fourdfpImg(fqfp);
-        end
-        function fqfn = dcm_to_pseudoct(this)
-            %% transforms MR AC as DICOM to pseudo-CT as 4dfp
+        function fqfp = dcm_to_UMAP(this)
+            %% transforms MR AC as DICOM to UMAP as 4dfp; works in this.umapPath
+            %  @return fullfile(this.umapPath, this.fileprefix)
             
+            fqfp = fullfile(this.umapPath, this.fileprefix());
+            if this.REUSE_UMAP && isfile([fqfp '.4dfp.hdr'])
+                return
+            end
+                
             pwd0 = pushd(this.umapPath);
-            system(sprintf('dcm2niix -f %s -o %s -z y %s', ...
+            system(sprintf('dcm2niix -f %s -o %s -z n %s', ...
                 this.filename_nii_gz, ...
                 this.umapPath, ...
                 mybasename(this.umapDicomPath)))
+            ic2 = mlfourd.ImagingContext(this.filename_nii_gz);
+            ic2 = ic2.selectNumericalTool;
+            ic2 = ic2 / 1000;
+            ic2.save            
             system(sprintf('nifti_4dfp -4 %s %s', gunzip(this.filename_nii_gz), this.filename_4dfp_hdr));
-            fqfn = fullfile(this.umapPath, this.filename_4dfp_hdr);
             popd(pwd0);
         end
-        function s    = mrSeriesLabel(~)
+        function [umapOnMpr,umapToMprT4] = CT2mpr_4dfp(this, umap, varargin)
+            %% builds MPR and Atlas T4s de novo.
+            
+            assert(lexist(this.fourdfpImg(umap), 'file'), ...
+                'mlfourdfp:RuntimeError', ...
+                'MRACHiresUmapBuilder.CT2mpr_4dfp could not find %s', this.fourdfpImg(umap));
+            mpr = this.sessionData.mpr('typ', 'fqfp');
+            pth = fileparts(mpr);
+            umapToMprT4 = fullfile(pth, this.buildVisitor.filenameT4(mybasename(umap), mybasename(mpr))); 
+            umapOnMpr   = fullfile(pth, [mybasename(umap) '_on_' mybasename(mpr)]);   
+            if (~lexist([mpr '_to_' this.atlas('typ','fp') '_t4']))
+                this.buildVisitor.mpr2atl_4dfp(mpr);
+            end
+            if (~lexist(this.fourdfpImg(umapOnMpr)))
+                umapOnMpr = this.buildVisitor.CT2mpr_4dfp(mpr, umap, ...
+                    'options', ['-T' this.atlas('typ','fqfp')], varargin{:});
+            end
+            assert(lexist(umapToMprT4, 'file'));        
+        end
+        function s = mrSeriesLabel(~)
             s = 'Head_MRAC_Brain_HiRes_in_UMAP';
         end
-        function fqfn = rescale_pseudoct(pct)
-            ctBuilder = mlfourdfp.PseudoCTBuilder('sessionData', this.sessionData);
-            fqfp = [myfileprefix(pct) '_rescaled'];
-            ctBuilder.rescaleCT(myfileprefix(pct), 'ctOut', fqfp)
-            fqfn = this.fourdfpImg(fqfp);
-        end
-        function        teardownBuildUmaps(this)
+        function teardownBuildUmaps(this)
             this.teardownLogs;
             this.teardownT4s;
             deleteExisting(fullfile(this.sessionData.sessionPath, [this.fileprefix '.4dfp.*']));
@@ -81,7 +132,7 @@ classdef MRACHiresUmapBuilder < mlfourdfp.MRUmapBuider
  			%% MRACHIRESUMAPBUILDER
  			%  @param .
 
- 			this = this@mlfourdfp.MRUmapBuider(varargin{:});
+ 			this = this@mlfourdfp.MRUmapBuilder(varargin{:});
  		end
  	end 
     
@@ -89,22 +140,22 @@ classdef MRACHiresUmapBuilder < mlfourdfp.MRUmapBuider
     
     methods (Access = protected)
         function f  = filename_nii_gz(this)
-            f = sprintf('pseudoct_%s_e2_ph.nii.gz', this.DTstring());
+            f = sprintf('%s_e2_ph.nii.gz', this.fileprefix());
         end
         function f  = filename_4dfp_hdr(this)
-            f = sprintf('pseudoct_%s.4dfp.hdr', this.DTstring());
+            f = [this.fileprefix() '.4dfp.hdr'];
         end
         function f  = fileprefix(this)
-            f = sprintf('pseudoct_%s', this.DTstring());
+            f = sprintf('%s_%s', this.PREFIX, this.DTstring());
         end
-        function dt = DTstring(~, varargin)
+        function dt = DTstring(this, varargin)
             ip = inputParser;
             addOptional(ip, 's', mybasename(this.umapDicomPath), @ischar);
             parse(ip);
-            r = regexp(ip.Results.s, 'Head_MRAC_Brain_HiRes_in_UMAP_(DT\d{14}.\d{6})', 'match');
+            r = regexp(ip.Results.s, '(DT\d{14}.\d{6})', 'match');
             assert(~isempty(r));
             dt = r{1};
-        end
+        end 
     end
     
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
