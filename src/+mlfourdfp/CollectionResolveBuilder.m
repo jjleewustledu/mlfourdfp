@@ -79,35 +79,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                 end                
             end
         end
-        function ll = lns_with_datetime_sub(fn_ast)
-            %% Creates sym.-link, including any datetime from the original (f.-q.) filename in the link name.
-            %  @param fn_ast is filename with *s for globbing.
-            %  @return ll is cell-array of sym.-links.
-            
-            import mlfourdfp.CollectionResolveBuilder;
-            assert(ischar(fn_ast));
-            dt = mlsystem.DirTool2(fn_ast);
-            ll = {};
-            for f = dt.fqfns
-                re = regexp(f{1}, '(?<TRACER>\w+)_DT(?<DT>\d+)\S+/(?<tracer>\w+)\.\S+', 'names');
-                % e.g., f{1}->$SUBJECTS_DIR/sub-S123/ses-E123/FDG_DT20190507225833.000000-Converted-AC/fdg_avgt.4dfp.img
-                if ~isempty(re)
-                    [tra, lbl] = strtok(re.tracer, '_'); % e.g., tra->'fdg', lbl->'_avgt'
-                    link_prefix = sprintf('%sdt%s', tra, re.DT); % e.g., fdgdt20190507225833
-                    [~,~,x] = myfileparts(f{1});
-                    link = [link_prefix lbl x];
-                    ll = [ll link]; %#ok<AGROW>
-                    [~,~,x] = myfileparts(f{1});
-                    if strcmp(x, '.4dfp.hdr')
-                        try
-                            lns_4dfp(myfileprefix(f{1}), myfileprefix(link));
-                        catch ME
-                            handwarning(ME);
-                        end
-                    end
-                end                
-            end
-        end
         function prefixes = uniqueFileprefixes(imgs)
             prefixes = {};
             for im = imgs
@@ -207,7 +178,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             copyfile(t40, sprintf('%s_to_T1001_t4', ref));
             popd(pwd0);
         end
-        function fp    = fileprefixStandardized(this, fp)
+        function fp   = fileprefixStandardized(this, fp)
             toks = regexp(fp, sprintf('^(?<tracRev>\\w+)_op_\\w+_on_op_%s\\w+$', this.referenceTracer), 'names');
             if (isempty(toks))
                 toks = regexp(fp, sprintf('^(?<tracRev>\\w+)_\\w*%s\\w*$', this.referenceTracer), 'names');
@@ -216,7 +187,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             end
             fp = sprintf('%s_op_%s', toks.tracRev, this.referenceTracer);
         end 
-        function fp    = fileprefixAvgtStandardized(this, fp)
+        function fp   = fileprefixAvgtStandardized(this, fp)
             toks = regexp(fp, sprintf('^(?<tracRev>\\w+r\\d)_op_\\w+_on_op_%s\\w+_avgtr\\d$', this.referenceTracer), 'names');
             if (isempty(toks))
                 toks = regexp(fp, sprintf('^(?<tracRev>\\w+)_\\w*%s\\w*_avgtr\\d$', this.referenceTracer), 'names');
@@ -350,42 +321,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                 ts = {};
             end
         end
-        function prefixes = stageSessionScans(this, varargin)
-            %% Creates links to tracer images distributed on the filesystem so that resolve operations may be done in the pwd.
-            %  e.g.:  HO_DT(yyyymmddHHMMSS).000000-Converted-AC/ho_avgt.4dfp.hdr -> hodt(yyyymmddHHMMSS)_avgt.4dfp.hdr
-            %  @param required tracer is char.
-            %  @param optional suffix is char, e.g., _avgt.
-            %  @return prefixes = cell(1, N(available images)) as unique fileprefixes in the pwd.
-            %  TODO:  stageSessionScans -> stageImages
-            
-            ip = inputParser;
-            addRequired(ip, 'tracer', @ischar);
-            addOptional(ip, 'suffix', '', @ischar);
-            parse(ip, varargin{:});         
-            
-            files = this.lns_with_datetime_sub( ...
-                sprintf('%s_DT*.000000-Converted-AC/%s%s.4dfp.*', ...
-                upper(ip.Results.tracer), lower(ip.Results.tracer), ip.Results.suffix));   
-            prefixes = this.uniqueFileprefixes(files);
-        end    
-        function prefixes = stageSubjectScans(this, varargin)
-            %% Creates links to tracer images distributed on the filesystem so that resolve operations may be done in the pwd.
-            %  e.g.:  HO_DT(yyyymmddHHMMSS).000000-Converted-AC/ho_avgt.4dfp.hdr -> hodt(yyyymmddHHMMSS)_avgt.4dfp.hdr
-            %  @param required tracer is char.
-            %  @param optional suffix is char, e.g., _avgt.
-            %  @return prefixes = cell(1, N(available images)) as unique fileprefixes in the pwd.
-            %  TODO:  stageSessionScans -> stageImages
-            
-            ip = inputParser;
-            addRequired(ip, 'tracer', @ischar);
-            addOptional(ip, 'suffix', '', @ischar);
-            parse(ip, varargin{:});         
-            
-            files = this.lns_with_datetime( ...
-                sprintf('%s_DT*.000000-Converted-AC/%s%s.4dfp.*', ...
-                upper(ip.Results.tracer), lower(ip.Results.tracer), ip.Results.suffix));   
-            prefixes = this.uniqueFileprefixes(files);
-        end    
         function this = sqrt(this, varargin)
             for p = 1:length(this.product)                
                 this.product_{p} = mlfourd.ImagingContext2( ...
@@ -505,9 +440,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             deleteExisting('*_b75.4dfp*');
             deleteExisting('*_mskt.4dfp*');
         end
-        
-        
-        
 		  
  		function this = CollectionResolveBuilder(varargin)
  			%% COLLECTIONRESOLVEBUILDER
@@ -527,6 +459,9 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             this.sessionData_.attenuationCorrected = true;
             this.rnumberOfSource_ = ip.Results.rnumberOfSource;
             this.referenceTracer_ = ip.Results.referenceTracer;
+            if isempty(this.sessionData_.tracer)
+                this.sessionData_.tracer = this.ReferenceTracer;
+            end
             this.workpath_ = ip.Results.workpath;
  		end
  	end 
