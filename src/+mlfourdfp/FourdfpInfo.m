@@ -508,7 +508,7 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             %fy = hdr.dime.pixdim(3);
             %fz = hdr.dime.pixdim(4);
             
-            assert(mlpet.Resources.instance.defaultN);
+            assert(mlpipeline.ResourcesRegistry.instance().defaultN);
             
             srow = [ [hdr.dime.pixdim(2) 0 0 (1-hdr.hist.originator(1))*fx]; ...
                      [0 hdr.dime.pixdim(3) 0 (1-hdr.hist.originator(2))*fy]; ...

@@ -108,7 +108,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
             fqfp = fullfile(this.sessionData.sessionPath, 'brainmask_mskt');
             if (~lexist_4dfp(fqfp))
                 ic2 = mlfourd.ImagingContext2('brainmask.4dfp.hdr');
-                ic2 = ic2.binarizeBlended(2*mlpet.Resources.instance.pointSpread);
+                ic2 = ic2.binarizeBlended(2*mlnipet.ResourcesRegistry.instance().petPointSpread);
                 ic2 = ic2.selectNumericalTool;
                 ic2 = ic2 * 1000;
                 ic2.saveas([fqfp '.4dfp.hdr']);
