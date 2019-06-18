@@ -260,6 +260,7 @@ classdef FourdfpVisitor
             parse(ip, varargin{:});            
             fqfp  = myfileprefix(ip.Results.fqfp);
             fqfp1 = myfileprefix(ip.Results.fqfp1);
+            assert(lexist_4dfp(fqfp))
             if isempty(fqfp1)
                 fqfp1 = mybasename(fqfp);
             end
