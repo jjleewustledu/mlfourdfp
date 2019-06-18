@@ -28,7 +28,7 @@ classdef Test_RawDataSorter < matlab.unittest.TestCase
             import mlraichle.* mlsystem.*;
             
             srcLoc   = fullfile(getenv('PPG'), 'rawdata/SYNTH25_V1_1234/RESOURCES/RawData', '');
-            sessPath = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'SYNTH25', '');
+            sessPath = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, 'SYNTH25', '');
             vPath    = fullfile(sessPath, 'V1', '');
             this.testObj.sessionData = SessionData( ...
                 'sessionPath', sessPath, ...
@@ -44,7 +44,7 @@ classdef Test_RawDataSorter < matlab.unittest.TestCase
             import mlraichle.* mlsystem.*;
             
             srcLoc = fullfile(getenv('PPG'), 'rawdata/HYGLY25_VISIT_1', 'scans', '');
-            sessPath = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY25', '');
+            sessPath = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, 'HYGLY25', '');
             vPath = fullfile(sessPath, 'V1', '');
             this.testObj.sessionData = SessionData( ...
                 'sessionPath', sessPath, ...
@@ -62,7 +62,7 @@ classdef Test_RawDataSorter < matlab.unittest.TestCase
         function test_rawDataMatch(this)
             import mlfourdfp.* mlraichle.*;
             RawDataPath = fullfile(getenv('PPG'), 'rawdata', 'SYNTH25_v1_1234', 'RESOURCES', 'RawData', '');
-            sessPath    = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'SYNTH25', '');
+            sessPath    = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, 'SYNTH25', '');
             vPath       = fullfile(sessPath, 'V1', '');
  			this.testObj = RawDataSorter( ...
                            'studyData',   this.studyData, ...
@@ -89,7 +89,7 @@ classdef Test_RawDataSorter < matlab.unittest.TestCase
         function test_UTEMatch(this)
             import mlfourdfp.* mlraichle.*;
             scansPath = fullfile(getenv('PPG'), 'rawdata', 'HYGLY25_VISIT_1', 'scans', '');
-            sessPath  = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY25', '');
+            sessPath  = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, 'HYGLY25', '');
             vPath     = fullfile(sessPath, 'V1', '');
  			this.testObj = RawDataSorter( ...
                            'studyData',   this.studyData, ...

@@ -18,13 +18,13 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
         sessionPath
         studyData
  		testObj
-        ctFqfp  = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY28', 'AC_CT')
-        mprFqfp = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY28', 'V1', 't1_mprage_sag')
+        ctFqfp  = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, 'HYGLY28', 'AC_CT')
+        mprFqfp = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, 'HYGLY28', 'V1', 't1_mprage_sag')
  	end
 
 	methods (Test)
         function test_dcmInfos(this)
-            cd(fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, 'HYGLY28_VISIT_1', ''));
+            cd(fullfile(mlraichle.StudyRegistry.instance.rawdataDir, 'HYGLY28_VISIT_1', ''));
             [infos,fqdns] = this.testObj.dcmInfos;
             for idx = 1:5
                 this.verifyEqual(fullfile(pwd, num2str(infos{idx}.SeriesNumber)), fqdns{idx});
@@ -32,7 +32,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
             end
         end
         function test_findDcmInfos(this)
-            cd(fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, 'HYGLY28_VISIT_1', ''));
+            cd(fullfile(mlraichle.StudyRegistry.instance.rawdataDir, 'HYGLY28_VISIT_1', ''));
             infos = this.testObj.findDcmInfos('UMAP');
             for idx = 1:length(infos)
                 fprintf('%g\t%s\t%s\t%s\t%s\n', ...
@@ -41,7 +41,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
             end
         end
         function test_findDcmInfos2(this)
-            cd(fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, 'HYGLY28_VISIT_1', ''));
+            cd(fullfile(mlraichle.StudyRegistry.instance.rawdataDir, 'HYGLY28_VISIT_1', ''));
             infos = this.testObj.findDcmInfos({'UMAP' 't2_spc_sag'});
             for idx = 1:length(infos)
                 fprintf('%g\t%s\t%s\t%s\t%s\n', ...
@@ -50,7 +50,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
             end
         end
         function test_destPath(this)
-            cd(mlraichle.RaichleRegistry.instance.rawdataDir);
+            cd(mlraichle.StudyRegistry.instance.rawdataDir);
             dt = mlsystem.DirTools('HYGLY*', 'NP*', 'hygly*', 'TW*', 'DT*');
             for idns = 1:length(dt.dns)
                 fprintf('dns-> %s\ndestPath -> %s\n\n', dt.dns{idns}, this.testObj.destPath(dt.dns{idns}));
@@ -58,7 +58,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
         end
         function test_session_to_4dfp(this)
             src  = fullfile(getenv('PPG'), 'rawdata', 'HYGLY28_VISIT_1', '');
-            dest = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, 'HYGLY28', 'V1', '');
+            dest = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, 'HYGLY28', 'V1', '');
             this.testObj.session_to_4dfp( ...
                 src, dest, ...
                 'seriesFilter', 't1_mprage_sag', ...
@@ -91,7 +91,7 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
 		function setupDicomSorter(this)
  			import mlfourdfp.* mlraichle.*;
             this.studyData = StudyData;
-            this.sessionPath = fullfile(RaichleRegistry.instance.subjectsDir, 'HYGLY28', '');
+            this.sessionPath = fullfile(StudyRegistry.instance.subjectsDir, 'HYGLY28', '');
             this.sessionData = SessionData('studyData', this.studyData, 'sessionPath', this.sessionPath);
  			this.testObj_  = DicomSorter('sessionData', this.sessionData);
  		end

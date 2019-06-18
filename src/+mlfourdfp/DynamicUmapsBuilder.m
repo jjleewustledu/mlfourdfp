@@ -56,7 +56,7 @@ classdef DynamicUmapsBuilder < mlfourdfp.CTBuilder
         end
         function parWilliam
             import mlsystem.*;
-            cd(mlraichle.RaichleRegistry.instance.subjectsDir);
+            cd(mlraichle.StudyRegistry.instance.subjectsDir);
             dt = DirTool('*');
             dtFqdns = dt.fqdns;
             parfor idt = 1:length(dtFqdns)

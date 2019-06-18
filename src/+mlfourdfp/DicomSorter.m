@@ -24,13 +24,13 @@ classdef DicomSorter < mlpipeline.DicomSorter
             assert(isa(sessd, 'mlpipeline.SessionData'));
             
             import mlsystem.* mlfourdfp.*;
-            dt    = DirTool(fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, '*')); 
+            dt    = DirTool(fullfile(mlraichle.StudyRegistry.instance.rawdataDir, '*')); 
             res   = cellfun(@(x) DicomSorter.folderRegexp(x),          dt.dns, 'UniformOutput', false);
             keys  = cellfun(@(x) sprintf('%s_V%s', x.subjid, x.visit), res,    'UniformOutput', false);
             keys  = cellfun(@DicomSorter.fillEmpty, keys,                      'UniformOutput', false);
             m     = containers.Map(keys, dt.dns);            
             pth   = m(sprintf('%s_V%i', sessd.sessionLocation('typ', 'folder'), sessd.vnumber));
-            pth   = fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, pth, '');
+            pth   = fullfile(mlraichle.StudyRegistry.instance.rawdataDir, pth, '');
         end
         function re    = folderRegexp(str)
             %% FOLDERREGEXP
@@ -53,7 +53,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
             dt = DirTools(ip.Results.sessionFilter);
             for idns = 1:length(dt.dns)
                 try
-                    cd(mlraichle.RaichleRegistry.instance.rawdataDir);
+                    cd(mlraichle.StudyRegistry.instance.rawdataDir);
                     srcPth = dt.dns{idns};
                     this = this.sessionDcmConvert( ...
                         srcPth, ...
@@ -101,7 +101,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
                 opts = [opts ' -t T'];
             end
             this.buildVisitor_.dcm_to_4dfp( ...
-                this.studyData.seriesDicomAsterisk(parentFqdn), ...
+                this.seriesDicomAsterisk(parentFqdn), ...
                 'base', canonFp, ...
                 'options', opts);
             this.appendInfoFieldToIfh(info, 'KVP', canonFp);
@@ -161,7 +161,12 @@ classdef DicomSorter < mlpipeline.DicomSorter
         function [s,r] = moveConverted(~, varargin)
             fv = mlfourdfp.FourdfpVisitor;
             [s,r] = fv.move_4dfp(varargin{:});
-        end       
+        end      
+        function a     = seriesDicomAsterisk(this, fqdn)
+            assert(isdir(fqdn));
+            assert(isdir(fullfile(fqdn, 'DICOM')));
+            a = fullfile(fqdn, 'DICOM', ['*' mlpipeline.ResourcesRegistry.instance().dicomExtension]);
+        end 
     end
     
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy

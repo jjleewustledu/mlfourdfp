@@ -150,7 +150,7 @@ classdef RawDataSorter
         end
         function pth  = sourceRawDataPath(str)
             assert(ischar(str));
-            pth = fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, str, 'RESOURCES', 'RawData', '');            
+            pth = fullfile(mlraichle.StudyRegistry.instance.rawdataDir, str, 'RESOURCES', 'RawData', '');            
             if(~isdir(pth))
                 pth = ''; 
             end
@@ -158,9 +158,9 @@ classdef RawDataSorter
         function pth  = sourceScansPath(str)
             assert(ischar(str));
             if (~strcmp(str(1), '/'))
-                pth = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, str, 'SCANS', '');
+                pth = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, str, 'SCANS', '');
                 if (~isdir(pth))
-                    pth = fullfile(mlraichle.RaichleRegistry.instance.subjectsDir, str, 'scans', '');
+                    pth = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, str, 'scans', '');
                 end
             else
                 pth = fullfile(str, '..', '..', 'SCANS', '');
@@ -175,7 +175,7 @@ classdef RawDataSorter
         function pth  = destSessionPath(str)
             assert(ischar(str));
             if (~strcmp(str(1), '/'))
-                pth = fullfile(mlraichle.RaichleRegistry.subjectsDir, str, '');
+                pth = fullfile(mlraichle.StudyRegistry.subjectsDir, str, '');
                 assert(isdir(pth));
             else
                 pth = str;
@@ -314,7 +314,7 @@ classdef RawDataSorter
                 [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fileparts(loc0));
             catch ME %#ok<NASGU>
                 try                    
-                    [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fullfile(mlraichle.RaichleRegistry.instance.rawdataDir, fileparts(loc0), ''));
+                    [info,fqdn] = ds.findDcmInfo(1, dcmInfoTag, fullfile(mlraichle.StudyRegistry.instance.rawdataDir, fileparts(loc0), ''));
                 catch ME1 %#ok<NASGU>
                     fprintf('RawDataSorter.umapMatch:  no match for %s\n', dcmInfoTag);
                     info = [];
