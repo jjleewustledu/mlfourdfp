@@ -21,10 +21,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
         t4s
         workpath
     end
-    
-	properties
- 		
-    end
 
     methods (Static)
         function cc = copy_4dfp_with_datetime(fn_ast)
@@ -50,7 +46,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                 end
             end
         end
-        function ll = lns_with_datetime(fn_ast)
+        function ll = lns_with_DateTime(fn_ast)
             %% Creates sym.-link, including any datetime from the original (f.-q.) filename in the link name.
             %  @param fn_ast is filename with *s for globbing.
             %  @return ll is cell-array of sym.-links.
@@ -67,6 +63,34 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                     link_prefix = sprintf('%sdt%s', tra, re.DT); % e.g., fdgdt20190507225833
                     [~,~,x] = myfileparts(f{1});
                     link = [link_prefix lbl x];
+                    ll = [ll link]; %#ok<AGROW>
+                    [~,~,x] = myfileparts(f{1});
+                    if strcmp(x, '.4dfp.hdr')
+                        try
+                            lns_4dfp(myfileprefix(f{1}), myfileprefix(link));
+                        catch ME
+                            handwarning(ME);
+                        end
+                    end
+                end                
+            end
+        end
+        function ll = lns_with_datetime(fn_ast)
+            %% Creates sym.-link, including any datetime from the original (f.-q.) filename in the link name.
+            %  @param fn_ast is filename with *s for globbing.
+            %  @return ll is cell-array of sym.-links.
+            
+            import mlfourdfp.CollectionResolveBuilder;
+            assert(ischar(fn_ast));
+            dt = mlsystem.DirTool2(fn_ast);
+            ll = {};
+            for f = dt.fqfns
+                re = regexp(f{1}, '(?<tracer>\w+)dt(?<dt>\d+)\S*\.4dfp\.\S+', 'names');
+                % e.g., f{1}->$SUBJECTS_DIR/sub-S123/ses-E123/fdg_dt20190507225833_op_fdg_on_op_fdg_avgtr1.4dfp.img
+                if ~isempty(re)
+                    link_prefix = sprintf('%sdt%s', re.tracer, re.dt); % e.g., fdgdt20190507225833
+                    [~,~,x] = myfileparts(f{1});
+                    link = [link_prefix x];
                     ll = [ll link]; %#ok<AGROW>
                     [~,~,x] = myfileparts(f{1});
                     if strcmp(x, '.4dfp.hdr')
@@ -149,7 +173,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             assert(ischar(tracer));
             assert(isnumeric(frames));
             
-            %this = this.t4imgDynamicImages(tracer);
             intermed = {};
             for d = 1:length(this.product)
                 nn = this.product_{d}.nifti;
