@@ -362,12 +362,14 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             
             ip = inputParser;
             addOptional(ip, 'tracer', this.referenceTracer, @ischar);
+            addParameter(ip, 'staging_handle', @(x) isa(x, 'function_handle')) % stageSessionScans or stageSubjectScans
             parse(ip, varargin{:});
+            ipr = ip.Results;
             assert(this.areAligned);  
             assert(~isempty(this.compositeRB_)); 
             assert(~isempty(this.t4s_)); 
             
-            imgs = this.stageSessionScans(ip.Results.tracer, '');             
+            imgs = ipr.staging_handle(ipr.tracer, '');             
             this.product_ = cell(size(imgs));
             if (length(imgs) < 2)
                 this.product_{1} = mlfourd.ImagingContext2([imgs{1} '.4dfp.hdr']);
@@ -390,48 +392,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                 this.compositeRB_ = this.compositeRB_.t4img_4dfp( ...
                     this.t4s_{1}{i}, ...
                     this.frontOfFileprefix(imgs{i}), ...
-                    'ref', this.frontOfFileprefix(imgs{1})); % 'out', [this.frontOfFileprefixR1(imgs{i}) '_op_' lower(ip.Results.tracer)], ...
-                this.product_{i} = this.compositeRB_.product;
-            end        
-        end 
-        function this = t4imgDynamicImages_sub(this, varargin)
-            %% T4IMGDYNAMICIMAGES applies accumulated this.t4s_, typically obtained from time-averages,
-            %  to dynamic sources of the time-averages specified by parameter tracer.  
-            %  @param optional tracer has default := this.referenceTracer.
-            %  @param {this.compositeRB_ this.t4s_} := align* method.  NRevision >= 1 is managed by this.compositeRB_. 
-            %  @return this.product_ := {dynamic sources for tracer} will have a messy, but unambiguous, name.
-            
-            ip = inputParser;
-            addOptional(ip, 'tracer', this.referenceTracer, @ischar);
-            parse(ip, varargin{:});
-            assert(this.areAligned);  
-            assert(~isempty(this.compositeRB_)); 
-            assert(~isempty(this.t4s_)); 
-            
-            imgs = this.stageSubjectScans(ip.Results.tracer, '');             
-            this.product_ = cell(size(imgs));
-            if (length(imgs) < 2)
-                this.product_{1} = mlfourd.ImagingContext2([imgs{1} '.4dfp.hdr']);
-                this.product_{1}.fourdfp;
-                
-                toks = regexp(this.t4s_{1}{1}, '\w+_to_(?<opTag>op_[a-zA-Z0-9]+)_t4$', 'names');
-                fp = this.product_{1}.fileprefix;
-                if (strcmp(mybasename(this.t4s_{1}{1}), 'T_t4') || isempty(toks))
-                    fp1 = sprintf('%s_op_%s', fp, this.scrubDatetime(fp));
-                    this.product_{1}.fileprefix = fp1;
-                    this.buildVisitor_.copyfilef_4dfp(fp, fp1);
-                    return
-                end
-                fp1 = [fp '_' toks.opTag];
-                this.product_{1}.fileprefix = fp1;
-                this.buildVisitor_.copyfilef_4dfp(fp, fp1);
-                return
-            end
-            for i = 1:length(imgs)
-                this.compositeRB_ = this.compositeRB_.t4img_4dfp( ...
-                    this.t4s_{1}{i}, ...
-                    this.frontOfFileprefix(imgs{i}), ...
-                    'ref', this.frontOfFileprefix(imgs{1})); % 'out', [this.frontOfFileprefixR1(imgs{i}) '_op_' lower(ip.Results.tracer)], ...
+                    'ref', this.frontOfFileprefix(imgs{1})); % 'out', [this.frontOfFileprefixR1(imgs{i}) '_op_' lower(ipr.tracer)], ...
                 this.product_{i} = this.compositeRB_.product;
             end        
         end 
