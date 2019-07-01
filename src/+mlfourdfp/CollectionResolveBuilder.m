@@ -64,7 +64,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                     [~,~,x] = myfileparts(f{1});
                     link = [link_prefix lbl x];
                     ll = [ll link]; %#ok<AGROW>
-                    [~,~,x] = myfileparts(f{1});
                     if strcmp(x, '.4dfp.hdr')
                         try
                             lns_4dfp(myfileprefix(f{1}), myfileprefix(link));
@@ -92,7 +91,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                     [~,~,x] = myfileparts(f{1});
                     link = [link_prefix x];
                     ll = [ll link]; %#ok<AGROW>
-                    [~,~,x] = myfileparts(f{1});
                     if strcmp(x, '.4dfp.hdr')
                         try
                             lns_4dfp(myfileprefix(f{1}), myfileprefix(link));
