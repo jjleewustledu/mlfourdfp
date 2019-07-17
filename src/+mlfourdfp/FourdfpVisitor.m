@@ -1322,13 +1322,16 @@ classdef FourdfpVisitor
             addParameter(ip, 'options',   '', @ischar);
             addParameter(ip, 'log',       '', @(x) ischar(x) || isa(x, 'Logger'));
             parse(ip, varargin{:});
-            log = ip.Results.log;
-            if (~isempty(ip.Results.log))
-                log = [' &> ' log];
-            end
+            ipr = ip.Results;
             
-            [s,r] = this.t4_resolve__( ...
-                sprintf(' %s -o%s %s %s', ip.Results.options, ip.Results.output, ip.Results.filenames, log));
+            log = ipr.log;
+            if (~isempty(ipr.log))
+                log = [' &> ' log];
+            end            
+            cmd_suf = sprintf(' %s -o%s %s %s', ipr.options, ipr.output, ipr.filenames, log);
+            [s,r] = this.t4_resolve__(cmd_suf);
+            fns = strsplit(ipr.filenames); % resolve onto first listed file
+            this.imgrecUpdate([fns{1} '_' ipr.output], ['t4_resolve' cmd_suf])
         end
         function      [s,r] = zero_slice_4dfp(this, varargin)
             ip = inputParser;
@@ -1753,7 +1756,12 @@ classdef FourdfpVisitor
             end            
             assert(strcmp(computer, 'GLNXA64'));
             %assert(lstrfind(hostname, this.FOURDFP_HOSTS));
-        end        
+        end    
+        function       imgrecUpdate(~, filename, cmd)
+            irl = mlfourdfp.ImgRecLogger(filename);
+            irl.add(cmd)
+            irl.save()
+        end
         function img = normalizeFramesBySums(~, img)
             assert(length(size(img)) == 4);
             for w = 1:size(img, 4)
