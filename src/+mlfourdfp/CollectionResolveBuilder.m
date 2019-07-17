@@ -56,7 +56,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             dt = mlsystem.DirTool2(fn_ast);
             ll = {};
             for f = dt.fqfns
-                re = regexp(f{1}, '(?<TRACER>\w+)_DT(?<DT>\d+)\S+/(?<tracer>\w+)\.\S+', 'names');
+                re = regexp(f{1}, '(?<TRACER>[A-Z]+)_DT(?<DT>\d+)\S+/(?<tracer>\w+)\.\S+', 'names');
                 % e.g., f{1}->$SUBJECTS_DIR/sub-S123/ses-E123/FDG_DT20190507225833.000000-Converted-AC/fdg_avgt.4dfp.img
                 if ~isempty(re)
                     [tra, lbl] = strtok(re.tracer, '_'); % e.g., tra->'fdg', lbl->'_avgt'
@@ -84,7 +84,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             dt = mlsystem.DirTool2(fn_ast);
             ll = {};
             for f = dt.fqfns
-                re = regexp(f{1}, '(?<tracer>\w+)dt(?<dt>\d+)\S*\.4dfp\.\S+', 'names');
+                re = regexp(f{1}, '(?<tracer>[a-z]+)dt(?<dt>\d+)\S*\.4dfp\.\S+', 'names');
                 % e.g., f{1}->$SUBJECTS_DIR/sub-S123/ses-E123/fdg_dt20190507225833_op_fdg_on_op_fdg_avgtr1.4dfp.img
                 if ~isempty(re)
                     link_prefix = sprintf('%sdt%s', re.tracer, re.dt); % e.g., fdgdt20190507225833
