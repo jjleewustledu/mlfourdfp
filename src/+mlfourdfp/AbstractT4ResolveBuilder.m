@@ -883,9 +883,9 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             this.rnumber = this.NRevisions;            
             this.product_ = mlfourd.ImagingContext2([ipr.resolved '.4dfp.hdr']); % may have state for FilesystemTool
             this.product_.addImgrec( ...
-                {'mlfourdfp.AbstractT4ResolveBuilder.constructResolve(' ipr ')'});
+                ['mlfourdfp.AbstractT4ResolveBuilder.buildProduct\nipr->\n' evalc('disp(ipr)') ]);
             this.product_.addLog( ...
-                {'mlfourdfp.AbstractT4ResolveBuilder.t4ResolveError_.logger.fqfilename->' this.t4ResolveError_.logger.fqfilename});
+                ['mlfourdfp.AbstractT4ResolveBuilder.buildProduct.t4ResolveError_.logger.fqfilename->' this.t4ResolveError_.logger.fqfilename]);
         end
         function this = cacheT4s(this, imgFpsc)
             %  @return this.t4s_{r}{1} for r-number r is the reference; size(this.t4s_) == this.NRevisions;
