@@ -423,44 +423,8 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             deleteExisting('*_mskt.4dfp*');
         end
 		  
- 		function this = CollectionResolveBuilder(varargin)
- 			%% COLLECTIONRESOLVEBUILDER
- 			%  @param sessionData.
-            %  @param referenceTracer is char.
-            %  @param rnumberOfSource is numeric.
- 			
-            ip = inputParser;
-            ip.KeepUnmatched = true;
-            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.ISessionData'));
-            addParameter(ip, 'referenceTracer', 'fdg', @ischar);
-            addParameter(ip, 'rnumberOfSource', 2, @isnumeric);
-            addParameter(ip, 'workpath', pwd, @isdir);
-            parse(ip, varargin{:});
-
-            this.sessionData_ = ip.Results.sessionData;
-            this.sessionData_.attenuationCorrected = true;
-            this.rnumberOfSource_ = ip.Results.rnumberOfSource;
-            this.referenceTracer_ = ip.Results.referenceTracer;
-            if isempty(this.sessionData_.tracer)
-                this.sessionData_.tracer = this.ReferenceTracer;
-            end
-            this.workpath_ = ip.Results.workpath;
- 		end
- 	end 
-    
-    %% PRIVATE
-    
-    properties (Access = private)
-        areAligned_ = false;
-        compositeRB_ 
-        referenceTracer_
-        rnumberOfSource_
-        sessionData_
-        t4s_
-        workpath_
-    end
-    
-    methods (Access = private)
+        %% UTILITY
+        
         function fqfp  = ensureLastRnumber(this, fqfp, r)
             %% ENSURELASTRNUMBER
             %  @param fqfp
@@ -535,11 +499,54 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             front = this.ensureLastRnumber( ...
                 this.frontOfFileprefix(fps, varargin{:}), 1);
         end
+        function front = frontOfT4(~, fn)
+            parts = strsplit(fn, '_');
+            front = parts{1};
+        end
         function s     = scrubDatetime(~, s)
             re = regexp(s, '(?<tracer>\w+)dt\d+(?<remainder>\S*)', 'names');
             assert(~isempty(re))
             s = [re.tracer re.remainder];
         end 
+        
+ 		function this = CollectionResolveBuilder(varargin)
+ 			%% COLLECTIONRESOLVEBUILDER
+ 			%  @param sessionData.
+            %  @param referenceTracer is char.
+            %  @param rnumberOfSource is numeric.
+ 			
+            ip = inputParser;
+            ip.KeepUnmatched = true;
+            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.ISessionData'));
+            addParameter(ip, 'referenceTracer', 'fdg', @ischar);
+            addParameter(ip, 'rnumberOfSource', 2, @isnumeric);
+            addParameter(ip, 'workpath', pwd, @isdir);
+            parse(ip, varargin{:});
+
+            this.sessionData_ = ip.Results.sessionData;
+            this.sessionData_.attenuationCorrected = true;
+            this.rnumberOfSource_ = ip.Results.rnumberOfSource;
+            this.referenceTracer_ = ip.Results.referenceTracer;
+            if isempty(this.sessionData_.tracer)
+                this.sessionData_.tracer = this.ReferenceTracer;
+            end
+            this.workpath_ = ip.Results.workpath;
+ 		end
+ 	end 
+    
+    %% PRIVATE
+    
+    properties (Access = private)
+        areAligned_ = false;
+        compositeRB_ 
+        referenceTracer_
+        rnumberOfSource_
+        sessionData_
+        t4s_
+        workpath_
+    end
+    
+    methods (Access = private)
     end
 
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy

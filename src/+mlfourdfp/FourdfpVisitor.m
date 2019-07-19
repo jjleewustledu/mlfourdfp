@@ -1087,7 +1087,7 @@ classdef FourdfpVisitor
                 gunzip([fqfp '.nii.gz']);
             end
             if (lexist([fqfp '.nii']))
-                if (~ip.Results.minusN && latlfind(fp))
+                if (~ip.Results.minusN && this.latlfind(fp))
                     [s,r] = this.nifti_4dfp__(sprintf(' -4 %s %s', fqfp, fqfpo));
                     deleteExisting([fqfp '.nii*']);
                     return
@@ -1290,7 +1290,7 @@ classdef FourdfpVisitor
         end
         function   [t4,s,r] = t4_inv(this, varargin)
             ip = inputParser;
-            addRequired( ip, 'in',          @(x) lexist(x, 'file'));
+            addRequired( ip, 'in',          @lexist);
             addParameter(ip, 'out',         this.filenameT4inv(varargin{1}), ...
                                             @ischar);
             addParameter(ip, 'options', '', @ischar);
@@ -1306,8 +1306,8 @@ classdef FourdfpVisitor
         end
         function   [t4,s,r] = t4_mul(this, varargin)
             ip = inputParser;
-            addRequired(ip, 'A2B', @(x) lexist(x, 'file'));
-            addRequired(ip, 'B2C', @(x) lexist(x, 'file'));
+            addRequired(ip, 'A2B', @lexist);
+            addRequired(ip, 'B2C', @lexist);
             addOptional(ip, 'A2C', this.filenameT4mul(varargin{1:2}), ...
                                    @ischar);
             parse(ip, varargin{:});
