@@ -267,13 +267,16 @@ classdef FourdfpVisitor
             
             s = 0; r = '';
             ext = {'.4dfp.hdr' '.4dfp.img'};         
+            fv = mlfourdfp.FourdfpVisitor();
             for e = 1:length(ext)
-                [s,r] = mlfourdfp.FourdfpVisitor.lns([fqfp ext{e}], [fqfp1 ext{e}]);
+                [s,r] = fv.lns([fqfp ext{e}], [fqfp1 ext{e}]);
             end
-            FourdfpVisitor.copy_ifh(fqfp, fqfp1);
-            FourdfpVisitor.copy_imgrec(fqfp, fqfp1);
+            fv.copy_ifh(fqfp, fqfp1);
+            fv.copy_imgrec(fqfp, fqfp1);
+            fv.imgrecUpdate(fqfp1, ...
+                sprintf('mlfourdfp.FourdfpVisitor.lns_4dfp %s %s', ip.Results.fqfp, ip.Results.fqfp1))
         end
-        function copy_ifh(fqfp, fqfp1)
+        function         copy_ifh(fqfp, fqfp1)
             if (isempty(fqfp1))
                 fqfp1 = mybasename(fqfp);
             end
@@ -288,7 +291,7 @@ classdef FourdfpVisitor
             fwrite(fid1, Y);
             fclose (fid1);
         end
-        function copy_imgrec(fqfp, fqfp1)
+        function         copy_imgrec(fqfp, fqfp1)
             %% e.g.:
             %  rec test_ifh.4dfp.img Fri Feb 22 18:43:06 2019 jjlee@ophthalmic.wucon.wustl.edu Darwin 18.2.0 x86_64
             %  endrec Fri Feb 22 18:43:06 2019 jjlee
@@ -666,7 +669,7 @@ classdef FourdfpVisitor
                 sprintf(' %s %s', ip.Results.in, ip.Results.out));
             if (ip.Results.N)
                 this.clearIfhMmppixCenter(ip.Results.out, ip.Results.N);
-            end
+            end            
         end
         function      [s,r] = cropfrac_4dfp(this, varargin)
             ip = inputParser;
