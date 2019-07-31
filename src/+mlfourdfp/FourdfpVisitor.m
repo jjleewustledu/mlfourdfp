@@ -514,7 +514,7 @@ classdef FourdfpVisitor
         end
         function [t4,fqfp,s,r] = ...
                               align_commonModal7(this, varargin)
-            %% ALIGN_COMMONMODAL7 calls imgreg_4dfp with modes [4099 4099 3075 2051 2051 10243] + 256 and writes a log.
+            %% ALIGN_COMMONMODAL7 calls imgreg_4dfp with modes [4099 4099 3075 3075 2051 2051 10243] + 256 and writes a log.
             %  See also mlfourdfp.FourdfpVisitor.align_modes7, mlfourdfp.FourdfpVisitor.imgreg_4dfp.
             
             [t4,fqfp,s,r] = this.align_modes7('useCommonModal', true, varargin{:});

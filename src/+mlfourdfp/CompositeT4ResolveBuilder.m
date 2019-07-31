@@ -320,7 +320,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             assertSizeEqual(ipr.maskForImages, ipr.source);
             for ii = 1:length(ipr.maskForImages)           
                 if (strcmp(ipr.maskForImages{ii}, 'Msktgen'))
-                    try
+                    try                                               
                         mg   = mlpet.Msktgen( ...
                             'sessionData', this.sessionData, ...
                             'logPath', fullfile(pwd, 'Log', ''));
@@ -334,12 +334,13 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                             this.buildVisitor.copyfile_4dfp(mskt.fqfileprefix, mskt.fileprefix);
                         end
                         fqfps{ii} = mskt.fqfileprefix;
+                        continue
                     catch ME
-                        dispexcept(ME, 'mlfourdfp:RuntimeError', ...
+                        handwarning(ME, 'mlfourdfp:RuntimeError', ...
                             'CompositeT4ResolveBuilder.lazyMaskForImages failed case Msktgen on %s; trying %s', ...
-                            ipr.source{ii}, 'none');
+                            ipr.source{ii}, 'none');                        
+                        ipr.maskForImages{ii} = 'msktgen_4dfp';
                     end
-                    continue
                 end
                 if (strcmp(ipr.maskForImages{ii}, 'T1001'))
                     try
@@ -348,8 +349,9 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         end
                         fqfps{ii} = [ipr.maskForImages{ii} '_mskt'];
                     catch ME
-                        dispexcept(ME, 'mlfourdfp:RuntimeError', ...
-                            'CompositeT4ResolveBuilder.lazyMaskForImages failed case T1001; trying none');
+                        handwarning(ME, 'mlfourdfp:RuntimeError', ...
+                            'CompositeT4ResolveBuilder.lazyMaskForImages failed case T1001; trying none');                        
+                        fqfps{ii} = 'none';
                     end
                     continue
                 end
@@ -360,9 +362,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                         end
                         fqfps{ii} = [ipr.source{ii} '_mskt'];
                     catch ME
-                        dispexcept(ME, 'mlfourdfp:RuntimeError', ...
+                        handwarning(ME, 'mlfourdfp:RuntimeError', ...
                             'CompositeT4ResolveBuilder.lazyMaskForImages failed case msktgen_4dfp on %s; trying %s', ...
-                            ipr.source{ii}, 'none');
+                            ipr.source{ii}, 'none');                        
+                        fqfps{ii} = 'none';
                     end
                     continue
                 end
