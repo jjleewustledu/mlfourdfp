@@ -10,10 +10,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
         DISABLE_FINISHFILE = true % to load t4 files into class instances
     end
     
-    properties 
-        blurArg = 4.3
-    end
-    
 	properties (Dependent)
  		areAligned % TODO:  -> isAligned
         compositeRB
@@ -267,8 +263,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                 'maskForImages', ip.Results.maskForImages, ...
                 'resolveTag',    ip.Results.resolveTag, ...
                 'NRevisions',    ip.Results.NRevisions, ...
-                'logPath',       this.getLogPath(), ...
-                'blurArg',       this.blurArg);
+                'logPath',       this.getLogPath());
             cRB.neverMarkFinished = this.DISABLE_FINISHFILE;
             cRB.ignoreFinishMark  = this.DISABLE_FINISHFILE;
             this.compositeRB_ = cRB.resolve; 
