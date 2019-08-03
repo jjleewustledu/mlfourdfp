@@ -21,8 +21,18 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 if (4 == length(size(ic)) && size(ic,4) > 1) % short-circuit
                     if (lexist([ic.fqfileprefix '_avgt.4dfp.hdr']))
                         ic = mlfourd.ImagingContext2([ic.fqfileprefix '_avgt.4dfp.hdr']);
-                    else                        
-                        ic = ic.timeAveraged('taus', this.taus);
+                    else   
+                        
+% POSSIBLE BUG reducing quality of [15O] tracers
+%                         try
+%                             taus = this.taus(1:size(ic,4)); % [this.taus] >= [ic]
+%                         catch ME
+%                             handwarning(ME)
+%                             taus = ones(1, size(ic,4))*this.taus(end);
+%                             taus(1:length(this.taus)) = this.taus;
+%                         end
+
+                        ic = ic.timeAveraged();
                         ic.save;
                         fprintf('mlfourdfp.CompositeT4ResolveBuilder.embedInEuclideanR3 saved %s\n', ...
                             ic.fqfilename);
@@ -62,7 +72,7 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             if (this.isfinished)
                 this = this.alreadyFinalized(ipr);
                 return
-            end
+            end            
             while (this.rnumber <= this.NRevisions)
                 ipr.source = ipr.resolved;
                 ipr.dest   = cellfun(@(x) this.fileprefixRevision(x, this.rnumber), ipr.dest, 'UniformOutput', false);
@@ -426,6 +436,10 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
     
     methods (Access = protected)
         function this = buildProduct(this, ipr)
+            
+            if this.skipT4imgAll
+                return
+            end
             
             this.ipResults_ = ipr;
             this.rnumber = this.NRevisions;            
