@@ -716,6 +716,17 @@ classdef FourdfpVisitor
             [s,r] = this.delete_4dfp__( ...
                 sprintf(' %s', ip.Results.in));
         end
+        function [fqfp,s,r] = epi2t1w_4dfp(this, varargin)
+            ip = inputParser;
+            addRequired(ip, 'epi', @lexist_4dfp)
+            addRequired(ip, 't1w', @lexist_4dfp)
+            addParameter(ip, 'options', sprintf('-T%s/TRIO_Y_NDC', getenv('REFDIR')), @ischar)
+            parse(ip, varargin{:})
+            ipr = ip.Results;
+            
+            [s,r] = this.epi2t1w_4dfp__(sprintf('%s %s %s', ipr.epi, ipr.t1w, ipr.options));
+            fqfp = sprintf('%s_on_%s', myfileprefix(ipr.epi), mybasename(ipr.t1w));
+        end
         function      [e,c] = etaAndCurves(this, varargin)
             ip = inputParser;
             addRequired(ip, 'dest',   @this.lexist_4dfp);
@@ -975,8 +986,13 @@ classdef FourdfpVisitor
                 assert(lexist( sprintf(   '%s.4dfp.%s', ip.Results.out, x{ix})));
                 [s,r] = mlbash(sprintf('rm %s.4dfp.%s', ip.Results.in,  x{ix}));
             end
-        end
+        end        
         function      [s,r] = mpr2atl_4dfp(this, varargin)
+            %% MPR2ATL_4DFP redirects to mpr2atl1_4dfp.
+            
+            [s,r] = this.mpr2atl1_4dfp(varargin{:});
+        end
+        function      [s,r] = mpr2atl1_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'in',               @ischar);
             addParameter(ip, 'options', sprintf('-T%s/TRIO_Y_NDC -S711-2B', getenv('REFDIR')), @ischar);
@@ -988,7 +1004,7 @@ classdef FourdfpVisitor
             if (~strcmp(ip.Results.log, '/dev/null'))
                 cmd = [cmd ' &> ' ip.Results.log]; 
             end
-            [s,r] = this.mpr2atl_4dfp__(sprintf( ...
+            [s,r] = this.mpr2atl1_4dfp__(sprintf( ...
                 cmd, in_, ip.Results.options));
         end
         function      [s,r] = msktgen_4dfp(this, varargin)
@@ -2009,6 +2025,20 @@ classdef FourdfpVisitor
                 end
             end
         end
+        function [s,r] = epi2t1w_4dfp__(~, args)
+            %% EPI2T1W_4DFP__ 
+            % $Id: epi2t1w_4dfp,v 1.3 2018/08/17 05:44:37 avi Exp $
+            % Usage:	epi2t1w_4dfp <4dfp epi> <4dfp t1w> <tarstr>
+            % e.g.:	epi2t1w_4dfp 070630_4TT00280_t1w 070630_4TT00280_anat_ave -T/data/cninds01/data2/atlas/TRIO_Y_NDC
+            % 	options
+            % N.B.:	epi2t1w_4dfp assumes that the <4dfp t1w> atlas transform, e.g.,
+            % 	070630_4TT00280_t1w_to_TRIO_Y_NDC_t4 exists and is in the current working directory
+            % N.B.:	<tarstr> is either '711-2?' or '-T/targetpath/target'
+            %%
+            
+            assert(ischar(args));
+            [s,r] = dbbash(sprintf('%s/epi2t1w_4dfp %s', getenv('RELEASE'), args));
+        end
         function [s,r] = extract_frame_4dfp__(~, args)
             %% EXTRACT_FRAME_4DFP__
             % usage:	extract_frame_4dfp <(4dfp) stack> <(int) frame>
@@ -2159,8 +2189,8 @@ classdef FourdfpVisitor
             assert(ischar(args));
             [s,r] = dbbash(sprintf('move_4dfp %s', args));
         end
-        function [s,r] = mpr2atl_4dfp__(~, args)
-            %% MPR2ATL_4DFP__ reroutes to mpr2atl1_4dfp.
+        function [s,r] = mpr2atl1_4dfp__(~, args)
+            %% MPR2ATL1_4DFP__ 
             % $Id: mpr2atl1_4dfp,v 1.3 2018/08/17 05:50:20 avi Exp $
             % Usage:	mpr2atl1_4dfp <mpr_anat> [options]
             % e.g.,	    mpr2atl1_4dfp vc1234_654-3[.4dfp.img]
