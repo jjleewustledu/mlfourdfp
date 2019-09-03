@@ -258,10 +258,6 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         %% UTILITY
         
         function ipr     = copySourceToDest(this, ipr)
-            if (this.skipT4imgAll)
-                return
-            end
-            
             if (1 == this.rnumber)
                 try              
                     for s = 1:length(ipr.source)
