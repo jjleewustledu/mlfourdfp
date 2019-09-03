@@ -368,10 +368,15 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             this.product_ = cell(size(ipr.sources));
             r = 1;
             for i = 1:length(this.product_)
-                fqfp = this.buildVisitor_.t4img_4dfp( ...
-                    ipr.t4s{r}{i}, ipr.sources{i}.fqfileprefix, 'options', ['-O' ipr.ref.fqfileprefix]);
-                ic2 = mlfourd.ImagingContext2([fqfp '.4dfp.hdr']);
-                this.product_{i} = ic2;
+                try
+                    fqfp = this.buildVisitor_.t4img_4dfp( ...
+                        ipr.t4s{r}{i}, ipr.sources{i}.fqfileprefix, 'options', ['-O' ipr.ref.fqfileprefix]);
+                    ic2 = mlfourd.ImagingContext2([fqfp '.4dfp.hdr']);
+                    this.product_{i} = ic2;
+                catch ME
+                    dispexcept(ME)
+                    % consider:   fqfp = ipr.sources{i}.fqfileprefix
+                end
             end
         end    
         function this = t4imgDynamicImages(this, varargin)
@@ -410,11 +415,16 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                 return
             end
             for i = 1:length(imgs)
-                this.compositeRB_ = this.compositeRB_.t4img_4dfp( ...
-                    this.t4s_{1}{i}, ...
-                    this.frontOfFileprefix(imgs{i}), ...
-                    'ref', this.frontOfFileprefix(imgs{1})); % 'out', [this.frontOfFileprefixR1(imgs{i}) '_op_' lower(ipr.tracer)], ...
-                this.product_{i} = this.compositeRB_.product;
+                try
+                    this.compositeRB_ = this.compositeRB_.t4img_4dfp( ...
+                        this.t4s_{1}{i}, ...
+                        this.frontOfFileprefix(imgs{i}), ...
+                        'ref', this.frontOfFileprefix(imgs{1})); % 'out', [this.frontOfFileprefixR1(imgs{i}) '_op_' lower(ipr.tracer)], ...
+                    this.product_{i} = this.compositeRB_.product;
+                catch ME
+                    handwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                        'CollectionResolveBuilder.t4imgDynamicImages had trouble ')
+                end
             end        
         end 
         function        teardownIntermediates(~)
