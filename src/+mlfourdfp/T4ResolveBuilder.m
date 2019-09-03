@@ -362,7 +362,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
         function fqfps = lazyStageImages(this, ipr)
             fqfps = this.imageComposite.lazyExtractImages(ipr);
         end
-        function fqfp  = buildSourceTimeAveraged(this, ipr)
+        function fqfp  = buildSourceTimeAveraged(~, ipr)
             %  @param ipr.source is a f.-q.-fileprefix.
             %  @return fqfp := [ipr.source '_sumt'] generated on the filesystem.  
             %  See also mlfourd.ImagingContext2.timeAveraged.            
@@ -372,7 +372,7 @@ classdef T4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
             end
             
             ic = mlfourd.ImagingContext2(ipr.source);
-            ic = ic.timeAveraged('taus', this.taus);
+            ic = ic.timeAveraged();
             ic.save;
             fqfp = ic.fqfileprefix;
         end
