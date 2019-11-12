@@ -7,31 +7,33 @@ classdef PseudoCTBuilder < mlfourdfp.CarneyUmapBuilder2
  	%% It was developed on Matlab 9.5.0.1067069 (R2018b) Update 4 for MACI64.  Copyright 2019 John Joowon Lee.
  	
     properties (Dependent)
-        pseudoct_nii
+        pseudoct
     end
     
 	methods 
         
         %% GET
         
-        function g = get.pseudoct_nii(this)
-            g = this.pseudoct_nii_;
+        function g = get.pseudoct(this)
+            g = this.pseudoct_;
         end
         
         %%
         
         function umap = buildUmap(this, varargin)
             ip = inputParser;
-            addOptional(ip, 'ct', this.pseudoct_nii_, @isfile)
+            addOptional(ip, 'ct', this.pseudoct, @isfile)
             parse(ip, varargin{:})
             
             ct = myfileprefix(ip.Results.ct);
-            if ~isfile([ct '.nii'])
-                assert(isfile([ct '.nii.gz']), 'mlfourdfp:RuntimeError', 'PseudoCTBuilder.buildUmaps')
-                gunzip(ct)
+            if lstrfind(ct, '.nii.gz')
+                ct = gunzip(ct);
             end
-            system(sprintf('%s/nifti_4dfp -4 %s.nii %s.4dfp.hdr', getenv('RELEASE'), ct, ct)) % keep *.nii
-            umap = this.assembleCarneyUmap(ct);
+            if lstrfind(ct, '.nii')
+                system(sprintf('%s/nifti_4dfp -4 %s.nii %s.4dfp.hdr', getenv('RELEASE'), ct, ct)) % keep *.nii
+                ct = [myfileprefix(ct) '.4dfp.hdr'];
+            end
+            umap = this.assembleCarneyUmap(myfileprefix(ct));
         end
         function [ct,ctToMprT4] = CT2mpr_4dfp(this, ct, varargin)
             %% @return ct unchanged and ctToMprT4 is the indentity
@@ -48,9 +50,9 @@ classdef PseudoCTBuilder < mlfourdfp.CarneyUmapBuilder2
  			this = this@mlfourdfp.CarneyUmapBuilder2(varargin{:});
             ip = inputParser;
             ip.KeepUnmatched = true;
-            addParameter(ip, 'pseudoct_nii', 't1_pct.nii', @isfile)
+            addParameter(ip, 'pseudoct', 'ct.4dfp.hdr', @ischar)
             parse(ip, varargin{:})
-            this.pseudoct_nii_ = ip.Results.pseudoct_nii;
+            this.pseudoct_ = ip.Results.pseudoct;
             this.ct_rescaleIntercept = 0;
  		end
     end 
@@ -58,7 +60,7 @@ classdef PseudoCTBuilder < mlfourdfp.CarneyUmapBuilder2
     %% PRIVATE
     
     properties (Access = private)
-        pseudoct_nii_
+        pseudoct_
     end
     
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy

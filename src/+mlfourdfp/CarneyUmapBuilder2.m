@@ -38,7 +38,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
             deleteExisting([umap '.4dfp.*']);
             deleteExisting([umap '_b*.4dfp.*']);
             deleteExisting([umap '.log']);
-            ic = this.CarneyImagingContext(ip.Results.rescaledCT);
+            ic = this.CarneyImagingContext('fileobj', [ip.Results.rescaledCT '.4dfp.hdr'], 'kVp', this.ct_kVp);
             ic.saveas([umap '.4dfp.hdr']);
         end
         function [ctm,ic,ctToMprT4] = buildCTMasked2(this)
@@ -135,23 +135,22 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
  		end
  	end 
 
-    %% PROTECTED
-    
-    methods (Access = protected)
-        function umap = CarneyImagingContext(this, varargin)
+    methods (Static)
+        function umap = CarneyImagingContext(varargin)
             %% CARNEYIMAGINGCONTEXT follows Carney, et al. Med. Phys. 33(4) 2006 976-983.
             %  @param ct   is the (fully-qualified) fileprefix of the rescaled CT.
             %  @returns umap ImagingContext2.
             
-            import mlfourdfp.*;
+            import mlfourdfp.CarneyUmapBuilder2;
             ip = inputParser;
-            addOptional(ip, 'ctRescaled', '', @FourdfpVisitor.lexist_4dfp);
+            addParameter(ip, 'fileobj', [])
+            addParameter(ip, 'kVp', 120, @isnumeric)
             parse(ip, varargin{:});
+            ipr = ip.Results;
             
-            ct  = mlfourd.ImagingContext2([ip.Results.ctRescaled '.4dfp.hdr']);
-            %ct  = flip(ct, 1);
+            ct = mlfourd.ImagingContext2(ipr.fileobj);
             
-            lowHU    = ct.uthresh(this.CarneyBP); 
+            lowHU    = ct.uthresh(CarneyUmapBuilder2.CarneyBP(ipr.kVp)); 
             lowMask  = lowHU.binarized;
             highMask = lowMask.ones - lowMask;
             highHU   = ct .* highMask;
@@ -159,14 +158,15 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
             lowHU = (lowHU + 1000) * 9.6e-5;
             lowHU =  lowHU .* lowMask;
             
-            highHU = (highHU + 1000) * this.CarneyA + this.CarneyB;
+            highHU = (highHU + 1000) * CarneyUmapBuilder2.CarneyA(ipr.kVp) + ...
+                                       CarneyUmapBuilder2.CarneyB(ipr.kVp);
             highHU =  highHU .* highMask;
 
             umap = lowHU + highHU;
             umap = umap .* (umap.numgt(0));
         end  
-        function a    = CarneyA(this)
-            switch (this.ct_kVp)
+        function a    = CarneyA(kVp)
+            switch (kVp)
                 case 80
                     a = 3.64e-5;
                 case 100
@@ -180,11 +180,11 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
                 case 140
                     a = 5.64e-5;
                 otherwise
-                    error('mlfourdfp:valueOutOfBounds', 'CarneyUmapBuilder2.ct_kVp->%g is not supported', this.ct_kVp);
+                    error('mlfourdfp:RuntimeError', 'CarneyUmapBuilder2.CarneyA.kVp->%g is not supported', kVp);
             end
         end
-        function b    = CarneyB(this)
-            switch (this.ct_kVp)
+        function b    = CarneyB(kVp)
+            switch (kVp)
                 case 80
                     b = 6.26e-2;
                 case 100
@@ -198,11 +198,11 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
                 case 140
                     b = 4.08e-2;
                 otherwise
-                    error('mlfourdfp:valueOutOfBounds', 'CarneyUmapBuilder2.ct_kVp->%g is not supported', this.ct_kVp);
+                    error('mlfourdfp:RuntimeError', 'CarneyUmapBuilder2.CarneyB.kVp->%g is not supported', kVp);
             end
         end
-        function bp   = CarneyBP(this)
-            switch (this.ct_kVp)
+        function bp   = CarneyBP(kVp)
+            switch (kVp)
                 case 80
                     bp = 50;
                 case 100
@@ -216,7 +216,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
                 case 140
                     bp = 30;
                 otherwise
-                    error('mlfourdfp:valueOutOfBounds', 'CarneyUmapBuilder2.ct_kVp->%g is not supported', this.ct_kVp);
+                    error('mlfourdfp:RuntimeError', 'CarneyUmapBuilder2.CarneyBP.kVp->%g is not supported', kVp);
             end
         end 
     end
