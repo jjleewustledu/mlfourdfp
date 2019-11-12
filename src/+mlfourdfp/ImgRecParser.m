@@ -16,7 +16,11 @@ classdef ImgRecParser < handle & mlio.AbstractParser
     
 	methods (Static)
         function this = load(fn)
-            assert(lexist(fn, 'file'));
+            if ~lexist(fn, 'file')
+                irl = mlfourdfp.ImgRecLogger(fn);
+                irl.add('mlfourdfp.ImgRecLogger:  creating de novo');
+                irl.save;
+            end
             [pth, fp, fext] = myfileparts(fn); 
             if (lstrfind(fext, mlfourdfp.ImgRecParser.IMGREC_EXT) || ...
                 isempty(fext))
