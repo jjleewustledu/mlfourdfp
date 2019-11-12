@@ -50,8 +50,9 @@ classdef IfhParser < handle & mlio.AbstractParser
                 'matrix_size', hdr.dime.dim(2:5), ...
                 'global_minimum', hdr.dime.glmin, ...
                 'global_maximum', hdr.dime.glmax, ...
-                'scaling_factor', hdr.dime.pixdim(2:4), ...
+                'scaling_factor', abs(hdr.dime.pixdim(2:4)), ...
                 'slice_thickness', hdr.dime.pixdim(4));
+            this.N_ = ip.Results.N;
             if (~ip.Results.N), ...
                 this.denovo_.mmppix = hdr.dime.pixdim(2:4);
                 this.denovo_.center = hdr.hist.originator;     
@@ -242,6 +243,15 @@ classdef IfhParser < handle & mlio.AbstractParser
             ip.Results.client.imagingInfo.ifh = that.load(that.fqfilename);
         end
         function n = scalingFactor(this)
+            if ~isempty(this.denovo_)
+                if isfield(this.denovo_, 'scaling_factor')
+                    n = this.denovo_.scaling_factor;
+                    return
+                end
+                n = [];
+                return
+            end
+            
             idx = 1;
             n = [];
             while (idx <= length(this.cellContents))
@@ -254,12 +264,39 @@ classdef IfhParser < handle & mlio.AbstractParser
             end
         end
         function n = sliceThickness(this)
+            if ~isempty(this.denovo_)
+                if isfield(this.denovo_, 'slice_thickness')
+                    n = this.denovo_.slice_thickness;
+                    return
+                end
+                n = [];
+                return
+            end
+            
             n = this.rightSideNumeric('slice thickness (mm/pixel)');
         end
         function n = mmppix(this)
+            if ~isempty(this.denovo_)
+                if isfield(this.denovo_, 'mmppix')
+                    n = this.denovo_.mmppix;
+                    return
+                end
+                n = [];
+                return
+            end
+            
             n = this.rightSideNumerics('mmppix');
         end
         function n = center(this)
+            if ~isempty(this.denovo_)
+                if isfield(this.denovo_, 'center')
+                    n = this.denovo_.center;
+                    return
+                end
+                n = [];
+                return
+            end
+            
             n = this.rightSideNumerics('center');
         end
         function [contnt,idx] = findNextCell(this, fieldName, idx0)
