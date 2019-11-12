@@ -225,6 +225,10 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             assert(ischar(tracer));
             tracer = lower(tracer);
             avgf = this.product_{1}.fourdfp;
+            if ~iscell(this.product_)
+                error('mlfourdfp:TypeError', ...
+                    'CollectionResolveBuilder.productAverage expected this.product_ to be a cell-array')
+            end
             for p = 2:length(this.product_)
                 nextf = this.product_{p}.fourdfp;
                 avgf.img = avgf.img + nextf.img;
