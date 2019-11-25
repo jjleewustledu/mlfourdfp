@@ -46,7 +46,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
             %  @return ctm := this.sessionData.ctMasked('typ', 'fqfp')
             %  @return ic  := ctMasked as ImagingContext2 on MPR-space
             
-            if (~isdir(fullfile(this.sessionData.sessionPath, 'ct', '')))
+            if (~isfolder(fullfile(this.sessionData.sessionPath, 'ct', '')))
                 [ctm,ic,ctToMprT4] = this.buildCTMasked3;
                 return
             end
@@ -57,7 +57,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
             ctm  = this.sessionData.ctMasked('typ', 'fqfp');            
             ctd  = fullfile(this.sessionData.sessionPath, 'ct', '');
             
-            assert(isdir(ctd));            
+            assert(isfolder(ctd));            
             pwd0 = pushd(fileparts(ctd));
             
             if (~lexist([ct '.4dfp.img'])) % disambiguate ctd and ct
@@ -87,7 +87,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
             ctm  = this.sessionData.ctMasked('typ', 'fqfp');
             sesd = fullfile(this.sessionData.sessionPath, '');
             
-            assert(isdir(sesd));            
+            assert(isfolder(sesd));            
             pwd0 = pushd(sesd);
             
             assert(lexist([ct '.4dfp.img']))

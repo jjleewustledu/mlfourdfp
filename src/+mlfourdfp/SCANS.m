@@ -55,7 +55,7 @@ classdef SCANS
  			%  @param mrdir.
 
             ip = inputParser;
-            addRequied(ip, 'mrdir', @isdir)
+            addRequied(ip, 'mrdir', @isfolder)
             parse(ip, varargin{:})
             this.mrdir = ip.Results.mrdir;
 
