@@ -254,19 +254,28 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             addParameter(ip, 'compAlignMethod', 'align_multiSpectral', @ischar);
             addParameter(ip, 'client', 'resolve_this', @ischar);
             parse(ip, fqfps_avgt, varargin{:});
+            ipr = ip.Results;
             
+            fqfps_avgt = this.ensure_fqfps_avgt(fqfps_avgt);
             this.referenceTracer = fqfps_avgt{1};
-            if (isa(fqfps_avgt{1}, 'mlfourd.ImagingContext2'))
-                fqfps_avgt = cellfun(@(x) x.fqfileprefix, fqfps_avgt, 'UniformOutput', false);
+            
+            % trivial:  nothing to resolve
+            if length(fqfps_avgt) < 2
+                this.t4s_ = {fullfile(getenv('RELEASE'), 'T_t4')};
+                this.product_ = mlfourd.ImagingContext2(fqfps_avgt{1});
+                this.areAligned_ = true;
+                return
             end
+            
+            % non-trivial
             pwd0 = pushd(fileparts(fqfps_avgt{1}));
-            this.sessionData_.compAlignMethod = ip.Results.compAlignMethod;
+            this.sessionData_.compAlignMethod = ipr.compAlignMethod;
             cRB = mlfourdfp.CompositeT4ResolveBuilder( ...
                 'sessionData',   this.sessionData_, ...
                 'theImages',     fqfps_avgt, ...
-                'maskForImages', ip.Results.maskForImages, ...
-                'resolveTag',    ip.Results.resolveTag, ...
-                'NRevisions',    ip.Results.NRevisions, ...
+                'maskForImages', ipr.maskForImages, ...
+                'resolveTag',    ipr.resolveTag, ...
+                'NRevisions',    ipr.NRevisions, ...
                 'logPath',       this.getLogPath());
             cRB.neverMarkFinished = this.DISABLE_FINISHFILE;
             cRB.ignoreFinishMark  = this.DISABLE_FINISHFILE;
@@ -274,8 +283,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             this.t4s_ = this.compositeRB_.t4s;
             this.product_ = this.compositeRB_.product;
             this.areAligned_ = true;
-            %this.save;
-            %this.saveThis(ip.Results.client);
             moveExisting('*.mat0', fullfile(this.workpath, 'Log', ''), 'f');
             moveExisting('*.sub',  fullfile(this.workpath, 'Log', ''), 'f');
             popd(pwd0);
@@ -561,6 +568,28 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
     end
     
     methods (Access = private)
+        function c    = ensure_fqfps_avgt(~, c)
+            %% ensures that c contains fqfileprefixes containing "_avgt" and that avgt files exist
+            
+            assert(~isempty(c))
+            for i = 1:size(c,1)
+                for j = 1:size(c,2)
+                    if (isa(c{i,j}, 'mlfourd.ImagingContext2'))
+                        c{i,j} = c{i,j}.fqfileprefix;
+                    end
+                    if ~lstrfind(c{i,j}, '_avgt')
+                        if isfile([c{i,j} '_avgt.4dfp.hdr'])
+                            c{i,j} = [c{i,j} '_avgt.4dfp.hdr'];
+                        else
+                            ic2 = mlfourd.ImagingContext2(c{i,j});
+                            ic2 = ic2.timeAveraged;
+                            ic2.save
+                            c{i,j} = ic2.fqfileprefix;
+                        end
+                    end
+                end
+            end
+        end
     end
 
 	%  Created with Newcl by John J. Lee after newfcn by Frank Gonzalez-Morphy
