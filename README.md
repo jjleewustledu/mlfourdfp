@@ -1,6 +1,6 @@
 4dfp Methods.
 
-This respository builds on the 4dfp suite of image registration codes written by Avi Snyder at Washington Univesity in Saint Louis.  The original 4dfp codes are not provided.
+This repository builds on the 4dfp suite of image registration codes written by Avi Snyder at Washington Univesity in Saint Louis.  The original 4dfp codes are not provided.
 The new methods:
 
   - provide interoperability with NIfTI and MGH imaging formats
