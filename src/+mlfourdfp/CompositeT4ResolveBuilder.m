@@ -69,10 +69,17 @@ classdef CompositeT4ResolveBuilder < mlfourdfp.AbstractT4ResolveBuilder
                 this = this.finalize(ipr);
                 return
             end
+            
             if (this.isfinished)
-                this = this.alreadyFinalized(ipr);
-                return
-            end            
+                try
+                    this = this.alreadyFinalized(ipr);
+                    return
+                catch ME
+                    handwarning(ME,  ...
+                        'mlfourdfp:RuntimeWarning', ...
+                        'CompositeT4ResolveBuilder.resolve could not manage finalized images')
+                end
+            end
             while (this.rnumber <= this.NRevisions)
                 ipr.source = ipr.resolved;
                 ipr.dest   = cellfun(@(x) this.fileprefixRevision(x, this.rnumber), ipr.dest, 'UniformOutput', false);
