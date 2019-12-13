@@ -534,7 +534,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.ISessionData'));
             addParameter(ip, 'referenceTracer', 'fdg', @ischar);
             addParameter(ip, 'rnumberOfSource', 2, @isnumeric);
-            addParameter(ip, 'workpath', pwd, @isdir);
+            addParameter(ip, 'workpath', pwd, @isfolder);
             parse(ip, varargin{:});
 
             this.sessionData_ = ip.Results.sessionData;
