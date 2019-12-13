@@ -251,7 +251,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             %  @return property this.finished instantiated with path, tags, the booleans.
             
             ip = inputParser;
-            addParameter(ip, 'path', this.getLogPath, @isdir);
+            addParameter(ip, 'path', this.getLogPath, @isfolder);
             addParameter(ip, 'tag', this.sessionTag, @ischar);
             parse(ip, varargin{:});
             

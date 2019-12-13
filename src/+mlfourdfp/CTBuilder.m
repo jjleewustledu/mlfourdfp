@@ -85,7 +85,7 @@ classdef CTBuilder < mlfourdfp.CompositeT4ResolveBuilder
     
     methods (Access = protected)
         function tf = ctdir_exists(this)
-            tf = isdir(fullfile(this.sessionData.sessionPath, 'ct', ''));
+            tf = isfolder(fullfile(this.sessionData.sessionPath, 'ct', ''));
         end
         function tf = ct4dfp_exists(this)
             tf = lexist(this.sessionData.ct('typ', '.4dfp.img'));
