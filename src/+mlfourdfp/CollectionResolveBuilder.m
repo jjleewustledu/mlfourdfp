@@ -139,14 +139,14 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
         end
         function this = set.ReferenceTracer(this, s)
             assert(ischar(s));
-            this.referenceTracer_ = s;
+            this.referenceTracer_ = lower(s);
         end
         function g = get.referenceTracer(this)
             g = lower(this.referenceTracer_);
         end
         function this = set.referenceTracer(this, s)
             assert(ischar(s));
-            this.referenceTracer_ = s;
+            this.referenceTracer_ = lower(s);
         end
         function g = get.sessionData(this)
             g = this.sessionData_;
