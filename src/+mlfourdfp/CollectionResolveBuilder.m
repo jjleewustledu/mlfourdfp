@@ -135,21 +135,23 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             g = sessd.tracerResolvedFinal('typ', 'mlfourd.ImagingContext2');
         end
         function g = get.ReferenceTracer(this)
-            g = upper(this.referenceTracer_);
+            g = this.sessionData.ReferenceTracer;
         end
         function this = set.ReferenceTracer(this, s)
-            assert(ischar(s));
-            this.referenceTracer_ = lower(s);
+            this.sessionData.ReferenceTracer = s;
         end
         function g = get.referenceTracer(this)
-            g = lower(this.referenceTracer_);
+            g = this.sessionData.referenceTracer;
         end
         function this = set.referenceTracer(this, s)
-            assert(ischar(s));
-            this.referenceTracer_ = lower(s);
+            this.sessionData.referenceTracer = s;
         end
         function g = get.sessionData(this)
             g = this.sessionData_;
+        end
+        function this = set.sessionData(this, s)
+            assert(isa(s, 'mlpipeline.ISessionData'))
+            this.sessionData_ = s;
         end
         function g = get.t4s(this)
             g = this.t4s_;
@@ -539,7 +541,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             ip = inputParser;
             ip.KeepUnmatched = true;
             addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.ISessionData'));
-            addParameter(ip, 'referenceTracer', 'fdg', @ischar);
             addParameter(ip, 'rnumberOfSource', 2, @isnumeric);
             addParameter(ip, 'workpath', pwd, @isfolder);
             parse(ip, varargin{:});
@@ -547,7 +548,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             this.sessionData_ = ip.Results.sessionData;
             this.sessionData_.attenuationCorrected = true;
             this.rnumberOfSource_ = ip.Results.rnumberOfSource;
-            this.referenceTracer_ = ip.Results.referenceTracer;
             if isempty(this.sessionData_.tracer)
                 this.sessionData_.tracer = this.ReferenceTracer;
             end
@@ -560,7 +560,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
     properties (Access = private)
         areAligned_ = false;
         compositeRB_ 
-        referenceTracer_
         rnumberOfSource_
         sessionData_
         t4s_
