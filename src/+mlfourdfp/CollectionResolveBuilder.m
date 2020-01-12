@@ -567,7 +567,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
     
     methods (Access = private)
         function c    = ensure_fqfps_avgt(~, c)
-            %% ensures that c contains fqfileprefixes containing "_avgt" and that avgt files exist
+            %% ensures that c contains fqfileprefixes containing "_avg" and that avg files exist
             
             assert(~isempty(c))
             for i = 1:size(c,1)
@@ -575,16 +575,22 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                     if (isa(c{i,j}, 'mlfourd.ImagingContext2'))
                         c{i,j} = c{i,j}.fqfileprefix;
                     end
-                    if ~lstrfind(c{i,j}, '_avgt')
-                        if isfile([c{i,j} '_avgt.4dfp.hdr'])
-                            c{i,j} = [c{i,j} '_avgt.4dfp.hdr'];
-                        else
-                            ic2 = mlfourd.ImagingContext2(c{i,j});
-                            ic2 = ic2.timeAveraged;
-                            ic2.save
-                            c{i,j} = ic2.fqfileprefix;
-                        end
+                    ss = strsplit(c{i,j});
+                    if lstrfind(ss{end}, '_avg')
+                        continue
                     end
+                    if isfile([c{i,j} '_avgt.4dfp.hdr'])
+                        c{i,j} = [c{i,j} '_avgt.4dfp.hdr'];
+                        continue
+                    end
+                    if isfile([c{i,j} '_avg.4dfp.hdr'])
+                        c{i,j} = [c{i,j} '_avg.4dfp.hdr'];
+                        continue
+                    end
+                    ic2 = mlfourd.ImagingContext2(c{i,j});
+                    ic2 = ic2.timeAveraged;
+                    ic2.save
+                    c{i,j} = ic2.fqfileprefix;
                 end
             end
         end
