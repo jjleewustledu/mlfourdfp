@@ -575,7 +575,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                     if (isa(c{i,j}, 'mlfourd.ImagingContext2'))
                         c{i,j} = c{i,j}.fqfileprefix;
                     end
-                    ss = strsplit(c{i,j});
+                    ss = strsplit(c{i,j}, '_');
                     if lstrfind(ss{end}, '_avg')
                         continue
                     end
