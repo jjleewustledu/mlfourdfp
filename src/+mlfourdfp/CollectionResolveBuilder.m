@@ -264,7 +264,6 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             ipr = ip.Results;
             
             fqfps_avgt = this.ensure_fqfps_avgt(fqfps_avgt);
-            this.referenceTracer = fqfps_avgt{1};
             
             % trivial:  nothing to resolve
             if length(fqfps_avgt) < 2
