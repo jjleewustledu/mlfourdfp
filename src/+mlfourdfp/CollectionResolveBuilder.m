@@ -226,7 +226,13 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             
             assert(ischar(tracer));
             tracer = lower(tracer);
-            if ~iscell(this.product_)
+            assert(~isempty(this.product_))
+            if iscell(this.product_) && (1 == length(this.product))
+                this.product_ = this.product_{1};
+            end
+            if isa(this.product_, 'mlfourd.ImagingContext2') 
+                this.product_.fileprefix = sprintf('%s_avg', tracer);
+                this.product_.save
                 return
             end
             avgf = this.product_{1}.fourdfp;
