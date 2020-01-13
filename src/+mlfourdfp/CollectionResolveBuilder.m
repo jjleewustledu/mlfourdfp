@@ -416,9 +416,20 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                 this.product_{1} = mlfourd.ImagingContext2([imgs{1} '.4dfp.hdr']);
                 this.product_{1}.fourdfp;
                 
-                toks = regexp(this.t4s_{1}{1}, '\w+_to_(?<opTag>op_[a-zA-Z0-9]+)_t4$', 'names');
+                try
+                    at4 = this.t4s_{1}{1};
+                catch ME
+                    handwarning(ME)
+                    try
+                        at4 = this.t4s_{1};
+                    catch ME1
+                        handwarning(ME1)
+                        at4 = this.t4s_;
+                    end
+                end
+                toks = regexp(at4, '\w+_to_(?<opTag>op_[a-zA-Z0-9]+)_t4$', 'names');
                 fp = this.product_{1}.fileprefix;
-                if (strcmp(mybasename(this.t4s_{1}{1}), 'T_t4') || isempty(toks))
+                if (strcmp(mybasename(at4), 'T_t4') || isempty(toks))
                     fp1 = sprintf('%s_op_%s', fp, this.scrubDatetime(fp));
                     this.product_{1}.fileprefix = fp1;
                     this.buildVisitor_.copyfilef_4dfp(fp, fp1);
