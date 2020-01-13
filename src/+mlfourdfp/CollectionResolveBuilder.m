@@ -227,12 +227,10 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             assert(ischar(tracer));
             tracer = lower(tracer);
             assert(~isempty(this.product_))
-            if iscell(this.product_) && (1 == length(this.product))
-                this.product_ = this.product_{1};
-            end
             if isa(this.product_, 'mlfourd.ImagingContext2') 
                 this.product_.fileprefix = sprintf('%s_avg', tracer);
                 this.product_.save
+                this.product_ = {this.product_};
                 return
             end
             avgf = this.product_{1}.fourdfp;
@@ -268,7 +266,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             % trivial:  nothing to resolve
             if length(fqfps_avgt) < 2
                 this.t4s_ = {fullfile(getenv('RELEASE'), 'T_t4')};
-                this.product_ = mlfourd.ImagingContext2(fqfps_avgt{1});
+                this.product_ = {mlfourd.ImagingContext2([fqfps_avgt{1} '.4dfp.hdr'])};
                 this.areAligned_ = true;
                 return
             end
@@ -572,24 +570,28 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
     
     methods (Access = private)
         function c    = ensure_fqfps_avgt(~, c)
-            %% ensures that c contains fqfileprefixes containing "_avg" and that avg files exist
+            %% ENSURE_FQFPS_AVGT prepares inputs for mlfourdfp.CompositeT4ResolveBuilder.resolve();
+            %  it ensures existence of time-averaged images from dynamic images.  
+            %  @param c is cell array of char.
+            %  @return c is cell array of char fileprefix for existing, non-dynamic image.
             
+            fv = mlfourdfp.FourdfpVisitor();
             assert(~isempty(c))
             for i = 1:size(c,1)
-                for j = 1:size(c,2)
-                    if (isa(c{i,j}, 'mlfourd.ImagingContext2'))
-                        c{i,j} = c{i,j}.fqfileprefix;
+                for j = 1:size(c,2)                    
+                    if ~fv.lexist_4dfp(c{i,j})
+                        error('mlfourdfp:RuntimeError', ...
+                            'CollectionResolveBuilder.ensure_fqfps_avgt could not find %s', c{i,j})
                     end
-                    ss = strsplit(c{i,j}, '_');
-                    if lstrfind(ss{end}, '_avg')
+                    msize = fv.ifhMatrixSize(c{i,j});
+                    if length(msize) < 4
                         continue
                     end
-                    if isfile([c{i,j} '_avgt.4dfp.hdr'])
-                        c{i,j} = [c{i,j} '_avgt.4dfp.hdr'];
+                    if 1 == msize(4) 
                         continue
                     end
-                    if isfile([c{i,j} '_avg.4dfp.hdr'])
-                        c{i,j} = [c{i,j} '_avg.4dfp.hdr'];
+                    if fv.lexist_4dfp([c{i,j} '_avgt'])
+                        c{i,j} = [c{i,j} '_avgt'];
                         continue
                     end
                     ic2 = mlfourd.ImagingContext2(c{i,j});
