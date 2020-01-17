@@ -605,7 +605,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
                         c{i,j} = [c{i,j} '_avgt'];
                         continue
                     end
-                    ic2 = mlfourd.ImagingContext2(c{i,j});
+                    ic2 = mlfourd.ImagingContext2([c{i,j} '.4dfp.hdr']);
                     ic2 = ic2.timeAveraged;
                     ic2.save
                     c{i,j} = ic2.fqfileprefix;
