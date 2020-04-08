@@ -407,7 +407,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             parse(ip, varargin{:});
             ipr = ip.Results;
             assert(this.areAligned);  
-            assert(~isempty(this.compositeRB_)); 
+            %assert(~isempty(this.compositeRB_)); 
             assert(~isempty(this.t4s_)); 
             
             imgs = ipr.staging_handle(ipr.tracer, '');             
