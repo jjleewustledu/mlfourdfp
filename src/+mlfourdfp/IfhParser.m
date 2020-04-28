@@ -19,6 +19,11 @@ classdef IfhParser < handle & mlio.AbstractParser
             'number_of_dimensions' 'matrix_size' 'scaling_factor' 'mmppix' 'center'}
     end
     
+    properties (Dependent)
+        denovo
+        N
+    end
+    
 	methods (Static)
         function this = constructDenovo(varargin)
             ip = inputParser;
@@ -114,6 +119,22 @@ classdef IfhParser < handle & mlio.AbstractParser
     end
     
 	methods
+        
+        %% GET/SET
+        
+        function g = get.denovo(this)
+            g = this.denovo_;
+        end
+        function g = get.N(this)
+            g = this.N_;
+        end
+        function     set.N(this, s)
+            assert(islogical(s))
+            this.N_ = s;
+        end
+        
+        %%
+        
         function s = struct(this)
             %% STRUCT
             %  @return struct s with fields:
