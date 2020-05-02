@@ -367,6 +367,10 @@ classdef IfhParser < handle & mlio.AbstractParser
                 return
             end
             names = regexp(line, sprintf('%s\\s+:=\\s*(?<value1>\\S+)', fieldName), 'names');
+            if isempty(names)
+                ch = '';
+                return
+            end
             ch    = strtrim(names.value1);
         end
         function [nv,idx1] = rightSideNumeric(this, fieldName, varargin)
