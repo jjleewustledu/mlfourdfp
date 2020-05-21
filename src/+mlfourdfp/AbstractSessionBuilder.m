@@ -199,9 +199,6 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function obj  = tracerResolvedFinalSumt(this, varargin)
             obj = this.sessionData.tracerResolvedFinalSumt(varargin{:});
         end
-        function obj  = tracerResolvedSubj(this, varargin)
-            obj = this.sessionData.tracerResolvedSubj(varargin{:});
-        end
         function obj  = tracerResolvedAvgt(this, varargin)
             obj = this.sessionData.tracerResolvedAvgt(varargin{:});
         end
@@ -314,6 +311,14 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             if (isprop(this.sessionData, 'ignoreFinishMark'))
                 this.finished.ignoreFinishMark = this.sessionData.ignoreFinishMark;
             end
+        end
+    end
+    
+    %% HIDDEN, DEPRECATED
+    
+    methods (Hidden)        
+        function obj  = tracerResolvedSubj(this, varargin)
+            obj = this.sessionData.tracerResolvedSubj(varargin{:});
         end
     end
     
