@@ -284,7 +284,13 @@ classdef FourdfpInfo < mlfourd.Analyze75Info
             
             import mlfourdfp.FourdfpInfo.*;
             if (hdrIsReasonableSurfer(hdr))
-                X = permute(X, [1 3 2]); % rl, pa, si with respect to fsleyes voxel/world orientations
+                switch ndims(X)
+                    case 3
+                        X = permute(X, [1 3 2]); % rl, pa, si with respect to fsleyes voxel/world orientations
+                    case 4
+                        X = permute(X, [1 3 2 4]); % rl, pa, si with respect to fsleyes voxel/world orientations
+                    otherwise
+                end
                 %X = flip(X,1);
                 X = flip(X,3);
                 
