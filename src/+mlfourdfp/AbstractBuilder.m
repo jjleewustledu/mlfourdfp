@@ -1,15 +1,11 @@
-classdef (Abstract) AbstractBuilder < mlpipeline.AbstractBuilder
-	%% ABSTRACTBUILDER  
+classdef (Abstract) AbstractBuilder < matlab.mixin.Heterogeneous & mlpipeline.AbstractBuilder
+	%% ABSTRACTBUILDER provides utilities for managing 4dfp data.
 
 	%  $Revision$
  	%  was created 14-Nov-2018 15:01:10 by jjlee,
  	%  last modified $LastChangedDate$ and placed into repository /Users/jjlee/MATLAB-Drive/mlfourdfp/src/+mlfourdfp.
  	%% It was developed on Matlab 9.4.0.813654 (R2018a) for MACI64.  Copyright 2018 John Joowon Lee.
  	
-	properties
- 		
- 	end
-
     methods (Static)
         function fn    = fourdfpHdr(fp)
             fn = [myfileprefix(fp) '.4dfp.hdr'];
@@ -162,9 +158,6 @@ classdef (Abstract) AbstractBuilder < mlpipeline.AbstractBuilder
         end        
 		  
  		function this = AbstractBuilder(varargin)
- 			%% ABSTRACTBUILDER
- 			%  @param .
-
  			this = this@mlpipeline.AbstractBuilder(varargin{:});
  		end
  	end 

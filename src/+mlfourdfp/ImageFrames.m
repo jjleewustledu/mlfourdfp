@@ -110,10 +110,15 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
         end
         function len   = readLength(this, varargin)
             ip = inputParser;
-            addOptional(ip, 'tracerSif', this.sourceImage, @lexist_4dfp);
+            addOptional(ip, 'tracerSif', this.sourceImage);
             parse(ip, varargin{:});
+            tracerSif = ip.Results.tracerSif;
+            if iscell(tracerSif)
+                tracerSif = tracerSif{1};
+            end
+            tracerSif = myfileprefix(tracerSif);
             
-            [~,len] = mlbash(sprintf('awk ''/matrix size \\[4\\]/{print $NF}'' %s.4dfp.ifh', ip.Results.tracerSif));
+            [~,len] = mlbash(sprintf('awk ''/matrix size \\[4\\]/{print $NF}'' %s.4dfp.ifh', tracerSif));
             len = str2double(len);
         end
         function mmpp  = readScalingFactors(this, varargin)

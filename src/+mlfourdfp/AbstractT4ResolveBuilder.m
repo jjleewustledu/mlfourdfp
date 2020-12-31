@@ -84,27 +84,13 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             f = str2double(names.f) + offset;
         end            
         function fqfn = loggerFilename(varargin)
-            %% LOGGERFILENAME ... 
-            %  Usage:  fq_filename = loggerFilename(['func', func_value, 'tag', tag_value, 'path', path_value]) 
-            %  @param method is the name of the calling function
-            %  @param tag is any string identifier
-            %  @param path is the path to the log file
-            %  @returns fqfn is a standardized log filename
-
             fqfn = [mlfourdfp.AbstractT4ResolveBuilder.loggerFileprefix(varargin{:}) '.log'];
         end
         function fqfp = loggerFileprefix(varargin)
-            %% LOGGERFILEPREFIX ... 
-            %  Usage:  fq_fileprefix = loggerFileprefix(['func', func_value, 'tag', tag_value, 'path', path_value]) 
-            %  @param method is the name of the calling function
-            %  @param tag is any string identifier
-            %  @param path is the path to the log file
-            %  @returns fqfp is a standardized log fileprefix
-
             ip = inputParser;
             addRequired( ip, 'tag', @ischar);
             addParameter(ip, 'func', 'unknownFunc', @ischar);
-            addParameter(ip, 'path', pwd, @isdir);
+            addParameter(ip, 'path', pwd, @isfolder);
             parse(ip, varargin{:});
             tag = strrep(mybasename(ip.Results.tag), '.', '_');
             if (~isempty(tag) && strcmp(tag(end), '_'))
@@ -164,8 +150,8 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             g = this.sessionData_.epochTag;
         end
         function g    = get.gaussArg(this)
-            %g = 1.1;
-            g = this.F_HALF_x_FWHM/this.blurArg;
+            F_HALF_x_FWHM = 10*0.4412712; % used with args to FourdfpVisitor.{imgblur_4dfp,gauss_4dfp}
+            g = F_HALF_x_FWHM/this.blurArg;
         end
         function g    = get.imageComposite(this)
             g = this.imageComposite_;
@@ -809,13 +795,6 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
         end
         
 		function this = AbstractT4ResolveBuilder(varargin)
- 			%% ABSTRACTT4RESOLVEBUILDER
-            %  @param named NRevisions
-            %  @param named keepForensics
-            %  @param named resolveTag
-            %  @param named theImages
-            %  @param named ipResults
-
  			
             this = this@mlfourdfp.AbstractSessionBuilder(varargin{:});
             if (0 == nargin); return; end
@@ -823,6 +802,7 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             %% invoke copy-ctor
             
             if (1 == nargin && isa(varargin{1}, 'mlfourdfp.AbstractT4ResolveBuilder'))
+                warning('mlfourdfp:RuntimeWarning', 'AbstractT4ResolveBuilder:deprecatedCopyCtor')
                 aCopy = varargin{1};
                 this.blurArg_ = aCopy.blurArg_;
                 this.imageRegLog = aCopy.imageRegLog;

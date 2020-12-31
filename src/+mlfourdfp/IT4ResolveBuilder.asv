@@ -10,6 +10,7 @@ classdef IT4ResolveBuilder
     
     properties (Abstract)        
         imageRegLog
+        NRevisions  
         resolveLog
         resolveTag
         theImages
@@ -27,9 +28,11 @@ classdef IT4ResolveBuilder
             %  @param indicesLogical is logical array.
             %  @param t40        is the initial t4-file for the transformation:  default this.buildVisitor.transverse_t4.
             %  @param resolveTag is char; default is this.resolveTag.
-            %  @param log        is the f.q. filename of the log file; default is /dev/null.
-            %  @return intermediate filesystem objects, but N.B. actions of methods teardown*(), finalize().            
-            %%     
+            %  @param log        is the f.q. filename of the log file:  default /dev/null.
+            %  @param this.finished.isfinished == true discontinues mutations and call this.alreadyFinalized.
+            %  @return intermediate filesystem objects, but N.B. actions of teardownRevision, teardownResolve, finalize.
+            
+            %%
             
         finalize(this)
         teardownLogs(this)

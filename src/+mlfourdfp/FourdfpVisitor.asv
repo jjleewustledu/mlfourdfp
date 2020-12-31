@@ -1092,8 +1092,7 @@ classdef FourdfpVisitor
                 cmd, in_, ip.Results.options));
         end
         function      [s,r] = msktgen_4dfp(this, varargin)
-            %% @return files <in>_mskt.4dfp.*
-            
+            %% @return file
             ip = inputParser;
             addRequired( ip, 'in',             @ischar);
             addOptional( ip, 'threshold', 200, @isnumeric);
@@ -1160,8 +1159,6 @@ classdef FourdfpVisitor
                 sprintf('%s %i %s %s', in_, ip.Results.threshold, ip.Results.options, log));
         end
         function this       = msktgenMprage(this, varargin)
-            %% @return files <fqfp>_mskt.4dfp.*
-            
             ip = inputParser;
             addRequired(ip, 'fqfp', @ischar);
             addOptional(ip, 'atl', fullfile(getenv('REFDIR'), 'TRIO_Y_NDC'), @ischar);

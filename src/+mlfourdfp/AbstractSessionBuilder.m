@@ -263,6 +263,9 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         end
         
  		function this = AbstractSessionBuilder(varargin)
+            %% @param census
+            %  @param sessionData is an mlpipeline.ISessionData
+            
  			this = this@mlfourdfp.AbstractBuilder(varargin{:});            
             ip = inputParser;
             ip.KeepUnmatched = true;            
@@ -314,10 +317,11 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         end
     end
     
-    %% HIDDEN, DEPRECATED
+    %% HIDDEN
     
     methods (Hidden)        
         function obj  = tracerResolvedSubj(this, varargin)
+            %% DEPRECATED
             obj = this.sessionData.tracerResolvedSubj(varargin{:});
         end
     end
