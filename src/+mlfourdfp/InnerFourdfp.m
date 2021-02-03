@@ -180,7 +180,11 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
             that.imagingInfo_.hdr = hdr_;
             try                
                 warning('off', 'MATLAB:structOnObject');
-                ana = mlniftitools.make_ana(single(that.img_), that.mmppix);
+                if numel(that.mmppix) < 3
+                    ana = mlniftitools.make_ana(single(that.img_), [that.mmppix that.mmppix(2)]);
+                else
+                    ana = mlniftitools.make_ana(single(that.img_), that.mmppix);
+                end
                 mlniftitools.save_untouch_nii(ana, that.fqfileprefix_4dfp_hdr);                
                 that.imagingInfo_.ifh.fqfileprefix = that.fqfileprefix;
                 that.imagingInfo_.ifh.save(that);
