@@ -160,7 +160,9 @@ classdef SimpleT4ResolveBuilder < mlfourdfp.AbstractBuilder
             b = cell(size(this.theImages));
             for ib = 1:length(b)
                 b{ib} = this.theImages{ib}.blurred(this.blurArg(ib));
-                b{ib}.save();
+                if ~isfile(b{ib}.fqfilename)
+                    b{ib}.save();
+                end
             end
         end
         function this = t4imgAll(this, fps)
