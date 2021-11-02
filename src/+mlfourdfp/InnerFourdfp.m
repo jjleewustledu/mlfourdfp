@@ -154,12 +154,12 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
             assert(0 == mlbash(sprintf('which %s', app)), ...
                 'mlfourdfp:externalAppNotFound', ...
                 'InnerFourdfp.viewExternally could not find %s', app);
-            tmp = that.tempFqfilename;
-            that.fqfilename = tmp;
+            that.fqfilename =  that.tempFqfilename;
+            that.filepath = tempdir;
             try
                 that.save; % always save temp; internal img likely has changed from img on filesystem
                 v = mlfourdfp.Viewer(app);
-                tmp = [tmp varargin];
+                tmp = [that.fqfilename varargin];
                 [s,r] = v.aview(tmp{:});
                 that.deleteExisting(tmp);
             catch ME
