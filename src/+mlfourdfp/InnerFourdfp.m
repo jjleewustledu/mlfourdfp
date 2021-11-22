@@ -92,7 +92,7 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
             switch (this.filesuffix)
                 case FourdfpInfo.SUPPORTED_EXT
                 case [NIfTIInfo.SUPPORTED_EXT]
-                    deleteExisting([this.fqfileprefix '.nii*']);
+                    %deleteExisting([this.fqfileprefix '.nii*']);
                     this.img = FourdfpInfo.exportFourdfpToNIfTI(this.img, struct(this.ifh).orientation);
                     info = NIfTIInfo(this.fqfilename, ...
                         'datatype', this.datatype, 'ext', this.imagingInfo.ext, 'filetype', this.imagingInfo.filetype, 'N', this.N , 'untouch', false, 'hdr', this.hdr);
@@ -102,8 +102,8 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
                        'separator', this.separator, 'stack', this.stack, 'viewer', this.viewer);
                     this.imagingInfo.hdr = hdr_;
                 case MGHInfo.SUPPORTED_EXT 
-                    deleteExisting([this.fqfileprefix '.mgz']);
-                    deleteExisting([this.fqfileprefix '.mgh']);
+                    %deleteExisting([this.fqfileprefix '.mgz']);
+                    %deleteExisting([this.fqfileprefix '.mgh']);
                     [this.img_,hdr_] = FourdfpInfo.exportFourdfpToFreesurferSpace(this.img_, hdr_);
                     info = MGHInfo(this.fqfilename, ...
                         'datatype', this.datatype, 'ext', this.imagingInfo.ext, 'filetype', this.imagingInfo.filetype, 'N', this.N , 'untouch', false, 'hdr', this.hdr);
