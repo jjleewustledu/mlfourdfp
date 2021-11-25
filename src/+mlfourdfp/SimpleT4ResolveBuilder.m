@@ -1,5 +1,5 @@
 classdef SimpleT4ResolveBuilder < mlfourdfp.AbstractBuilder
-	%% SIMPLET4RESOLVEBUILDER avoids the complexity of AbstractT4ResolveBuilder and its implementations.
+	%% SIMPLET4RESOLVEBUILDER implements t4_resolve while avoiding the complexity of AbstractT4ResolveBuilder.
 
 	%  $Revision$
  	%  was created 30-Dec-2020 10:44:06 by jjlee,
@@ -109,6 +109,9 @@ classdef SimpleT4ResolveBuilder < mlfourdfp.AbstractBuilder
             this = this.finalize();
         end
         function fps = imageReg(this)
+            this.ensureFiles(this.theImages)
+            this.ensureFiles(this.blurredImages)
+            this.ensureFiles(this.maskForImages)
             len = length(this.theImages);
             fps = cellfun(@(x) x.fileprefix, this.theImages, 'UniformOutput', false);
             bfps = cellfun(@(x) x.fileprefix, this.blurredImages(), 'UniformOutput', false);
@@ -133,6 +136,14 @@ classdef SimpleT4ResolveBuilder < mlfourdfp.AbstractBuilder
                     end
                 end
             end 
+        end
+        function ensureFiles(~, ics)
+            for i = 1:length(ics)
+                if ~isfile(ics{i}.fqfn)
+                    assert(~isempty(ics{i}))
+                    ics{i}.save()
+                end
+            end
         end
         function this = resolveAndPaste(this, fps)
             % Must use short fileprefixes in calls to t4_resolve to avoid filenaming error by t4_resolve.  E.g.:
