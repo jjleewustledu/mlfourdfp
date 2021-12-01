@@ -1,5 +1,6 @@
 classdef FilenameState < mlfourdfp.ImagingState
 	%% FILENAMESTATE 
+    %  @deprecated
     
 	%  $Revision$
  	%  was created 25-Apr-2016 23:01:59

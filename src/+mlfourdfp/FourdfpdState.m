@@ -1,5 +1,6 @@
 classdef FourdfpdState < mlfourdfp.ImagingState
 	%% FOURDFPDSTATE has-an mlfourd.CellCompositeState 
+    %  @deprecated
     
 	%  $Revision$
  	%  was created 25-Apr-2016 22:58:52

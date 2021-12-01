@@ -1,6 +1,7 @@
 classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
 	%% FOURDFP is a NIfTIdecorator that composes an internal INIfTI object according to the decorator design pattern.
     %  It is presently a stub for future development of fourdfp tools.
+    %  @deprecated
 
 	%  $Revision$
  	%  was created 24-Jan-2017 19:36:07

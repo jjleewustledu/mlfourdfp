@@ -1,5 +1,6 @@
-classdef (Abstract) ImagingState < mlfourdfp.FourdfpIO
+classdef (Abstract) ImagingState < mlio.IOInterface
 	%% IMAGINGSTATE is the parent class for all internal states used by ImagingContext in a state design pattern.
+    %  @deprecated
 
 	%  $Revision$
  	%  was created 25-Apr-2016 22:58:52
@@ -134,8 +135,8 @@ classdef (Abstract) ImagingState < mlfourdfp.FourdfpIO
                 NumericalNIfTIdState(this.concreteObj_, this.contexth_));
             b = this.contexth_.blurred(varargin{:});
         end
-        function c    = char(this)
-            c = char(this.concreteObj_);
+        function c    = char(this, varargin)
+            c = this.concreteObj_.char(varargin{:});
         end
         function        close(this)
             if (~lexist(this.fqfilename, 'file'))
@@ -238,6 +239,9 @@ classdef (Abstract) ImagingState < mlfourdfp.FourdfpIO
             this.contexth_.changeState( ...
                 NIfTIdState(this.concreteObj_, this.contexth_));
             tf = this.contexth_.sizeLt(varargin{:});
+        end
+        function s    = string(this, varargin)
+            s = this.concreteObj_.string(varargin{:});
         end
         function t    = thresh(this, varargin)
             %% THRESH

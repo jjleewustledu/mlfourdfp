@@ -1,5 +1,6 @@
 classdef FourdfpcState < mlfourdfp.ImagingState
 	%% FOURDFPCSTATE  
+    %  @deprecated
 
 	%  $Revision$
  	%  was created 25-Apr-2016 22:58:52
