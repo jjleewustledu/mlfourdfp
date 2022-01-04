@@ -23,7 +23,7 @@ classdef ImgRecLogger < handle & mlpipeline.AbstractLogger
             this = this@mlpipeline.AbstractLogger(varargin{:});  
             this.cellArrayList_ = mlpatterns.CellArrayList; % reset  
             
-            if (lexist(this.fqfilename, 'file'))
+            if (isfile(this.fqfilename))
                 ipr = mlfourdfp.ImgRecParser.loadx(this.fqfileprefix, this.filesuffix);
                 this.cons([sprintf('mlfourdfp.ImgRecLogger.ctor fqfilename->%s', this.fqfilename) ipr.cellContents]);
             end
@@ -76,7 +76,7 @@ classdef ImgRecLogger < handle & mlpipeline.AbstractLogger
             if (isempty(this.contents))
                 this.add('mlfourdfp.ImgRecLogger.save; see also %s.log', this.fqfileprefix);
             end
-            mlsystem.FilesystemRegistry.cellArrayListToTextfile( ...
+            mlio.FilesystemRegistry.cellArrayListToTextfile( ...
                 this.cellArrayList_, this.fqfilename, 'w');
         end
     end 

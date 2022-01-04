@@ -47,7 +47,7 @@ classdef Test_IfhParser < matlab.unittest.TestCase
         end
         function test_constructDenovo(this)
             import mlfourdfp.*;
-            nh = InnerFourdfp(FourdfpInfo([this.fileprefix '.4dfp.hdr']));
+            nh = InnerFourdfp(mlfourd.FourdfpInfo([this.fileprefix '.4dfp.hdr']));
             tmpfp = tempFileprefix(this.fileprefix);
             deno = IfhParser.constructDenovo( ...
                 nh.hdr, ...

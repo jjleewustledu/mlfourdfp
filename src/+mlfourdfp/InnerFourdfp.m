@@ -20,11 +20,11 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
                 InnerFourdfp.createImagingInfo(fn, varargin{:}), varargin{:});
         end
         function info = createImagingInfo(fn, varargin)
-            info = mlfourdfp.FourdfpInfo(fn, varargin{:});
+            info = mlfourd.FourdfpInfo(fn, varargin{:});
         end
         function [s,finfo] = imagingInfo2struct(fn, varargin)
             fn = [myfileprefix(fn) '.4dfp.hdr'];
-            finfo = mlfourdfp.FourdfpInfo(fn, varargin{:});
+            finfo = mlfourd.FourdfpInfo(fn, varargin{:});
             nii = finfo.make_nii;
             s = struct( ...
                 'hdr', nii.hdr, ...
@@ -90,10 +90,10 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
             import mlfourd.* mlfourdfp.* mlsurfer.*;  
             hdr_ = this.hdr;
             switch (this.filesuffix)
-                case FourdfpInfo.SUPPORTED_EXT
+                case mlfourd.FourdfpInfo.SUPPORTED_EXT
                 case [NIfTIInfo.SUPPORTED_EXT]
                     %deleteExisting([this.fqfileprefix '.nii*']);
-                    this.img = FourdfpInfo.exportFourdfpToNIfTI(this.img, struct(this.ifh).orientation);
+                    this.img = mlfourd.FourdfpInfo.exportFourdfpToNIfTI(this.img, struct(this.ifh).orientation);
                     info = NIfTIInfo(this.fqfilename, ...
                         'datatype', this.datatype, 'ext', this.imagingInfo.ext, 'filetype', this.imagingInfo.filetype, 'N', this.N , 'untouch', false, 'hdr', this.hdr);
                     this = InnerNIfTI(info, ...
@@ -104,7 +104,7 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
                 case MGHInfo.SUPPORTED_EXT 
                     %deleteExisting([this.fqfileprefix '.mgz']);
                     %deleteExisting([this.fqfileprefix '.mgh']);
-                    [this.img_,hdr_] = FourdfpInfo.exportFourdfpToFreesurferSpace(this.img_, hdr_);
+                    [this.img_,hdr_] = mlfourd.FourdfpInfo.exportFourdfpToFreesurferSpace(this.img_, hdr_);
                     info = MGHInfo(this.fqfilename, ...
                         'datatype', this.datatype, 'ext', this.imagingInfo.ext, 'filetype', this.imagingInfo.filetype, 'N', this.N , 'untouch', false, 'hdr', this.hdr);
                     this = InnerMGH(info, ...
@@ -151,6 +151,9 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
         function [s,r] = viewExternally(this, app, varargin)
             s = []; r = '';
             that = copy(this); % avoid side effects
+            if isa(app, 'mlfourd.IViewer')
+                app = app.app;
+            end
             assert(0 == mlbash(sprintf('which %s', app)), ...
                 'mlfourdfp:externalAppNotFound', ...
                 'InnerFourdfp.viewExternally could not find %s', app);
@@ -176,7 +179,7 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
         function save__(this)
             that = copy(this);
             assert(lstrfind(this.filesuffix, '.4dfp'));
-            [that.img_,hdr_] = mlfourdfp.FourdfpInfo.exportFourdfp(that.img_, that.imagingInfo.hdr); %% KLUDGE
+            [that.img_,hdr_] = mlfourd.FourdfpInfo.exportFourdfp(that.img_, that.imagingInfo.hdr); %% KLUDGE
             that.imagingInfo_.hdr = hdr_;
             try                
                 warning('off', 'MATLAB:structOnObject');
@@ -210,8 +213,8 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
         end
         function this = adjustSRows(this)
             this.hdr.hist.srow_x(4) = this.hdr.hist.srow_x(4) / this.hdr.dime.pixdim(2);
-            this.hdr.hist.srow_y(4) = this.hdr.hist.srow_y(4) / this.hdr.dime.pixdim(2);
-            this.hdr.hist.srow_z(4) = this.hdr.hist.srow_z(4) / this.hdr.dime.pixdim(2);
+            this.hdr.hist.srow_y(4) = this.hdr.hist.srow_y(4) / this.hdr.dime.pixdim(3);
+            this.hdr.hist.srow_z(4) = this.hdr.hist.srow_z(4) / this.hdr.dime.pixdim(4);
         end
     end
     

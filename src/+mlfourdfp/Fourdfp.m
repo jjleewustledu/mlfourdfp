@@ -33,14 +33,13 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
             this.component.save;
         end
         function obj = saveas(this, fqfn)
-            import mlfourdfp.*;
             obj = this.clone;
             [pth,fp,x] = myfileparts(fqfn);
             if (isempty(x))
                 fqfp = fullfile(pth, fp);
-                obj.component_ = this.component.saveas([fqfp FourdfpInfo.FOURDFP_EXT]);            
+                obj.component_ = this.component.saveas([fqfp mlfourd.FourdfpInfo.FOURDFP_EXT]);            
                 obj.fvisitor_.nifti_4dfp_4(fqfp);
-                obj.filesuffix = FourdfpInfo.FOURDFP_EXT;
+                obj.filesuffix = mlfourd.FourdfpInfo.FOURDFP_EXT;
                 deleteExisting([fqfp '.nii']);
                 deleteExisting([fqfp '.nii.gz']);
                 return
@@ -59,7 +58,7 @@ classdef Fourdfp < mlfourd.NIfTIdecoratorProperties
                 return
             end
             this = this.append_descrip('decorated by mlfourdfp.Fourdfp');
-            this.component_.filesuffix = FourdfpInfo.FOURDFP_EXT;
+            this.component_.filesuffix = mlfourd.FourdfpInfo.FOURDFP_EXT;
             this.component_.img        = single(this.component_.img);
             this.fvisitor_ = FourdfpVisitor;
  		end

@@ -129,7 +129,7 @@ classdef (Abstract) AbstractBuilder < matlab.mixin.Heterogeneous & mlpipeline.Ab
                     return
                 end
                 [s,r] = this.buildVisitor.nifti_4dfp_n(myfileprefix(ip.Results.filename));
-                assert(lexist(myfilename(ip.Results.filename), 'file'));
+                assert(lexist(myfilename(ip.Results.filename, '.nii.gz'), 'file'));
                 return
             end
             if (2 == exist([ip.Results.filename '.nii'], 'file'))

@@ -10,8 +10,8 @@ classdef (Abstract) ImagingState < mlio.IOInterface
  	%% It was developed on Matlab 9.0.0.341360 (R2016a) for MACI64.
  	 
 	properties (Abstract)
-        fourdfpc
-        fourdfpd
+%         fourdfpc
+%         fourdfpd
     end
     
     properties (Dependent)
