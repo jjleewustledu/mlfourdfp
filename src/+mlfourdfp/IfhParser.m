@@ -73,10 +73,11 @@ classdef IfhParser < handle & mlio.AbstractParser
         end
         function this = load(varargin)
             ip = inputParser;
-            addRequired(ip, 'fn', @(x) lexist(x, 'file'));
+            addRequired(ip, 'fn', @isfile);
             addParameter(ip, 'N', mlpipeline.ResourcesRegistry.instance().defaultN, @islogical);
             parse(ip, varargin{:});
             fn = ip.Results.fn;
+            fn = convertStringsToChars(fn);
             
             [pth, fp, fext] = myfileparts(fn); 
             if (lstrfind(fext, mlfourdfp.IfhParser.IFH_EXT) || ...
@@ -92,6 +93,7 @@ classdef IfhParser < handle & mlio.AbstractParser
                 'IfhParser.load does not support file-extension .%s; consider using loadx', fext);
         end
         function this = loadx(fn, ext, varargin)
+            fn = convertStringsToChars(fn);
             ip = inputParser;
             addParameter(ip, 'N', mlpipeline.ResourcesRegistry.instance().defaultN, @islogical);
             parse(ip, varargin{:});
@@ -102,7 +104,7 @@ classdef IfhParser < handle & mlio.AbstractParser
                 end
                 fn = [fn ext];
             end
-            assert(lexist(fn, 'file'));
+            assert(isfile(fn));
             [pth, fp, fext] = filepartsx(fn, ext); 
             this = mlfourdfp.IfhParser.loadText(fn);
             this.filepath_   = pth;
@@ -435,6 +437,7 @@ classdef IfhParser < handle & mlio.AbstractParser
             end
         end
         function this = loadText(fn)
+            fn = convertStringsToChars(fn);
             import mlfourdfp.*;
             this = IfhParser;
             this.cellContents_ = IfhParser.textfileToCell(fn);

@@ -16,6 +16,7 @@ classdef ImgRecParser < handle & mlio.AbstractParser
     
 	methods (Static)
         function this = load(fn)
+            fn = convertStringsToChars(fn);
             if ~lexist(fn, 'file')
                 irl = mlfourdfp.ImgRecLogger(fn);
                 irl.add('mlfourdfp.ImgRecLogger:  creating de novo');
@@ -34,6 +35,7 @@ classdef ImgRecParser < handle & mlio.AbstractParser
                 'ImgRecParser.load does not support file-extension .%s; consider using loadx', fext);
         end
         function this = loadx(fn, ext)
+            fn = convertStringsToChars(fn);
             if (~lstrfind(fn, ext))
                 if (~strcmp('.', ext(1)))
                     ext = ['.' ext];
@@ -110,6 +112,7 @@ classdef ImgRecParser < handle & mlio.AbstractParser
     
     methods (Static, Access = 'protected')
         function this = loadText(fn)
+            fn = convertStringsToChars(fn);
             import mlfourdfp.*;
             this = ImgRecParser;
             this.cellContents_ = ImgRecParser.textfileToCell(fn);
