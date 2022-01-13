@@ -102,7 +102,7 @@ classdef FourdfpVisitor
                 obj = cellfun(@(x) this.ensureLocalFourdfp(x), obj, 'UniformOutput', false);
                 return
             end
-            if (isa(obj, 'mlio.HandleIOInterface') || isa(obj, 'mlio.IOInterface'))
+            if (isa(obj, 'mlio.IOInterface'))
                 obj.filepath = pwd;
                 return
             end
@@ -156,7 +156,7 @@ classdef FourdfpVisitor
                 obj = cellfun(@(x) this.ensureSafeFileprefix(x), obj, 'UniformOutput', false);
                 return
             end
-            if (isa(obj, 'mlio.IOInterface') || isa(obj, 'mlio.HandleIOInterface'))
+            if (isa(obj, 'mlio.IOInterface'))
                 obj.fileprefix = this.ensureSafeFileprefix(obj.fileprefix);
                 return
             end
@@ -197,10 +197,10 @@ classdef FourdfpVisitor
              m(4)      = ifhp.rightSideNumeric('matrix size [4]', idx);
         end
         function tf    = isLocalFourdfp(obj)
-            %  @param obj is a fourdfp data object:  filename, fileprefix, mlio.IOInterface, mlio.HandleIOInterface.
+            %  @param obj is a fourdfp data object:  filename, fileprefix, mlio.IOInterface.
             %  @return tf is boolean for presence of fourdfp data object in the pwd.            
 
-            if (isa(obj, 'mlio.HandleIOInterface') || isa(obj, 'mlio.IOInterface'))
+            if (isa(obj, 'mlio.IOInterface'))
                 obj = obj.fqfilename;
             end            
             [~,fp] = myfileparts(obj);
