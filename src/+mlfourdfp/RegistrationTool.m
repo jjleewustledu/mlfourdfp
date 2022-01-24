@@ -1,4 +1,4 @@
-classdef RegistrationTool < handle & mlfourd.ImagingFormatTool
+classdef RegistrationTool < handle & mlfourd.ImagingTool
 	%% REGISTRATIONTOOL  
 
 	%  $Revision$
@@ -16,7 +16,7 @@ classdef RegistrationTool < handle & mlfourd.ImagingFormatTool
  			%% REGISTRATIONTOOL
  			%  @param .
 
-            this = this@mlfourd.ImagingFormatTool(h, varargin{:});
+            this = this@mlfourd.ImagingTool(h, varargin{:});
  		end
  	end 
 

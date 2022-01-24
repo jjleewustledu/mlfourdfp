@@ -55,7 +55,7 @@ classdef T4ResolveError < mlfourdfp.AbstractT4ResolveError
             d   = d.volumeSummed;
             n   = d.nifti;
             idx = n.img > this.sessionData.fractionalImageFrameThresh * median(n.img) + ...
-                          mlnipet.ResourcesRegistry.instance().noiseFloorOfActivity;
+                          mlnipet.NipetRegistry.instance().noiseFloorOfActivity;
             idx = ensureRowVector(idx);
             this.logger.add('mlfourdfp.T4ResolveError.assessValidFrames.idx->%s\n', mat2str(idx));
         end

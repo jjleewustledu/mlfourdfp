@@ -89,10 +89,10 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
 
  	methods (TestClassSetup)
 		function setupDicomSorter(this)
- 			import mlfourdfp.* mlraichle.*;
-            this.studyData = StudyData;
-            this.sessionPath = fullfile(StudyRegistry.instance.subjectsDir, 'HYGLY28', '');
-            this.sessionData = SessionData('studyData', this.studyData, 'sessionPath', this.sessionPath);
+ 			import mlfourdfp.*;
+            this.studyData = mlraichle.StudyData;
+            this.sessionPath = fullfile(mlraichle.StudyRegistry.instance.subjectsDir, 'HYGLY28', '');
+            this.sessionData = mlraichle.SessionData('studyData', this.studyData, 'sessionPath', this.sessionPath);
  			this.testObj_  = DicomSorter('sessionData', this.sessionData);
  		end
 	end
