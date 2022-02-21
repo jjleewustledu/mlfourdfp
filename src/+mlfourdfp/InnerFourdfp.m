@@ -93,7 +93,6 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
                 case mlfourd.FourdfpInfo.SUPPORTED_EXT
                 case [NIfTIInfo.SUPPORTED_EXT]
                     %deleteExisting([this.fqfileprefix '.nii*']);
-                    this.img = mlfourd.FourdfpInfo.exportFourdfpToNIfTI(this.img, struct(this.ifh).orientation);
                     info = NIfTIInfo(this.fqfilename, ...
                         'datatype', this.datatype, 'ext', this.imagingInfo.ext, 'filetype', this.imagingInfo.filetype, 'N', this.N , 'untouch', false, 'hdr', this.hdr);
                     this = InnerNIfTI(info, ...
@@ -148,6 +147,45 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
     %% PROTECTED
     
     methods (Access = protected)
+        function hdr = adjustHdrForExport(~, hdr)
+            %% ADJUSTHDRFOREXPORT
+            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
+            %  niftigz_4dfp is not compliant with NIfTI qfac.
+            
+            assert(mlpipeline.ResourcesRegistry.instance().defaultN); % TODO: add support for 4dfp center coords
+
+            hdr.hist.qform_code = 0;
+            hdr.hist.sform_code = 1;
+            
+            srow = [ [hdr.dime.pixdim(2) 0 0 (1-hdr.hist.originator(1))]; ...
+                     [0 hdr.dime.pixdim(3) 0 (1-hdr.hist.originator(2))]; ...
+                     [0 0 hdr.dime.pixdim(4) (1-hdr.hist.originator(3))] ];
+            
+            hdr.hist.srow_x = -srow(1,:);
+            hdr.hist.srow_y =  srow(2,:);
+            hdr.hist.srow_z =  srow(3,:);
+        end
+        function [X,hdr] = exportFourdfpToFourdfp(this, X, hdr)
+            %% EXPORTFOURDFP
+            %  Use to maintain interoperability with output of niftigz_4dfp -4 <in.nii.gz> <out.4dfp.hdr> -N
+            %  niftigz_4dfp is not compliant with NIfTI qfac.
+            
+            if (hdrIsReasonableSurfer(hdr))
+                switch ndims(X)
+                    case 3
+                        X = permute(X, [1 3 2]); % rl, pa, si with respect to fsleyes voxel/world orientations
+                    case 4
+                        X = permute(X, [1 3 2 4]); % rl, pa, si with respect to fsleyes voxel/world orientations
+                    otherwise
+                end
+                X = flip(X,3);
+                
+                X = flip(X,2);
+            else
+                X = flip(X,2);
+            end
+            hdr = this.adjustHdrForExport(hdr);
+        end
         function [s,r] = viewExternally(this, app, varargin)
             s = []; r = '';
             that = copy(this); % avoid side effects
@@ -179,7 +217,7 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
         function save__(this)
             that = copy(this);
             assert(lstrfind(this.filesuffix, '.4dfp'));
-            [that.img_,hdr_] = mlfourd.FourdfpInfo.exportFourdfp(that.img_, that.imagingInfo.hdr); %% KLUDGE
+            [that.img_,hdr_] = this.exportFourdfpToFourdfp(that.img_, that.imagingInfo.hdr); %% KLUDGE
             that.imagingInfo_.hdr = hdr_;
             try                
                 warning('off', 'MATLAB:structOnObject');
