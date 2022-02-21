@@ -54,12 +54,12 @@ classdef CarneyUmapBuilder < mlfourdfp.CTBuilder
     end
     
 	methods 
-        function [this,umap] = buildUmap(this, varargin)
-            [this,umap] = this.buildCarneyUmap(varargin{:});
+        function umap = buildUmap(this, varargin)
+            umap = this.buildCarneyUmap(varargin{:});
         end
-        function [this,umap] = buildCarneyUmap(this, varargin)
-            umap = [];
+        function umap = buildCarneyUmap(this, varargin)
             if (this.isfinished)
+                umap = this.product;
                 return
             end            
             pwd0 = pushd(this.sessionData.sessionPath);
@@ -72,6 +72,7 @@ classdef CarneyUmapBuilder < mlfourdfp.CTBuilder
             ctm  = this.rescaleCT(ctm);
             umap = this.assembleCarneyUmap(ctm);
             umap = this.buildVisitor.imgblur_4dfp(umap, 4);
+            umap = mlfourd.ImagingContext2(umap);
             %this.teardownBuildUmaps;
             popd(pwd0);
         end
@@ -105,7 +106,7 @@ classdef CarneyUmapBuilder < mlfourdfp.CTBuilder
             
             popd(pwd0);
         end
-        function [this,umap] = buildPhantomUmap(this, varargin)
+        function umap = buildPhantomUmap(this, varargin)
             pwd0 = pushd(this.sessionData.sessionPath);
             ip = inputParser;
             addOptional(ip, 'ctm', 'ctMasked', @lexist_4dfp);
@@ -115,6 +116,7 @@ classdef CarneyUmapBuilder < mlfourdfp.CTBuilder
             ctr  = this.rescaleCT(ip.Results.ctm, 'ctOut', 'ctRescaled');
             umap = this.assembleCarneyUmap(ctr, 'umapSynth');
             umap = this.buildVisitor.imgblur_4dfp(umap, 4);
+            umap = mlfourd.ImagingContext2(umap);
             popd(pwd0);
         end
         function umap        = testGroundTruth(this, ct)

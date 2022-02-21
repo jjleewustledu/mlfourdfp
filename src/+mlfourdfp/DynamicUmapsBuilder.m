@@ -100,7 +100,7 @@ classdef DynamicUmapsBuilder < mlfourdfp.CTBuilder
                                 'snumber',     mlfourdfp.T4ResolveUtilities.scanNumber(eTracer.dns{iTracer}), ...
                                 'tracer',      mlfourdfp.T4ResolveUtilities.tracerPrefix(eTracer.dns{iTracer}));
                             this = DynamicUmapsBuilder('sessionData', sessd);
-                            this = this.buildUmaps;                                     
+                            [~,this] = this.buildUmaps;                                     
                             save(sprintf('mlfourdfp_UmapResolveBuilder_serialBuildUmaps_this_%s.mat', mydatetimestr(now)), 'this');
                         catch ME
                             handwarning(ME);
@@ -119,10 +119,10 @@ classdef DynamicUmapsBuilder < mlfourdfp.CTBuilder
     end
     
 	methods        
-        function [this,umaps]          = buildUmaps(this, varargin)
-            [this,umaps] = this.buildDynamicUmaps(varargin{:});
+        function [umaps,this]          = buildUmaps(this, varargin)
+            [umaps,this] = this.buildDynamicUmaps(varargin{:});
         end
-        function [this,umapsOpDyn]     = buildDynamicUmaps(this, varargin)
+        function [umapsOpDyn,this]     = buildDynamicUmaps(this, varargin)
             ip = inputParser;
             addParameter(ip, 'indicesLogical', this.framesDynamic, @isnumeric);
             parse(ip, varargin{:});

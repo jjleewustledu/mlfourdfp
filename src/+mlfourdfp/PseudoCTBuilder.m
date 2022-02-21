@@ -34,6 +34,7 @@ classdef PseudoCTBuilder < mlfourdfp.CarneyUmapBuilder2
                 ct = [myfileprefix(ct) '.4dfp.hdr'];
             end
             umap = this.assembleCarneyUmap(myfileprefix(ct));
+            umap = mlfourd.ImagingContext2(umap);
         end
         function [ct,ctToMprT4] = CT2mpr_4dfp(this, ct, varargin)
             %% @return ct unchanged and ctToMprT4 is the indentity

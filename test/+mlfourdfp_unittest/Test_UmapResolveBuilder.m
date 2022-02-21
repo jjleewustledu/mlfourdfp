@@ -36,7 +36,8 @@ classdef Test_UmapResolveBuilder < matlab.unittest.TestCase
         end
         function test_buildCarneyUmap(this)
             umap = this.testObj.buildCarneyUmap(this.sessd.ctRescaled('typ', 'fqfp'));
-            this.verifyTrue(lexist([umap '.4dfp.hdr'], 'file'));
+            umap = mlfourd.ImagingContext2(umap);
+            this.verifyTrue(lexist(umap.fqfn, 'file'));
             this.checkImg(umap, this.sessd.ctRescaled('typ', 'fqfp'));
         end
         function test_alignUmapToNACFrames(this)  

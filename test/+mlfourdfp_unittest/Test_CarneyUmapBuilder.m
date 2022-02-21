@@ -28,7 +28,7 @@ classdef Test_CarneyUmapBuilder < matlab.unittest.TestCase
             this.verifyClass(this.testObj, 'mlfourdfp.CarneyUmapBuilder');
  		end
 		function test_buildUmap(this)
-            [~,umap] = this.testObj_.buildUmap;
+            umap = this.testObj_.buildUmap;
             umap = mlfourd.NIfTId.load([umap '.4dfp.hdr']);
             umap.fslview;
             this.verifyTrue(this.testObj_.isfinished);

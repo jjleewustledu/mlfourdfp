@@ -17,6 +17,7 @@ classdef CarneyUmapBuilder2 < mlfourdfp.CTBuilder & mlfourdfp.IUmapBuilder
             ctm  = this.buildCTMasked2;
             ctm  = this.rescaleCT(ctm);
             umap = this.assembleCarneyUmap(ctm);
+            umap = mlfourd.ImagingContext2(umap);
         end
         
         function umap = assembleCarneyUmap(this, varargin)
