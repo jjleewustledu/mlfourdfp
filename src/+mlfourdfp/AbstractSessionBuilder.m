@@ -263,7 +263,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         end
         
  		function this = AbstractSessionBuilder(varargin)
-            %% @param census
+            %  @param census
             %  @param sessionData is an mlpipeline.ISessionData
             
  			this = this@mlfourdfp.AbstractBuilder(varargin{:});            
