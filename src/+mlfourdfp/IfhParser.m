@@ -137,49 +137,20 @@ classdef IfhParser < handle & mlio.AbstractParser
         
         %%
         
-        function s = struct(this)
-            %% STRUCT
-            %  @return struct s with fields:
-            %  version_of_keys
-            %  number_format
-            %  conversion_program
-            %  name_of_data_file
-            %  number_of_bytes_per_pixel
-            %  imagedata_byte_order
-            %  orientation
-            %  number_of_dimensions
-            %  matrix_size
-            %  scaling_factor
-            %  mmppix, if ~this.N
-            %  center, if ~this.N
-            %  @return s.version_of_keys >= this.MIN_VERSION.
-            
-            if (~isempty(this.denovo_))
-                s = this.denovo_;
+        function s = char(this)
+            s = char(this.cellContents);
+        end
+        function n = center(this)
+            if ~isempty(this.denovo_)
+                if isfield(this.denovo_, 'center')
+                    n = this.denovo_.center;
+                    return
+                end
+                n = [];
                 return
             end
             
-            assert(this.rightSideNumeric('version of keys') >= this.MIN_VERSION);            
-            s = struct( ...
-                'version_of_keys', this.rightSideNumeric('version of keys'), ...
-                'number_format', this.rightSideChar('number format'), ...
-                'conversion_program', this.rightSideChar('conversion program'), ...
-                'name_of_data_file', this.nameOfDataFile, ...
-                'patient_ID', this.rightSideChar('patient ID'), ...
-                'date', this.rightSideChar('date'), ...
-                'number_of_bytes_per_pixel', this.rightSideNumeric('number of bytes per pixel'), ...
-                'imagedata_byte_order', this.rightSideChar('imagedata byte order'), ...
-                'orientation', this.rightSideNumeric('orientation'), ...
-                'number_of_dimensions', this.rightSideNumeric('number of dimensions'), ...
-                'matrix_size', this.matrixSize, ...
-                'global_minimum', this.rightSideNumeric('global minimum'), ...
-                'global_maximum', this.rightSideNumeric('global maximum'), ...
-                'scaling_factor', this.scalingFactor, ...
-                'slice_thickness', this.sliceThickness);
-            if (~this.N_), ...
-                s.mmppix = this.mmppix;
-                s.center = this.center;     
-            end
+            n = this.rightSideNumerics('center');
         end
         function n = matrixSize(this)
             idx = 1;
@@ -192,6 +163,18 @@ classdef IfhParser < handle & mlio.AbstractParser
                 idx = idx + 1;
                 n = [n rsn]; %#ok<AGROW>
             end
+        end
+        function n = mmppix(this)
+            if ~isempty(this.denovo_)
+                if isfield(this.denovo_, 'mmppix')
+                    n = this.denovo_.mmppix;
+                    return
+                end
+                n = [];
+                return
+            end
+            
+            n = this.rightSideNumerics('mmppix');
         end
         function s = nameOfDataFile(this)
             s = mybasename(this.rightSideChar('name of data file'));
@@ -298,30 +281,54 @@ classdef IfhParser < handle & mlio.AbstractParser
             
             n = this.rightSideNumeric('slice thickness (mm/pixel)');
         end
-        function n = mmppix(this)
-            if ~isempty(this.denovo_)
-                if isfield(this.denovo_, 'mmppix')
-                    n = this.denovo_.mmppix;
-                    return
-                end
-                n = [];
+        function s = string(this)
+            s = string(this.cellContents);
+        end
+        function s = struct(this)
+            %% STRUCT
+            %  @return struct s with fields:
+            %  version_of_keys
+            %  number_format
+            %  conversion_program
+            %  name_of_data_file
+            %  number_of_bytes_per_pixel
+            %  imagedata_byte_order
+            %  orientation
+            %  number_of_dimensions
+            %  matrix_size
+            %  scaling_factor
+            %  mmppix, if ~this.N
+            %  center, if ~this.N
+            %  @return s.version_of_keys >= this.MIN_VERSION.
+            
+            if (~isempty(this.denovo_))
+                s = this.denovo_;
                 return
             end
             
-            n = this.rightSideNumerics('mmppix');
-        end
-        function n = center(this)
-            if ~isempty(this.denovo_)
-                if isfield(this.denovo_, 'center')
-                    n = this.denovo_.center;
-                    return
-                end
-                n = [];
-                return
+            assert(this.rightSideNumeric('version of keys') >= this.MIN_VERSION);            
+            s = struct( ...
+                'version_of_keys', this.rightSideNumeric('version of keys'), ...
+                'number_format', this.rightSideChar('number format'), ...
+                'conversion_program', this.rightSideChar('conversion program'), ...
+                'name_of_data_file', this.nameOfDataFile, ...
+                'patient_ID', this.rightSideChar('patient ID'), ...
+                'date', this.rightSideChar('date'), ...
+                'number_of_bytes_per_pixel', this.rightSideNumeric('number of bytes per pixel'), ...
+                'imagedata_byte_order', this.rightSideChar('imagedata byte order'), ...
+                'orientation', this.rightSideNumeric('orientation'), ...
+                'number_of_dimensions', this.rightSideNumeric('number of dimensions'), ...
+                'matrix_size', this.matrixSize, ...
+                'global_minimum', this.rightSideNumeric('global minimum'), ...
+                'global_maximum', this.rightSideNumeric('global maximum'), ...
+                'scaling_factor', this.scalingFactor, ...
+                'slice_thickness', this.sliceThickness);
+            if (~this.N_), ...
+                s.mmppix = this.mmppix;
+                s.center = this.center;     
             end
-            
-            n = this.rightSideNumerics('center');
         end
+
         function [contnt,idx] = findNextCell(this, fieldName, idx0)
             %  @return idx | cellContents{idx} contains the fieldName.
             
@@ -406,7 +413,7 @@ classdef IfhParser < handle & mlio.AbstractParser
             nv    = str2num(strtrim(names.value1)); %#ok<ST2NM>
         end
         
-        function this = IfhParser(varargin)            
+        function this = IfhParser(varargin)
             ip = inputParser;
             addParameter(ip, 'N', mlpipeline.ResourcesRegistry.instance().defaultN, @islogical);
             parse(ip, varargin{:});
