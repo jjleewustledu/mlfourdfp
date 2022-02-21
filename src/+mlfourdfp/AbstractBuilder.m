@@ -85,8 +85,9 @@ classdef (Abstract) AbstractBuilder < matlab.mixin.Heterogeneous & mlpipeline.Ab
                     [s,r] = this.ensure4dfp([fp '.nii']);
                     return
                 end
-                [s,r] = this.buildVisitor.nifti_4dfp_4(myfileprefix(ip.Results.filename));
-                assert(lexist(myfilename(ip.Results.filename, '.4dfp.hdr'), 'file'));
+                ic = mlfourd.ImagingContext2(myniftiname(ip.Results.filename));
+                ic.selectFourdfpTool();
+                ic.save();
                 return
             end
             if (2 == exist([ip.Results.filename '.4dfp.hdr'], 'file'))
@@ -128,8 +129,9 @@ classdef (Abstract) AbstractBuilder < matlab.mixin.Heterogeneous & mlpipeline.Ab
                     [s,r] = mlbash(sprintf('mri_convert %s.mgz %s.nii.gz', fp, fp));
                     return
                 end
-                [s,r] = this.buildVisitor.nifti_4dfp_n(myfileprefix(ip.Results.filename));
-                assert(lexist(myfilename(ip.Results.filename, '.nii.gz'), 'file'));
+                ic = mlfourd.ImagingContext2(ip.Results.filename);
+                ic.selectNiftiTool();
+                ic.save();
                 return
             end
             if (2 == exist([ip.Results.filename '.nii'], 'file'))

@@ -73,7 +73,9 @@ classdef MRACHiresUmapBuilder < mlfourdfp.MRUmapBuilder
                 'in', umap, ...
                 'ref', fullfile(sesp, 'T1'), ...
                 'out', fullfile(sesp, this.umapSynthOpT1001('blurTag', '', 'typ', 'fp')));
-            this.buildVisitor.nifti_4dfp_4(out)
+            out = mlfourd.ImagingContext2(myniftiprefix(out));
+            out.selectFourdfpTool();
+            out.save();
         end        
         
         function fqfp = dcm_to_UMAP(this)

@@ -393,13 +393,12 @@ classdef (Abstract) AbstractT4ResolveBuilder < mlfourdfp.AbstractSessionBuilder 
             assert(length(fqfps) == sum(this.indicesLogical));
         end
         function msk   = maskBoundaries(this, fqfp)
-            this.buildVisitor.nifti_4dfp_n(fqfp);
-            ic  = mlfourd.ImagingContext2(fqfp);
-            ic  = ic.ones;
-            ic.noclobber = false;
-            ic.saveas([fqfp '_ones']);
-            this.buildVisitor.nifti_4dfp_4([fqfp '_ones']);
-            msk = this.zeroSlicesOnBoundaries([fqfp '_ones'], 3);
+            ic = mlfourd.ImagingContext2(fqfp);
+            ic = ic.ones;
+            ic.fileprefix = strcat(ic.fileprefix, '_ones');
+            ic.selectFourdfpTool();
+            ic.save();
+            msk = this.zeroSlicesOnBoundaries(ic.fqfp, 3);
         end           
         function this  = mpr2atl(this)
             sd = this.sessionData;
