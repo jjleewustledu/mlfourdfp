@@ -7,19 +7,16 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
  	%% It was developed on Matlab 9.3.0.713579 (R2017b) for MACI64.  Copyright 2017 John Joowon Lee.
  	
 
-    properties (Dependent)        
-        rawdataPath
-        rawdataFolder
-        scanPath
-        scanFolder
-        sessionPath
-        sessionFolder
+    properties (Dependent) 
+        projectsDir
         projectPath
         projectFolder
-        
-        projectsDir
         subjectsDir
-        
+        sessionPath
+        sessionFolder
+        scanPath
+        scanFolder
+                
         attenuationCorrected
         census
         dbgTag
@@ -36,31 +33,19 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
 	methods
         
         %% GET/SET
-                
-        function g    = get.rawdataPath(this)
-            g = this.sessionData.rawdataPath;
+
+        function g    = get.projectsDir(this)
+            g = this.sessionData.projectsDir;
         end
-        function this = set.rawdataPath(this, s)
-            this.sessionData.rawdataPath = s;
+        function g    = get.projectPath(this)
+            g = this.sessionData.projectPath;
         end
-        function g    = get.rawdataFolder(this)
-            g = this.sessionData.rawdataFolder;
+        function g    = get.projectFolder(this)
+            g = this.sessionData.projectFolder;
         end
-        function this = set.rawdataFolder(this, s)
-            this.sessionData.rawdataFolder = s;
-        end
-        function g    = get.scanPath(this)
-            g = this.sessionData.scanPath;
-        end
-        function this = set.scanPath(this, s)
-            this.sessionData.scanPath = s;
-        end
-        function g    = get.scanFolder(this)
-            g = this.sessionData.scanFolder;
-        end
-        function this = set.scanFolder(this, s)
-            this.sessionData.scanFolder = s;
-        end
+        function g    = get.subjectsDir(this)
+            g = this.sessionData.subjectsDir;
+        end        
         function g    = get.sessionPath(this)
             g = this.sessionData.sessionPath;
         end
@@ -73,26 +58,19 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
         function this = set.sessionFolder(this, s)
             this.sessionData.sessionFolder = s;
         end   
-        function g    = get.projectPath(this)
-            g = this.sessionData.projectPath;
+        function g    = get.scanPath(this)
+            g = this.sessionData.scanPath;
         end
-        function this = set.projectPath(this, s)
-            this.sessionData.projectPath = s;
+        function this = set.scanPath(this, s)
+            this.sessionData.scanPath = s;
         end
-        function g    = get.projectFolder(this)
-            g = this.sessionData.projectFolder;
+        function g    = get.scanFolder(this)
+            g = this.sessionData.scanFolder;
         end
-        function this = set.projectFolder(this, s)
-            this.sessionData.projectFolder = s;
-        end    
-        
-        function g    = get.projectsDir(this)
-            g = this.sessionData.projectsDir;
+        function this = set.scanFolder(this, s)
+            this.sessionData.scanFolder = s;
         end
-        function g    = get.subjectsDir(this)
-            g = this.sessionData.subjectsDir;
-        end
-        
+               
         function g    = get.attenuationCorrected(this)
             g = this.sessionData.attenuationCorrected;
         end
