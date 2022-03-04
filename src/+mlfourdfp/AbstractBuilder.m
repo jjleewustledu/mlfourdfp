@@ -31,7 +31,7 @@ classdef (Abstract) AbstractBuilder < matlab.mixin.Heterogeneous & mlpipeline.Ab
             fn = fullfile(p, [f mlfourd.NIfTIInfo.FILETYPE_EXT]);
         end
         function fn    = mri_convert(fn, varargin)
-            %% MRI_CONVERT
+            %% MRI_CONVERT also calls fslreorient2std
             %  @param fn is the source possessing a filename extension recognized by mri_convert
             %  @param fn is the destination, also recognized by mri_convert.  Optional.  Default is [fileprefix(fn) '.nii.gz'] 
             
@@ -39,11 +39,20 @@ classdef (Abstract) AbstractBuilder < matlab.mixin.Heterogeneous & mlpipeline.Ab
             ip = inputParser;
             addRequired(ip, 'fn',  @(x) lexist(x, 'file'));
             addOptional(ip, 'fn2', niigzFilename(fn), @ischar);
-            parse(ip, fn, varargin{:});            
-            
-            fprintf('mlfourdfp.AbstractBuilder.mri_convert is working on %s\n', ip.Results.fn);
-            mlbash(sprintf('mri_convert %s %s', ip.Results.fn, ip.Results.fn2));
-            fn = ip.Results.fn2;
+            parse(ip, fn, varargin{:});  
+            ipr = ip.Results;            
+            fprintf('mlfourdfp.AbstractBuilder.mri_convert is working on %s\n', ipr.fn);
+
+            [~,~,x] = myfileparts(ipr.fn2);
+            if contains(x, '.nii')
+                tempname_ = strcat(tempname, x);
+                mlbash(sprintf('mri_convert %s %s', ipr.fn, tempname_));
+                mlbash(sprintf('fslreorient2std %s %s', tempname_, ipr.fn2));
+                fn = ipr.fn2;
+                return
+            end
+            mlbash(sprintf('mri_convert %s %s', ipr.fn, ipr.fn2));
+            fn = ipr.fn2;
         end
         function [s,r] = nifti_4dfp_4(varargin)
             vtor = mlfourdfp.FourdfpVisitor;
