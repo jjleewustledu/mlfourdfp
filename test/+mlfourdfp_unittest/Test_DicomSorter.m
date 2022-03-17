@@ -49,11 +49,11 @@ classdef Test_DicomSorter < matlab.unittest.TestCase
                     infos{idx}.ImageType, infos{idx}.SequenceName);
             end
         end
-        function test_destPath(this)
+        function test_destinationPath(this)
             cd(mlraichle.StudyRegistry.instance.rawdataDir);
             dt = mlsystem.DirTools('HYGLY*', 'NP*', 'hygly*', 'TW*', 'DT*');
             for idns = 1:length(dt.dns)
-                fprintf('dns-> %s\ndestPath -> %s\n\n', dt.dns{idns}, this.testObj.destPath(dt.dns{idns}));
+                fprintf('dns-> %s\ndestinationPath -> %s\n\n', dt.dns{idns}, this.testObj.destinationPath(dt.dns{idns}));
             end
         end
         function test_session_to_4dfp(this)

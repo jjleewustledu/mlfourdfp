@@ -18,7 +18,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
             this = this.sessionSort(varargin{:});
         end        
         function pth   = findRawdataSession(sessd)
-            %% FINDRAWDATASESSION is a pseudo-inverse to DicomSorter.destPath
+            %% FINDRAWDATASESSION is a pseudo-inverse to DicomSorter.destinationPath
             %  @returns path to rawdata session.
             
             assert(isa(sessd, 'mlpipeline.SessionData'));
@@ -57,7 +57,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
                     srcPth = dt.dns{idns};
                     this = this.sessionDcmConvert( ...
                         srcPth, ...
-                        this.destPath(srcPth), ...
+                        this.destinationPath(srcPth), ...
                         'sessionData', this.sessionData, ...
                         'seriesFilter', ip.Results.seriesFilter, ...
                         'preferredName', ip.Results.preferredName);
@@ -108,7 +108,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
             this.appendInfoFieldToIfh(info, 'RescaleIntercept', canonFp);
             this.appendInfoFieldToIfh(info, 'RescaleSlope', canonFp);
         end
-        function pth     = destPath(this, str)
+        function pth     = destinationPath(this, str)
             %% DESTPATH 
             %  @param str, a string for rawdata source folder.
             %  @returns pth, the path to a canonical session path determined by internally stored mlpipeline.SessionData

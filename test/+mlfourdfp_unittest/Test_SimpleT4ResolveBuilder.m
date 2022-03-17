@@ -23,8 +23,8 @@ classdef Test_SimpleT4ResolveBuilder < matlab.unittest.TestCase
  			this.assertEqual(1,1);
         end
         function test_resolveOnTof(this)
-            cd(fullfile(getenv('SINGULARITY_HOME'), 'CCIR_00559_00754', 'derivatives', 'sub-S58163', 'anat', ''))
-            bids = mlraichle.MMRBids();
+            cd(fullfile(getenv('SINGULARITY_HOME'), 'CCIR_00559_00754', 'derivatives', 'resolve', 'sub-S58163', 'anat', ''))
+            bids = mlraichle.Ccir559754Bids();
             tof_b6 = bids.tof_ic.blurred(6);
             tof_bin = tof_b6.thresh(30);
             tof_bin = tof_bin.binarized();
