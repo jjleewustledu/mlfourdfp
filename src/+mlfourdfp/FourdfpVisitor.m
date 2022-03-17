@@ -195,6 +195,11 @@ classdef FourdfpVisitor
             [m(2),idx] = ifhp.rightSideNumeric('matrix size [2]', idx);
             [m(3),idx] = ifhp.rightSideNumeric('matrix size [3]', idx);
              m(4)      = ifhp.rightSideNumeric('matrix size [4]', idx);
+        end        
+        function         imgrecUpdate(filename, cmd)
+            irl = mlfourdfp.ImgRecLogger(filename);
+            irl.add(cmd)
+            irl.save()
         end
         function tf    = isLocalFourdfp(obj)
             %  @param obj is a fourdfp data object:  filename, fileprefix, mlio.IOInterface.
@@ -1437,8 +1442,9 @@ classdef FourdfpVisitor
             end            
             cmd_suf = sprintf(' %s -o%s %s %s', ipr.options, ipr.output, ipr.filenames, log);
             [s,r] = this.t4_resolve__(cmd_suf);
-            fns = strsplit(ipr.filenames); % resolve onto first listed file
-            this.imgrecUpdate([fns{1} '_' ipr.output], ['t4_resolve' cmd_suf])
+            if isempty(r)
+                r = strcat('t4_resolve', cmd_suf);
+            end
         end
         function      [s,r] = zero_slice_4dfp(this, varargin)
             ip = inputParser;
@@ -1865,11 +1871,6 @@ classdef FourdfpVisitor
             assert(strcmp(computer, 'GLNXA64'));
             %assert(lstrfind(hostname, this.FOURDFP_HOSTS));
         end    
-        function       imgrecUpdate(~, filename, cmd)
-            irl = mlfourdfp.ImgRecLogger(filename);
-            irl.add(cmd)
-            irl.save()
-        end
         function img = normalizeFramesBySums(~, img)
             assert(length(size(img)) == 4);
             for w = 1:size(img, 4)
