@@ -20,7 +20,7 @@ classdef FourdfpVisitor
     properties 
         coronal_t4      = fullfile(getenv('RELEASE'), 'C_t4')
         sagittal_t4     = fullfile(getenv('RELEASE'), 'S_t4')
-        sagittal_inv_t4 = fullfile(getenv('HOME'), 'Local', 'bin', 'Sinv_t4')
+        sagittal_inv_t4 = fullfile(getenv('REFDIR'), 'Sinv_t4')
         transverse_t4   = fullfile(getenv('RELEASE'), 'T_t4')
     end
     
