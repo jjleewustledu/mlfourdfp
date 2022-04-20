@@ -77,7 +77,6 @@ classdef MRACHiresUmapBuilder < mlfourdfp.MRUmapBuilder
             out.selectFourdfpTool();
             out.save();
         end        
-        
         function fqfp = dcm_to_UMAP(this)
             %% transforms MR AC as DICOM to UMAP as 4dfp; works in this.umapPath
             %  @return fullfile(this.umapPath, this.fileprefix)
