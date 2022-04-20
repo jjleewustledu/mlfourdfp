@@ -1084,7 +1084,7 @@ classdef FourdfpVisitor
         function      [s,r] = mpr2atl1_4dfp(this, varargin)
             ip = inputParser;
             addRequired( ip, 'in',               @ischar);
-            addParameter(ip, 'options', sprintf('-T%s/TRIO_Y_NDC -S711-2B', getenv('REFDIR')), @ischar);
+            addParameter(ip, 'options', sprintf('-T%s/TRIO_Y_NDC -S711-2B crossmodal', getenv('REFDIR')), @ischar);
             addParameter(ip, 'log', '/dev/null', @ischar);
             parse(ip, varargin{:});
             in_ = ip.Results.in;
