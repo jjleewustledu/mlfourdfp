@@ -377,7 +377,7 @@ classdef FourdfpVisitor
             %% SIZE_4DFP
             %  @return sz, the size of the image data specified by obj.fqfileprefix.
             
-            assert(isprop(obj, 'fqfileprefix'));
+            assert(isa(obj, 'mlio.IOInterface'));
             sz = mlfourdfp.FourdfpVisitor.ifhMatrixSize(obj.fqfileprefix);
         end
     end

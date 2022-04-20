@@ -149,7 +149,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
             
             s = this.sessionData;
             t4 = [               s.mprage('typ', 'fp') '_to_' s.atlas('typ', 'fp') '_t4'];            
-            if ~lexist(fullfile(s.mprage('typ', 'path'), t4)) || ~this.sessionData.noclobber
+            if ~isfile(fullfile(s.mprage('typ', 'path'), t4)) || ~this.sessionData.noclobber
                 pwd0 = pushd(    s.mprage('typ', 'path'));
                 this.buildVisitor.msktgenMprage(s.mprage('typ', 'fp'));
                 popd(pwd0);
@@ -283,7 +283,7 @@ classdef (Abstract) AbstractSessionBuilder < mlfourdfp.AbstractBuilder
                 return
             end
             t = [t '_' myclass(p)];
-            if (~isprop(p, 'fileprefix'))
+            if (~isa(p, 'mlio.IOInterface'))
                 return
             end
             t = [t '_' p.fileprefix];
