@@ -75,7 +75,7 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
             
             this.theImages_ = this.it4ResolveBuilder_.ensureSafeFileprefix(ip.Results.theImages);
             if (isempty(this.theImages))
-                this.length_ = this.readLength;
+                this.length_ = this.readLength(this.sourceImage);
             else
                 this.length_ = this.readLength(this.theImages);
             end
@@ -108,14 +108,11 @@ classdef ImageFrames < mlfourdfp.AbstractImageComposite
         function len   = length(this)
             len = this.length_;
         end
-        function len   = readLength(this, varargin)
-            ip = inputParser;
-            addOptional(ip, 'tracerSif', this.sourceImage);
-            parse(ip, varargin{:});
-            tracerSif = ip.Results.tracerSif;
+        function len   = readLength(~, tracerSif)
             if iscell(tracerSif)
                 tracerSif = tracerSif{1};
             end
+            assert(istext(tracerSif));
             tracerSif = myfileprefix(tracerSif);
             
             [~,len] = mlbash(sprintf('awk ''/matrix size \\[4\\]/{print $NF}'' %s.4dfp.ifh', tracerSif));
