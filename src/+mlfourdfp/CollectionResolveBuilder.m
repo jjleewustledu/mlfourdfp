@@ -48,6 +48,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
         end
         function ll = lns_with_DateTime(fn_ast)
             %% Creates sym.-link, including any datetime from the original (f.-q.) filename in the link name.
+            %  TRACER code and DT code are upper case.
             %  @param fn_ast is filename with *s for globbing.
             %  @return ll is cell-array of sym.-links.
             
@@ -76,6 +77,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
         end
         function ll = lns_with_datetime(fn_ast)
             %% Creates sym.-link, including any datetime from the original (f.-q.) filename in the link name.
+            %  tracer code and dt code are lower case.
             %  @param fn_ast is filename with *s for globbing.
             %  @return ll is cell-array of sym.-links.
             
@@ -85,7 +87,7 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             ll = {};
             for f = dt.fqfns
                 re = regexp(f{1}, '(?<tracer>[a-z]+)dt(?<dt>\d+)\S*\.4dfp\.\S+', 'names');
-                % e.g., f{1}->$SUBJECTS_DIR/sub-S123/ses-E123/fdg_dt20190507225833_op_fdg_on_op_fdg_avgtr1.4dfp.img
+                % e.g., f{1}->$SUBJECTS_DIR/sub-S123/ses-E123/fdgdt20190507225833_op_fdg_on_op_fdg_avgtr1.4dfp.img
                 if ~isempty(re)
                     link_prefix = sprintf('%sdt%s', re.tracer, re.dt); % e.g., fdgdt20190507225833
                     [~,~,x] = myfileparts(f{1});
@@ -102,6 +104,8 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             end
         end
         function prefixes = uniqueFileprefixes(imgs)
+            %% selects just .4dfp.hdr files, ignoring other .4dfp.*
+
             prefixes = {};
             for im = imgs
                 [~,~,x] = myfileparts(im{1});
@@ -165,6 +169,10 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
         end
         function g = get.workpath(this)
             g = this.workpath_;
+        end
+        function this = set.workpath(this, s)
+            assert(isfolder(s));
+            this.workpath_ = s;
         end
         
         %%
@@ -255,13 +263,13 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             addRequired( ip, 'fqfps_avgt', @iscell);
             addParameter(ip, 'NRevisions', 1, @isnumeric);
             addParameter(ip, 'maskForImages', 'Msktgen');
-            addParameter(ip, 'resolveTag', sprintf('op_%sr1', fqfps_avgt{1}), @ischar);
+            addParameter(ip, 'resolveTag', sprintf('op_%sr1', mybasename(fqfps_avgt{1})), @ischar);
             addParameter(ip, 'compAlignMethod', 'align_multiSpectral', @ischar);
             addParameter(ip, 'client', 'resolve_this', @ischar);
             parse(ip, fqfps_avgt, varargin{:});
             ipr = ip.Results;
             
-            fqfps_avgt = this.ensure_fqfps_avgt(fqfps_avgt);
+            %fqfps_avgt = this.ensure_fqfps_avgt(fqfps_avgt);
             
             % trivial:  nothing to resolve
             if length(fqfps_avgt) < 2
@@ -410,43 +418,59 @@ classdef CollectionResolveBuilder < mlfourdfp.AbstractBuilder
             %assert(~isempty(this.compositeRB_)); 
             assert(~isempty(this.t4s_)); 
             
-            imgs = ipr.staging_handle(ipr.tracer, '');             
+            imgs = ipr.staging_handle(ipr.tracer, '');
+            imgs = imgs(~contains(imgs, '_avgt')); % match size(imgs) with size(this.t4s_)
             this.product_ = cell(size(imgs));
             if (length(imgs) < 2)
-                this.product_{1} = mlfourd.ImagingContext2([imgs{1} '.4dfp.hdr']);
-                this.product_{1}.fourdfp;
-                
                 try
-                    at4 = this.t4s_{1}{1};
-                catch ME
-                    handwarning(ME)
-                    try
-                        at4 = this.t4s_{1};
-                    catch ME1
-                        handwarning(ME1)
-                        at4 = this.t4s_;
+                    this.product_{1} = mlfourd.ImagingContext2([imgs{1} '.4dfp.hdr']);
+                    %this.product_{1}.fourdfp;                
+                    
+                    at4 = this.t4s_; % e.g., this.t4s_{1}{i} ~ text
+                    if iscell(at4)
+                        at4 = at4{1};
                     end
-                end
-                toks = regexp(at4, '\w+_to_(?<opTag>op_[a-zA-Z0-9]+)_t4$', 'names');
-                fp = this.product_{1}.fileprefix;
-                if (strcmp(mybasename(at4), 'T_t4') || isempty(toks))
-                    fp1 = sprintf('%s_op_%s', fp, this.scrubDatetime(fp));
-                    this.product_{1}.fileprefix = fp1;
+                    if iscell(at4)
+                        at4 = at4{1};
+                    end
+    
+                    re = regexp(at4, '\w+_to_(?<opTag>op_[a-zA-Z0-9]+)_t4$', 'names');
+                    fp = this.product_{1}.fileprefix;
+                    if (strcmp(mybasename(at4), 'T_t4') || isempty(re))
+                        fp1 = sprintf('%s_op_%s', fp, this.scrubDatetime(fp));
+                        this.buildVisitor_.copyfilef_4dfp(fp, fp1);
+                        this.product_{1} = mlfourd.ImagingContext2([fp1 '.4dfp.hdr']);
+                        return
+                    end
+                    fp1 = [fp '_' re.opTag];
                     this.buildVisitor_.copyfilef_4dfp(fp, fp1);
-                    return
+                    this.product_{1} = mlfourd.ImagingContext2([fp1 '.4dfp.hdr']);
+                catch ME
+                    handwarning(ME, 'mlfourdfp:RuntimeWarning', ...
+                        'CollectionResolveBuilder.t4imgDynamicImages had trouble ')
                 end
-                fp1 = [fp '_' toks.opTag];
-                this.product_{1}.fileprefix = fp1;
-                this.buildVisitor_.copyfilef_4dfp(fp, fp1);
                 return
             end
             for i = 1:length(imgs)
                 try
-                    this.compositeRB_ = this.compositeRB_.t4img_4dfp( ...
-                        this.t4s_{1}{i}, ...
-                        this.frontOfFileprefix(imgs{i}), ...
-                        'ref', this.frontOfFileprefix(imgs{1})); % 'out', [this.frontOfFileprefixR1(imgs{i}) '_op_' lower(ipr.tracer)], ...
-                    this.product_{i} = this.compositeRB_.product;
+                    this.product_{i} = mlfourd.ImagingContext2([imgs{1} '.4dfp.hdr']);
+                    %this.product_{i}.fourdfp;
+
+                    at4 = this.t4s_; % e.g., this.t4s_{1}{i} ~ text
+                    if iscell(at4)
+                        at4 = at4{1};
+                    end
+                    if iscell(at4)
+                        at4 = at4{i};
+                    end
+
+                    if ~isempty(this.compositeRB_)
+                        this.compositeRB_ = this.compositeRB_.t4img_4dfp( ...
+                            at4, ...
+                            this.frontOfFileprefix(imgs{i}), ...
+                            'ref', this.frontOfFileprefix(imgs{1})); % 'out', [this.frontOfFileprefixR1(imgs{i}) '_op_' lower(ipr.tracer)], ...
+                        this.product_{i} = this.compositeRB_.product;
+                    end
                 catch ME
                     handwarning(ME, 'mlfourdfp:RuntimeWarning', ...
                         'CollectionResolveBuilder.t4imgDynamicImages had trouble ')
