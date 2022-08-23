@@ -11,7 +11,7 @@ classdef SCANS_studies_txt
             %      filename (file): of SCANS.studies.txt.
             
             ip = inputParser;
-            addOptional(ip, "filename", 'SCANS.studies.txt', @isfile)
+            addOptional(ip, "filename", 'SCANS.studies.txt', @istext)
             parse(ip, varargin{:})
             ipr = ip.Results;
             
@@ -19,8 +19,14 @@ classdef SCANS_studies_txt
                 this.the_table_ = readtable(ipr.filename);
             catch ME
                 handwarning(ME);
-                ipr.filename = fullfile(fileparts(ipr.filename), '.studies.txt');
-                this.the_table_ = readtable(ipr.filename);
+                try
+                    ipr.filename = 'scans.studies.txt';
+                    this.the_table_ = readtable(ipr.filename);
+                catch ME1
+                    handwarning(ME1);
+                    ipr.filename = fullfile(pwd, '.studies.txt');
+                    this.the_table_ = readtable(ipr.filename);
+                end
             end
             this.the_table_.Properties.VariableNames = {'scan_index', 'pulse_seq', 'scan_name', 'num_slices'};
         end
@@ -70,7 +76,7 @@ classdef SCANS_studies_txt
             assert(isfolder(study), 'expected study folder %s not found', study)
             
             % dcm2niix
-            mlpipeline.Bids.dcm2niix(study, 'o', ipr.o);
+            mlpipeline.Bids.dcm2niix(study, 'o', ipr.o, 'terse', true);
             
             % find fqfn
             g = glob(sprintf('%s%s*-%i.nii.gz', ipr.o, filesep, si));
@@ -104,11 +110,21 @@ classdef SCANS_studies_txt
                 fqfn = this.dcm2niix(varargin{:}, 'name_pattern', 'T1GRESTEALTH');
             catch
                 try
-                    patt = 'POST';
-                    fqfn = this.dcm2niix(varargin{:}, 'name_pattern', 'T1POST');
+                    patt = 'STEALTH';
+                    fqfn = this.dcm2niix(varargin{:}, 'name_pattern', 'TRA3DSTEALTH');
                 catch
-                    patt = 'TRA_3D_GRE';
-                    fqfn = this.dcm2niix(varargin{:}, 'name_pattern', 'TRA3DGRE', 'last', true);
+                    try
+                        patt = 'POST';
+                        fqfn = this.dcm2niix(varargin{:}, 'name_pattern', 'T1POST');
+                    catch
+                        try                        
+                            patt = 'POST';
+                            fqfn = this.dcm2niix(varargin{:}, 'name_pattern', 'T13DPOST');
+                        catch 
+                            patt = 'TRA_3D_GRE';
+                            fqfn = this.dcm2niix(varargin{:}, 'name_pattern', 'TRA3DGRE', 'last', true);
+                        end
+                    end
                 end
             end
         end
