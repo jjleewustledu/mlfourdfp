@@ -82,13 +82,13 @@ classdef FourdfpFacade < handle
         end
  		function this = FourdfpFacade(varargin)
  			%% FOURDFPFACADE
-            %  @param sessionData is an mlpipeline.SessionData specifying identifiers for the study session, including
+            %  @param sessionData is an mlpipeline.ISessionData specifying identifiers for the study session, including
             %  Freesurfer's recon-all results (T1.mgz is in Talairach space) and all PET data.
             %  @param t4ResolveBuilder is an mlfourdfp.T4ResolveBuilder, a builder pattern.
             %  @return this is a facade pattern for imaging alignment.
 
             ip = inputParser;
-            addParameter(ip, 'sessionData',      [], @(x) isa(x, 'mlpipeline.SessionData'));
+            addParameter(ip, 'sessionData',      [], @(x) isa(x, 'mlpipeline.ISessionData'));
             addParameter(ip, 't4ResolveBuilder', [], @(x) isa(x, 'mlfourdfp.T4ResolveBuilder') || isempty(x));
             addParameter(ip, 'buildVisitor', mlfourdfp.FourdfpVisitor, ...
                                                      @(x) isa(x, 'mlfourdfp.FourdfpVisitor'));

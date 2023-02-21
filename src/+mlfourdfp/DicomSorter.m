@@ -21,7 +21,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
             %% FINDRAWDATASESSION is a pseudo-inverse to DicomSorter.destinationPath
             %  @returns path to rawdata session.
             
-            assert(isa(sessd, 'mlpipeline.SessionData'));
+            assert(isa(sessd, 'mlpipeline.ISessionData'));
             
             import mlsystem.* mlfourdfp.*;
             dt    = DirTool(fullfile(mlraichle.StudyRegistry.instance.rawdataDir, '*')); 
@@ -44,7 +44,7 @@ classdef DicomSorter < mlpipeline.DicomSorter
             ip = inputParser;
             addParameter(ip, 'sessionFilter', @(x) iscell(x) || ischar(x));
             addParameter(ip, 'seriesFilter',  @(x) iscell(x) || ischar(x));
-            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.SessionData'));
+            addParameter(ip, 'sessionData', [], @(x) isa(x, 'mlpipeline.ISessionData'));
             addParameter(ip, 'preferredName', 'unknown', @ischar);
             parse(ip, varargin{:});
             
@@ -111,7 +111,8 @@ classdef DicomSorter < mlpipeline.DicomSorter
         function pth     = destinationPath(this, str)
             %% DESTPATH 
             %  @param str, a string for rawdata source folder.
-            %  @returns pth, the path to a canonical session path determined by internally stored mlpipeline.SessionData
+            %  @returns pth, the path to a canonical session path determined by internally stored
+            %  mlpipeline.SessionData2022
             %  object.
             %  Uses:  this.ctDestPath, this.folderRegexp, this.scrubSubjectID.
             

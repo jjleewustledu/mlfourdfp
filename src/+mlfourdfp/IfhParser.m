@@ -242,7 +242,7 @@ classdef IfhParser < handle & mlio.AbstractParser
                 end
                 error('mlfourdfp:guardingIfsFailed', 'in IfhParser.save');
             end
-            fprintf('\n');
+            fprintf(fid, '\n');
             fclose(fid);
             
             % reload to update the cell contents

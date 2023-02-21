@@ -32,7 +32,7 @@ classdef T4ResolveReporter
  			%  Usage:  this = T4ResolveReporter()
 
  			ip = inputParser;
-            addParameter(ip, 'sessionData', this.sessionData_, @(x) isa(x, 'mlpipeline.SessionData'));
+            addParameter(ip, 'sessionData', this.sessionData_, @(x) isa(x, 'mlpipeline.ISessionData'));
             addParameter(ip, 'imagingPath', pwd,               @isdir);
             addParameter(ip, 'loggingPath', pwd,               @isdir);
             addParameter(ip, 'imagingFileprefix', '',          @ischar);

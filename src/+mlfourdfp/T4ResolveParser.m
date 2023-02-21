@@ -43,10 +43,10 @@ classdef T4ResolveParser
 	methods
  		function this = T4ResolveParser(varargin)
  			%% T4RESOLVEPARSER
- 			%  @param 'sessionData' obj is an instance of mlpipeline.SessionData
+ 			%  @param 'sessionData' obj is an instance of mlpipeline.ISessionData
 
             ip = inputParser;
-            addParameter(ip, 'sessionData',     [], @(x) isa(x, 'mlpipeline.SessionData'));
+            addParameter(ip, 'sessionData',     [], @(x) isa(x, 'mlpipeline.ISessionData'));
             addParameter(ip, 'imagingFilename', '', @ischar);
             addParameter(ip, 'loggingFilename', '', @ischar);
             addParameter(ip, 'frameLength',     0, @isnumeric);
