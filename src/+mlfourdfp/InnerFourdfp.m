@@ -68,7 +68,7 @@ classdef InnerFourdfp < handle & mlfourd.AbstractInnerImagingFormat
                 return
             end
             if (lexist(this.fqfilename, 'file'))
-                [~, o] = mlbash(['fslorient -getorient ' this.fqfileprefix '.4dfp.hdr']);
+                [~, o] = mlbash(strcat('fslorient -getorient ', this.fqfileprefix, '.4dfp.hdr'));
                 o = strtrim(o);
                 return
             end

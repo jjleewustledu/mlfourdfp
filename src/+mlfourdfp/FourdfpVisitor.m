@@ -56,7 +56,7 @@ classdef FourdfpVisitor
             deleteExisting([fqfp '.4dfp.hdr']);
             ifh.save;
             pwd0 = myfileparts(fqfp);
-            mlbash(['ifh2hdr ' fqfp]);
+            mlbash(strcat('ifh2hdr ', fqfp));
             popd(pwd0);
         end
         function [s,m] = copyfile_4dfp(varargin)
